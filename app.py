@@ -14,6 +14,7 @@ from hackathon_advisor.data import ProjectIndex
 from hackathon_advisor.field_notes import build_field_notes_markdown
 from hackathon_advisor.lora_dataset import build_lora_dataset_jsonl
 from hackathon_advisor.prize_ledger import prize_ledger
+from hackathon_advisor.submission_packet import build_submission_packet_markdown
 from hackathon_advisor.tool_contracts import resolve_tool_call, tool_schemas
 from hackathon_advisor.tools import TARGETS
 from hackathon_advisor.trace_export import build_trace_jsonl, trace_metadata
@@ -147,6 +148,23 @@ def lora_dataset_artifact(session_json: str = "{}") -> str:
             **trace_metadata(index),
             "project_count": len(index.projects),
         },
+    )
+
+
+@app.api(name="submission_packet", concurrency_limit=8)
+def submission_packet_artifact(session_json: str = "{}") -> str:
+    try:
+        session = json.loads(session_json or "{}")
+    except json.JSONDecodeError:
+        session = {}
+    runtime_status = engine.runtime_status()
+    return build_submission_packet_markdown(
+        session,
+        {
+            **trace_metadata(index),
+            "project_count": len(index.projects),
+        },
+        prize_ledger(runtime_status),
     )
 
 

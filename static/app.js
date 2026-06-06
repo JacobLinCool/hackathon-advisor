@@ -23,6 +23,7 @@ const exportTraceButton = document.querySelector("#export-trace");
 const exportNotesButton = document.querySelector("#export-notes");
 const exportChapterButton = document.querySelector("#export-chapter");
 const exportLoraButton = document.querySelector("#export-lora");
+const exportPacketButton = document.querySelector("#export-packet");
 const resetButton = document.querySelector("#reset-session");
 
 const SESSION_STORAGE_KEY = "hackathon-advisor-session-v1";
@@ -69,6 +70,10 @@ exportChapterButton.addEventListener("click", async () => {
 
 exportLoraButton.addEventListener("click", async () => {
   await exportLoraDataset();
+});
+
+exportPacketButton.addEventListener("click", async () => {
+  await exportSubmissionPacket();
 });
 
 resetButton.addEventListener("click", () => {
@@ -189,6 +194,7 @@ function renderRestoredSession(data) {
   exportNotesButton.disabled = !(session.trace?.length);
   exportChapterButton.disabled = !(session.ideas?.length);
   exportLoraButton.disabled = !(session.trace?.length);
+  exportPacketButton.disabled = !(session.trace?.length);
 }
 
 function readSavedSession() {
@@ -372,6 +378,7 @@ function handleEvent(event) {
     exportNotesButton.disabled = !(session.trace?.length);
     exportChapterButton.disabled = !(session.ideas?.length);
     exportLoraButton.disabled = !(session.trace?.length);
+    exportPacketButton.disabled = !(session.trace?.length);
     saveSession();
   }
 }
@@ -548,13 +555,15 @@ function setCommandDisabled(disabled) {
     const isNotes = button.id === "export-notes";
     const isChapter = button.id === "export-chapter";
     const isLora = button.id === "export-lora";
+    const isPacket = button.id === "export-packet";
     button.disabled =
       disabled ||
       (isArtifact && !currentArtifact) ||
       (isTrace && !session.trace?.length) ||
       (isNotes && !session.trace?.length) ||
       (isChapter && !session.ideas?.length) ||
-      (isLora && !session.trace?.length);
+      (isLora && !session.trace?.length) ||
+      (isPacket && !session.trace?.length);
   });
 }
 
@@ -625,6 +634,15 @@ async function exportLoraDataset() {
   });
   const data = Array.isArray(result.data) ? result.data[0] : result.data;
   downloadText("hackathon-advisor-lora-sft.jsonl", String(data || ""));
+}
+
+async function exportSubmissionPacket() {
+  const client = await clientPromise;
+  const result = await client.predict("/submission_packet", {
+    session_json: JSON.stringify(session),
+  });
+  const data = Array.isArray(result.data) ? result.data[0] : result.data;
+  downloadText("hackathon-advisor-submission-packet.md", String(data || ""), "text/markdown;charset=utf-8");
 }
 
 function exportArtifact(artifact) {

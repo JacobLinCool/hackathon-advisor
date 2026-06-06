@@ -10,6 +10,7 @@ from app import (
     lora_dataset_artifact,
     prize_ledger_endpoint,
     runtime,
+    submission_packet_artifact,
     tool_contract_check,
     tool_contracts,
     trace_artifact,
@@ -92,6 +93,21 @@ def test_lora_dataset_endpoint_exports_sft_jsonl() -> None:
     assert lines[1]["example_kind"] == "tool_call"
     assert lines[1]["base_model"] == "openbmb/MiniCPM5-1B"
     assert lines[2]["example_kind"] == "advisor_response"
+
+
+def test_submission_packet_endpoint_exports_markdown() -> None:
+    state = engine.turn(
+        "A local-first archive cartographer for family photos",
+        {"targets": ["Field Notes"]},
+    ).state
+    state = engine.turn("make a build plan", state).state
+
+    payload = submission_packet_artifact(json.dumps(state))
+
+    assert payload.startswith("# Hackathon Advisor Submission Packet")
+    assert "## Demo Script" in payload
+    assert "## Prize Evidence" in payload
+    assert "Live Space:" in payload
 
 
 def test_tool_contracts_endpoint_exposes_schemas() -> None:

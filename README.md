@@ -82,6 +82,13 @@ turns. Each included turn yields a tool-call example and an advisor-response exa
 selected targets, parsed XML tool call, tool observations, and score context preserved. This prepares the Well-Tuned
 path without claiming that the adapter has already been trained or published.
 
+## Submission Packet
+
+The `submission_packet` Gradio API endpoint and `Packet` button export a Markdown submission bundle for the current
+session: live links, snapshot provenance, a timed demo script, artifact checklist, Prize Ledger evidence, model budget,
+session trace summary, social post draft, and open badge gaps. This keeps the final submission story tied to the same
+auditable state as the app instead of a separate hand-curated checklist.
+
 ## Prize Ledger
 
 `/api/prize-ledger` and the in-app Prize Ledger panel expose submission evidence: the documented model stack, total
