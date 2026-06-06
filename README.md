@@ -1,7 +1,7 @@
 ---
 title: Hackathon Advisor
 emoji: "📜"
-colorFrom: amber
+colorFrom: yellow
 colorTo: green
 sdk: gradio
 sdk_version: 6.16.0
@@ -9,7 +9,7 @@ python_version: "3.11"
 app_file: app.py
 pinned: true
 license: mit
-short_description: Text-first originality advisor for the Build Small Hackathon.
+short_description: Originality advisor for Build Small.
 tags:
   - gradio
   - build-small-hackathon
