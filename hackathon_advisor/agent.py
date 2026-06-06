@@ -245,9 +245,12 @@ class AdvisorEngine:
     ) -> TurnResult:
         idea = self._idea_for_optional_id(call, state)
         if idea is None:
-            title, pitch = idea_from_text(normalized)
-            idea, event = self.tools.save_idea(state, title, pitch)
-            tool_events.append(event)
+            tool_events.append(ToolEvent("make_plan", "No idea page was available to plan."))
+            response = (
+                "Write one project instinct first, or press Gap for a starting direction. "
+                "Then I can draft a build path."
+            )
+            return self._result(normalized, corrections, response, state, tool_events, [], [], None, [], {})
         score, event = self.tools.score_idea(idea)
         score = self._align_score_from_state(score, idea, state)
         idea.score = score.to_dict()
@@ -269,7 +272,10 @@ class AdvisorEngine:
         ranked = self._rank_ideas(state)
         if not ranked:
             tool_events.append(ToolEvent("compare_ideas", "No idea pages were available to rank."))
-            response = "There are no written pages on the board yet."
+            response = (
+                "No idea pages are on the board yet. Write one project instinct first, "
+                "or press Gap to seed a direction."
+            )
             return self._result(normalized, corrections, response, state, tool_events, [], [], None, [], {})
 
         ideas = [idea for idea, _score in ranked]

@@ -28,6 +28,18 @@ def test_rule_planner_uses_plan_when_idea_exists() -> None:
     assert resolution.call.name == "make_plan"
 
 
+def test_rule_planner_keeps_empty_board_commands_as_commands() -> None:
+    planner = RuleBasedPlanner()
+
+    plan = planner.plan("make a build plan", {})
+    rank = planner.plan("compare ideas", {})
+
+    assert plan.status == "valid"
+    assert plan.call.name == "make_plan"
+    assert rank.status == "valid"
+    assert rank.call.name == "compare_ideas"
+
+
 def test_rule_planner_defaults_blank_to_list_projects() -> None:
     planner = RuleBasedPlanner()
 

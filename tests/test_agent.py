@@ -83,6 +83,21 @@ def test_plan_command_uses_current_idea() -> None:
     assert planned.state["ideas"][0]["title"] == first.artifact["title"]
 
 
+def test_plan_and_rank_do_not_create_placeholder_ideas() -> None:
+    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    engine = AdvisorEngine(index)
+
+    planned = engine.turn("make a build plan", {})
+    ranked = engine.turn("compare ideas", planned.state)
+
+    assert planned.state["ideas"] == []
+    assert ranked.state["ideas"] == []
+    assert "Write one project instinct first" in planned.response
+    assert "No idea pages" in ranked.response
+    assert planned.tool_events[0].name == "make_plan"
+    assert ranked.tool_events[0].name == "compare_ideas"
+
+
 def test_plan_uses_profile_context() -> None:
     index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
     engine = AdvisorEngine(index)

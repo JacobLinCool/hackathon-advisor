@@ -44,9 +44,9 @@ class RuleBasedPlanner:
         lower = text.lower()
         if not text:
             output = '<function name="list_projects">{"sort":"likes"}</function>'
-        elif any(term in lower for term in ("compare", "choose", "rank")) and state.get("ideas"):
+        elif any(term in lower for term in ("compare", "choose", "rank")):
             output = '<function name="compare_ideas">{}</function>'
-        elif any(term in lower for term in ("plan", "roadmap", "next step", "milestone")) and state.get("ideas"):
+        elif any(term in lower for term in ("plan", "roadmap", "next step", "milestone")):
             output = '<function name="make_plan">{}</function>'
         elif any(term in lower for term in ("whitespace", "original", "new", "bolder", "unwritten", "gap")):
             output = '<function name="find_whitespace">{}</function>'
