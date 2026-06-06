@@ -63,8 +63,8 @@ BADGE_LEDGER = [
     },
     {
         "name": "Well-Tuned",
-        "status": "dataset-ready",
-        "evidence": "LoRA SFT dataset export is generated from exact session traces; adapter publication remains a separate build milestone.",
+        "status": "training-kit-ready",
+        "evidence": "LoRA SFT dataset and training kit export are generated from exact session traces; adapter publication remains a separate build milestone.",
     },
     {
         "name": "Llama Champion",
@@ -80,6 +80,13 @@ TRAINING_ARTIFACTS = [
         "status": "export-ready",
         "endpoint": "lora_dataset",
         "format": "chat-jsonl",
+        "base_model": "openbmb/MiniCPM5-1B",
+    },
+    {
+        "name": "MiniCPM5 LoRA training kit",
+        "status": "export-ready",
+        "endpoint": "/api/lora-training-kit.zip",
+        "format": "zip",
         "base_model": "openbmb/MiniCPM5-1B",
     }
 ]

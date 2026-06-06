@@ -24,6 +24,7 @@ const exportTraceButton = document.querySelector("#export-trace");
 const exportNotesButton = document.querySelector("#export-notes");
 const exportChapterButton = document.querySelector("#export-chapter");
 const exportLoraButton = document.querySelector("#export-lora");
+const exportTrainKitButton = document.querySelector("#export-train-kit");
 const exportPacketButton = document.querySelector("#export-packet");
 const exportBundleButton = document.querySelector("#export-bundle");
 const resetButton = document.querySelector("#reset-session");
@@ -76,6 +77,10 @@ exportChapterButton.addEventListener("click", async () => {
 
 exportLoraButton.addEventListener("click", async () => {
   await exportLoraDataset();
+});
+
+exportTrainKitButton.addEventListener("click", () => {
+  window.location.assign("/api/lora-training-kit.zip");
 });
 
 exportPacketButton.addEventListener("click", async () => {
@@ -618,6 +623,7 @@ function renderTrace(trace) {
 
 function setCommandDisabled(disabled) {
   document.querySelectorAll(".command-row button").forEach((button) => {
+    if (button.id === "export-train-kit") return;
     if (button.id === "export-bundle") return;
     const isArtifact = button.id === "export-artifact";
     const isTrace = button.id === "export-trace";

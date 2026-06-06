@@ -82,6 +82,14 @@ turns. Each included turn yields a tool-call example and an advisor-response exa
 selected targets, parsed XML tool call, tool observations, and score context preserved. This prepares the Well-Tuned
 path without claiming that the adapter has already been trained or published.
 
+## LoRA Training Kit
+
+`/api/lora-training-kit.zip` and the `Train` button export a training kit for the deterministic demo session: SFT JSONL,
+training recipe, adapter model-card draft, and the exact training command. The included
+`scripts/train_minicpm_lora.py` entrypoint supports a dependency-light `--dry-run` validation path and a real
+`transformers + PEFT` training path after installing `pip install -e '.[train]'`. The Prize Ledger still marks
+Well-Tuned as training-kit-ready until a real adapter is trained and published.
+
 ## Submission Packet
 
 The `submission_packet` Gradio API endpoint and `Packet` button export a Markdown submission bundle for the current
@@ -100,8 +108,8 @@ Packet, and PNG exports.
 
 `/api/demo-bundle.zip` and the `Bundle` button download a server-built ZIP for the deterministic demo session. The
 bundle includes a manifest, demo session JSON, Prize Ledger JSON, trace JSONL, Field Notes, Almanac chapter, LoRA SFT
-JSONL, Submission Packet, and a PNG export note. This gives judges or collaborators one auditable package without
-depending on browser `localStorage`.
+JSONL, LoRA training kit, Submission Packet, and a PNG export note. This gives judges or collaborators one auditable
+package without depending on browser `localStorage`.
 
 ## Prize Ledger
 

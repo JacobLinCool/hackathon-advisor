@@ -9,6 +9,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 from hackathon_advisor.chapter import build_chapter_markdown
 from hackathon_advisor.field_notes import build_field_notes_markdown
 from hackathon_advisor.lora_dataset import build_lora_dataset_jsonl
+from hackathon_advisor.lora_training_kit import build_lora_training_kit_zip
 from hackathon_advisor.submission_packet import build_submission_packet_markdown
 from hackathon_advisor.trace_export import build_trace_jsonl
 
@@ -39,7 +40,7 @@ def _bundle_files(
     metadata: dict[str, Any],
     ledger: dict[str, Any],
     demo: dict[str, Any],
-) -> dict[str, str]:
+) -> dict[str, str | bytes]:
     return {
         "demo-session.json": json.dumps(demo, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         "prize-ledger.json": json.dumps(ledger, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
@@ -47,13 +48,14 @@ def _bundle_files(
         "field-notes.md": build_field_notes_markdown(session, metadata),
         "almanac-chapter.md": build_chapter_markdown(session, metadata),
         "lora-sft.jsonl": build_lora_dataset_jsonl(session, metadata),
+        "lora-training-kit.zip": build_lora_training_kit_zip(session, metadata, ledger),
         "submission-packet.md": build_submission_packet_markdown(session, metadata, ledger),
         "png-export-note.md": _png_note(demo),
     }
 
 
 def _manifest(
-    files: dict[str, str],
+    files: dict[str, str | bytes],
     metadata: dict[str, Any],
     ledger: dict[str, Any],
     demo: dict[str, Any],

@@ -12,6 +12,7 @@ from app import (
     health,
     index,
     lora_dataset_artifact,
+    lora_training_kit,
     prize_ledger_endpoint,
     runtime,
     submission_packet_artifact,
@@ -143,7 +144,22 @@ def test_demo_bundle_endpoint_returns_zip_attachment() -> None:
 
     assert "submission-packet.md" in names
     assert "lora-sft.jsonl" in names
+    assert "lora-training-kit.zip" in names
     assert manifest["turn_count"] == 2
+
+
+def test_lora_training_kit_endpoint_returns_zip_attachment() -> None:
+    response = lora_training_kit()
+
+    assert response.media_type == "application/zip"
+    assert "hackathon-advisor-lora-training-kit.zip" in response.headers["content-disposition"]
+    with ZipFile(BytesIO(response.body)) as archive:
+        names = set(archive.namelist())
+        recipe = json.loads(archive.read("training-recipe.json"))
+
+    assert "adapter-model-card.md" in names
+    assert "train-command.txt" in names
+    assert recipe["publish_status"] == "not-published"
 
 
 def test_tool_contract_check_endpoint_defaults_safely() -> None:
@@ -168,3 +184,4 @@ def test_prize_ledger_endpoint_reports_submission_evidence() -> None:
     assert payload["tiny_titan_eligible"] is True
     assert any(badge["name"] == "Sharing is Caring" for badge in payload["badges"])
     assert payload["training_artifacts"][0]["endpoint"] == "lora_dataset"
+    assert payload["training_artifacts"][1]["endpoint"] == "/api/lora-training-kit.zip"

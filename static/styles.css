@@ -473,6 +473,10 @@ button:disabled {
   border-left-color: #5f6d38;
 }
 
+.badge-item.training-kit-ready {
+  border-left-color: #5f6d38;
+}
+
 .badge-item.planned {
   border-left-color: var(--muted-ink);
 }

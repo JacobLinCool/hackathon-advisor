@@ -19,6 +19,12 @@ model = [
   "torch>=2.8,<3",
   "transformers>=4.55,<5",
 ]
+train = [
+  "accelerate>=1.0,<2",
+  "peft>=0.13,<1",
+  "torch>=2.8,<3",
+  "transformers>=4.55,<5",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

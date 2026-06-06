@@ -30,7 +30,7 @@ def test_submission_packet_contains_demo_and_prize_evidence() -> None:
     assert "## Model Budget" in markdown
     assert "## Social Post Draft" in markdown
     assert "Hackathon Advisor" in markdown
-    assert "Well-Tuned | dataset-ready" in markdown
+    assert "Well-Tuned | training-kit-ready" in markdown
     assert "MiniCPM5 LoRA SFT JSONL | ready | lora_dataset" in markdown
     assert "Ready badges and planned badges are separated" in markdown
     assert "A local-first archive cartographer for family photos" in markdown

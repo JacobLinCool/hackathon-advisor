@@ -15,6 +15,7 @@ from hackathon_advisor.data import ProjectIndex
 from hackathon_advisor.demo_rehearsal import build_demo_rehearsal
 from hackathon_advisor.field_notes import build_field_notes_markdown
 from hackathon_advisor.lora_dataset import build_lora_dataset_jsonl
+from hackathon_advisor.lora_training_kit import TRAINING_KIT_FILENAME, build_lora_training_kit_zip
 from hackathon_advisor.prize_ledger import prize_ledger
 from hackathon_advisor.submission_packet import build_submission_packet_markdown
 from hackathon_advisor.tool_contracts import resolve_tool_call, tool_schemas
@@ -112,6 +113,24 @@ def demo_bundle() -> Response:
         content=content,
         media_type="application/zip",
         headers={"Content-Disposition": f'attachment; filename="{BUNDLE_FILENAME}"'},
+    )
+
+
+@app.get("/api/lora-training-kit.zip")
+def lora_training_kit() -> Response:
+    runtime_status = engine.runtime_status()
+    ledger = prize_ledger(runtime_status)
+    metadata = {
+        **trace_metadata(index),
+        "project_count": len(index.projects),
+    }
+    demo = build_demo_rehearsal(engine)
+    session = demo.get("session") if isinstance(demo.get("session"), dict) else {}
+    content = build_lora_training_kit_zip(session, metadata, ledger)
+    return Response(
+        content=content,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{TRAINING_KIT_FILENAME}"'},
     )
 
 

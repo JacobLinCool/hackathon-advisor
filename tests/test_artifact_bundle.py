@@ -34,11 +34,12 @@ def test_demo_bundle_contains_submission_evidence_files() -> None:
         "field-notes.md",
         "almanac-chapter.md",
         "lora-sft.jsonl",
+        "lora-training-kit.zip",
         "submission-packet.md",
         "png-export-note.md",
     }
     assert manifest["type"] == "demo_bundle_manifest"
     assert manifest["turn_count"] == 2
-    assert manifest["badge_status"]["Well-Tuned"] == "dataset-ready"
+    assert manifest["badge_status"]["Well-Tuned"] == "training-kit-ready"
     assert "agent_turn" in trace
     assert "## Prize Evidence" in packet
