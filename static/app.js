@@ -38,7 +38,7 @@ let turnWatchdog = null;
 let sawTurnToken = false;
 let bootstrapData = null;
 
-bootstrap();
+bootstrap().catch(handleBootstrapError);
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -141,6 +141,7 @@ async function runTurn(message) {
 
 async function bootstrap() {
   const response = await fetch("/api/bootstrap");
+  if (!response.ok) throw new Error(`project index failed with ${response.status}`);
   const data = await response.json();
   bootstrapData = data;
   const rawProfiles = Array.isArray(data.target_profiles) ? data.target_profiles : [];
@@ -155,6 +156,30 @@ async function bootstrap() {
   renderProfile(session.profile);
   renderRestoredSession(data);
   renderWhitespace(data.whitespace || []);
+}
+
+function handleBootstrapError(error) {
+  bootstrapData = null;
+  currentArtifact = null;
+  session = {};
+  submit.disabled = true;
+  input.disabled = true;
+  setCommandDisabled(true);
+  ink.textContent = `The project index could not be opened: ${error.message}`;
+  ink.classList.remove("thinking", "gold");
+  ink.classList.add("bleed");
+  corrections.textContent = "Reload the page to try again.";
+  provenanceEl.textContent = "index unavailable";
+  renderScore(null);
+  verdictEl.textContent = "UNWRITTEN";
+  overallEl.textContent = "0.0";
+  renderWoodMap(null);
+  renderTargets([]);
+  renderProfile({});
+  renderIdeas([]);
+  renderProjects([]);
+  renderWhitespace([]);
+  renderPlan([]);
 }
 
 function defaultSession(data = bootstrapData) {
