@@ -11,6 +11,7 @@ from gradio import Server
 from hackathon_advisor.agent import AdvisorEngine
 from hackathon_advisor.chapter import build_chapter_markdown
 from hackathon_advisor.data import ProjectIndex
+from hackathon_advisor.demo_rehearsal import build_demo_rehearsal
 from hackathon_advisor.field_notes import build_field_notes_markdown
 from hackathon_advisor.lora_dataset import build_lora_dataset_jsonl
 from hackathon_advisor.prize_ledger import prize_ledger
@@ -90,6 +91,11 @@ def tool_contracts() -> dict:
         "tool_count": len(tool_schemas()),
         "tools": tool_schemas(),
     }
+
+
+@app.get("/api/demo-session")
+def demo_session() -> dict:
+    return build_demo_rehearsal(engine)
 
 
 @app.api(name="tool_contract_check", concurrency_limit=8)

@@ -3,6 +3,7 @@ import json
 from app import (
     bootstrap,
     chapter_artifact,
+    demo_session,
     engine,
     field_notes_artifact,
     health,
@@ -115,6 +116,17 @@ def test_tool_contracts_endpoint_exposes_schemas() -> None:
 
     assert payload["tool_count"] >= 8
     assert any(tool["function"]["name"] == "search_projects" for tool in payload["tools"])
+
+
+def test_demo_session_endpoint_returns_export_ready_state() -> None:
+    payload = demo_session()
+
+    assert payload["turn_count"] == 2
+    assert payload["session"]["trace"]
+    assert payload["session"]["ideas"]
+    assert payload["plan"]
+    assert payload["artifact"]["wood_map"]["dots"]
+    assert payload["export_ready"]["submission_packet"] is True
 
 
 def test_tool_contract_check_endpoint_defaults_safely() -> None:

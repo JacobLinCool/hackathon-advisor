@@ -89,6 +89,13 @@ session: live links, snapshot provenance, a timed demo script, artifact checklis
 session trace summary, social post draft, and open badge gaps. This keeps the final submission story tied to the same
 auditable state as the app instead of a separate hand-curated checklist.
 
+## Demo Rehearsal
+
+`/api/demo-session` and the `Demo` button load a deterministic two-turn rehearsal: a complete project idea, profile,
+target badges, score seal, build plan, trace, wood map, and export-ready artifacts. It is built by running the same
+advisor engine as a normal user session, so the demo state can be used immediately with JSONL, Notes, Chapter, LoRA,
+Packet, and PNG exports.
+
 ## Prize Ledger
 
 `/api/prize-ledger` and the in-app Prize Ledger panel expose submission evidence: the documented model stack, total

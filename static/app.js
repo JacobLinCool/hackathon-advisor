@@ -18,6 +18,7 @@ const traceEl = document.querySelector("#trace");
 const provenanceEl = document.querySelector("#provenance");
 const verdictEl = document.querySelector("#verdict");
 const overallEl = document.querySelector("#overall");
+const demoButton = document.querySelector("#load-demo");
 const exportButton = document.querySelector("#export-artifact");
 const exportTraceButton = document.querySelector("#export-trace");
 const exportNotesButton = document.querySelector("#export-notes");
@@ -49,6 +50,10 @@ document.querySelectorAll("[data-command]").forEach((button) => {
   button.addEventListener("click", async () => {
     await runTurn(button.dataset.command);
   });
+});
+
+demoButton.addEventListener("click", async () => {
+  await loadDemoSession();
 });
 
 exportButton.addEventListener("click", () => {
@@ -159,6 +164,64 @@ async function bootstrap() {
   renderPrizeLedger(data.prize_ledger || null);
   renderRestoredSession(data);
   renderWhitespace(data.whitespace || []);
+}
+
+async function loadDemoSession() {
+  submit.disabled = true;
+  setCommandDisabled(true);
+  ink.classList.remove("bleed", "gold");
+  ink.classList.add("thinking");
+  ink.textContent = "The demo pages are turning.";
+  corrections.textContent = "";
+  try {
+    const response = await fetch("/api/demo-session");
+    if (!response.ok) throw new Error(`demo rehearsal failed with ${response.status}`);
+    applyDemoSession(await response.json());
+  } catch (error) {
+    ink.textContent = `The demo rehearsal could not be loaded: ${error.message}`;
+    ink.classList.remove("thinking");
+    ink.classList.add("bleed");
+  } finally {
+    submit.disabled = false;
+    setCommandDisabled(false);
+    input.focus();
+  }
+}
+
+function applyDemoSession(data) {
+  session = data.session || {};
+  session.profile = session.profile || {};
+  session.targets = Array.isArray(session.targets) ? session.targets : [];
+  currentArtifact = data.artifact || session.last_artifact || null;
+  ink.textContent = data.response || "Demo rehearsal loaded.";
+  ink.classList.remove("thinking");
+  if (data.score) {
+    verdictEl.textContent = data.score.verdict;
+    overallEl.textContent = Number(data.score.overall).toFixed(1);
+    renderScore(data.score);
+    ink.classList.toggle("bleed", data.score.verdict.startsWith("ECHO"));
+    ink.classList.toggle("gold", data.score.verdict.startsWith("UNWRITTEN"));
+  }
+  renderTargets(session.targets);
+  renderProfile(session.profile);
+  renderIdeas(session.ideas || []);
+  renderTrace(session.trace || []);
+  renderPlan(data.plan || session.last_plan || []);
+  renderWhitespace(data.whitespace || []);
+  if (currentArtifact?.wood_map) renderWoodMap(currentArtifact.wood_map);
+  if (data.score?.echoes?.length) {
+    renderCitations(data.score.echoes);
+  } else {
+    renderProjects(data.projects || []);
+  }
+  exportButton.disabled = !currentArtifact;
+  exportTraceButton.disabled = !(session.trace?.length);
+  exportNotesButton.disabled = !(session.trace?.length);
+  exportChapterButton.disabled = !(session.ideas?.length);
+  exportLoraButton.disabled = !(session.trace?.length);
+  exportPacketButton.disabled = !(session.trace?.length);
+  corrections.textContent = `demo: ${data.turn_count || 0} recorded turns`;
+  saveSession();
 }
 
 function renderProvenance(data) {
