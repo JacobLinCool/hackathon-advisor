@@ -23,6 +23,8 @@ const exportChapterButton = document.querySelector("#export-chapter");
 const resetButton = document.querySelector("#reset-session");
 
 const SESSION_STORAGE_KEY = "hackathon-advisor-session-v1";
+const FIELD_NOTES_FILENAME = "hackathon-advisor-field-notes.md";
+const CHAPTER_FILENAME = "hackathon-advisor-chapter.md";
 
 let session = {};
 let clientPromise = Client.connect(window.location.origin);
@@ -58,13 +60,9 @@ exportButton.addEventListener("click", () => {
   exportArtifact(currentArtifact);
 });
 
-exportNotesButton.addEventListener("click", async () => {
-  await exportNotes();
-});
+exportNotesButton.addEventListener("click", () => exportNotes());
 
-exportChapterButton.addEventListener("click", async () => {
-  await exportChapter();
-});
+exportChapterButton.addEventListener("click", () => exportChapter());
 
 resetButton.addEventListener("click", () => {
   clearSavedSession();
@@ -660,21 +658,49 @@ function syncCurrentIdeaTargets() {
 }
 
 async function exportNotes() {
-  const client = await clientPromise;
-  const result = await client.predict("/field_notes", {
-    session_json: JSON.stringify(session),
+  await exportMarkdown({
+    endpoint: "/field_notes",
+    filename: FIELD_NOTES_FILENAME,
+    button: exportNotesButton,
+    busyLabel: "Notes...",
+    pendingLabel: "Writing notes.",
+    successLabel: "Notes saved",
   });
-  const data = Array.isArray(result.data) ? result.data[0] : result.data;
-  downloadText("hackathon-advisor-field-notes.md", String(data || ""), "text/markdown;charset=utf-8");
 }
 
 async function exportChapter() {
-  const client = await clientPromise;
-  const result = await client.predict("/chapter", {
-    session_json: JSON.stringify(session),
+  await exportMarkdown({
+    endpoint: "/chapter",
+    filename: CHAPTER_FILENAME,
+    button: exportChapterButton,
+    busyLabel: "Chapter...",
+    pendingLabel: "Writing chapter.",
+    successLabel: "Chapter saved",
   });
-  const data = Array.isArray(result.data) ? result.data[0] : result.data;
-  downloadText("hackathon-advisor-chapter.md", String(data || ""), "text/markdown;charset=utf-8");
+}
+
+async function exportMarkdown({ endpoint, filename, button, busyLabel, pendingLabel, successLabel }) {
+  if (!button || button.disabled) return;
+  const idleLabel = button.textContent;
+  button.disabled = true;
+  button.textContent = busyLabel;
+  corrections.textContent = pendingLabel;
+  try {
+    const client = await clientPromise;
+    const result = await client.predict(endpoint, {
+      session_json: JSON.stringify(session),
+    });
+    const data = Array.isArray(result.data) ? result.data[0] : result.data;
+    const text = String(data || "");
+    if (!text.trim()) throw new Error("empty export");
+    downloadText(filename, text, "text/markdown;charset=utf-8");
+    corrections.textContent = `${successLabel}: ${filename}`;
+  } catch (error) {
+    corrections.textContent = `Export failed: ${error.message}`;
+  } finally {
+    button.textContent = idleLabel;
+    setCommandDisabled(false);
+  }
 }
 
 function exportArtifact(artifact) {
