@@ -353,6 +353,8 @@ class AdvisorEngine:
             }
         )
         state["trace"] = trace[-12:]
+        if plan:
+            state["last_plan"] = list(plan)
         if artifact:
             state["last_artifact"] = artifact
 

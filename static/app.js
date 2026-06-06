@@ -18,6 +18,7 @@ const verdictEl = document.querySelector("#verdict");
 const overallEl = document.querySelector("#overall");
 const exportButton = document.querySelector("#export-artifact");
 const exportTraceButton = document.querySelector("#export-trace");
+const exportNotesButton = document.querySelector("#export-notes");
 
 let session = {};
 let clientPromise = Client.connect(window.location.origin);
@@ -47,6 +48,10 @@ exportButton.addEventListener("click", () => {
 
 exportTraceButton.addEventListener("click", async () => {
   await exportTrace();
+});
+
+exportNotesButton.addEventListener("click", async () => {
+  await exportNotes();
 });
 
 targetsEl.addEventListener("change", (event) => {
@@ -210,6 +215,7 @@ function handleEvent(event) {
       exportButton.disabled = false;
     }
     exportTraceButton.disabled = !(session.trace?.length);
+    exportNotesButton.disabled = !(session.trace?.length);
   }
 }
 
@@ -327,7 +333,12 @@ function setCommandDisabled(disabled) {
   document.querySelectorAll(".command-row button").forEach((button) => {
     const isArtifact = button.id === "export-artifact";
     const isTrace = button.id === "export-trace";
-    button.disabled = disabled || (isArtifact && !currentArtifact) || (isTrace && !session.trace?.length);
+    const isNotes = button.id === "export-notes";
+    button.disabled =
+      disabled ||
+      (isArtifact && !currentArtifact) ||
+      (isTrace && !session.trace?.length) ||
+      (isNotes && !session.trace?.length);
   });
 }
 
@@ -345,6 +356,15 @@ async function exportTrace() {
   });
   const data = Array.isArray(result.data) ? result.data[0] : result.data;
   downloadText("hackathon-advisor-trace.jsonl", String(data || ""));
+}
+
+async function exportNotes() {
+  const client = await clientPromise;
+  const result = await client.predict("/field_notes", {
+    session_json: JSON.stringify(session),
+  });
+  const data = Array.isArray(result.data) ? result.data[0] : result.data;
+  downloadText("hackathon-advisor-field-notes.md", String(data || ""), "text/markdown;charset=utf-8");
 }
 
 function exportArtifact(artifact) {
@@ -402,8 +422,8 @@ function exportArtifact(artifact) {
   link.click();
 }
 
-function downloadText(filename, text) {
-  const blob = new Blob([text], { type: "application/jsonl;charset=utf-8" });
+function downloadText(filename, text, type = "application/jsonl;charset=utf-8") {
+  const blob = new Blob([text], { type });
   const link = document.createElement("a");
   link.download = filename;
   link.href = URL.createObjectURL(blob);

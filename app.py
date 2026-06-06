@@ -10,6 +10,7 @@ from gradio import Server
 
 from hackathon_advisor.agent import AdvisorEngine
 from hackathon_advisor.data import ProjectIndex
+from hackathon_advisor.field_notes import build_field_notes_markdown
 from hackathon_advisor.tool_contracts import resolve_tool_call, tool_schemas
 from hackathon_advisor.tools import TARGETS
 from hackathon_advisor.trace_export import build_trace_jsonl, trace_metadata
@@ -92,6 +93,21 @@ def trace_artifact(session_json: str = "{}") -> str:
     except json.JSONDecodeError:
         session = {}
     return build_trace_jsonl(session, trace_metadata(index))
+
+
+@app.api(name="field_notes", concurrency_limit=8)
+def field_notes_artifact(session_json: str = "{}") -> str:
+    try:
+        session = json.loads(session_json or "{}")
+    except json.JSONDecodeError:
+        session = {}
+    return build_field_notes_markdown(
+        session,
+        {
+            **trace_metadata(index),
+            "project_count": len(index.projects),
+        },
+    )
 
 
 @app.api(name="agent_turn", concurrency_limit=4, stream_every=0.04)

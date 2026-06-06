@@ -1,6 +1,16 @@
 import json
 
-from app import bootstrap, engine, health, index, runtime, tool_contract_check, tool_contracts, trace_artifact
+from app import (
+    bootstrap,
+    engine,
+    field_notes_artifact,
+    health,
+    index,
+    runtime,
+    tool_contract_check,
+    tool_contracts,
+    trace_artifact,
+)
 
 
 def test_health_exposes_index_metadata() -> None:
@@ -33,6 +43,22 @@ def test_trace_artifact_endpoint_exports_jsonl() -> None:
     assert lines[0]["type"] == "trace_manifest"
     assert lines[0]["turn_count"] == 1
     assert lines[1]["type"] == "agent_turn"
+
+
+def test_field_notes_endpoint_exports_markdown() -> None:
+    state = engine.turn(
+        "A local-first archive cartographer for family photos",
+        {"profile": {"skills": "frontend"}, "targets": ["Field Notes"]},
+    ).state
+    state = engine.turn("make a build plan", state).state
+
+    payload = field_notes_artifact(json.dumps(state))
+
+    assert payload.startswith("# Hackathon Advisor Field Notes")
+    assert "Skills: frontend" in payload
+    assert "Targets: Field Notes" in payload
+    assert "## Turn Trace" in payload
+    assert "Record the trace and write Field Notes" in payload
 
 
 def test_tool_contracts_endpoint_exposes_schemas() -> None:

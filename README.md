@@ -63,6 +63,12 @@ source, project order, and digest before the app starts.
 The app exposes a `trace_artifact` Gradio API endpoint and a `JSONL` button in the UI. Both emit the same JSONL schema:
 a manifest row followed by one row per agent turn. `data/sample_trace.jsonl` is a checked-in, Hub-published sample trace.
 
+## Field Notes Artifact
+
+The `field_notes` Gradio API endpoint and `Notes` button export a Markdown build note from the exact session state:
+builder profile, target badges, idea board, cited Spaces, latest build plan, planner calls, and the share caption. This
+keeps the Field Notes badge path tied to auditable app evidence instead of a separate hand-written summary.
+
 ## Tool-Call Contract
 
 `/api/tool-contracts` exposes the JSON schemas intended for MiniCPM-style tool calling. `tool_contract_check` accepts a
