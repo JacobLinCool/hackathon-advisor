@@ -10,23 +10,16 @@ const whitespaceEl = document.querySelector("#whitespace");
 const ideasEl = document.querySelector("#ideas");
 const targetsEl = document.querySelector("#targets");
 const profileEl = document.querySelector("#profile");
-const prizeLedgerEl = document.querySelector("#prize-ledger");
 const woodMapEl = document.querySelector("#wood-map");
 const scoreEl = document.querySelector("#score");
 const planEl = document.querySelector("#plan");
-const traceEl = document.querySelector("#trace");
 const provenanceEl = document.querySelector("#provenance");
 const verdictEl = document.querySelector("#verdict");
 const overallEl = document.querySelector("#overall");
 const demoButton = document.querySelector("#load-demo");
 const exportButton = document.querySelector("#export-artifact");
-const exportTraceButton = document.querySelector("#export-trace");
 const exportNotesButton = document.querySelector("#export-notes");
 const exportChapterButton = document.querySelector("#export-chapter");
-const exportLoraButton = document.querySelector("#export-lora");
-const exportTrainKitButton = document.querySelector("#export-train-kit");
-const exportPacketButton = document.querySelector("#export-packet");
-const exportBundleButton = document.querySelector("#export-bundle");
 const resetButton = document.querySelector("#reset-session");
 
 const SESSION_STORAGE_KEY = "hackathon-advisor-session-v1";
@@ -63,32 +56,12 @@ exportButton.addEventListener("click", () => {
   exportArtifact(currentArtifact);
 });
 
-exportTraceButton?.addEventListener("click", async () => {
-  await exportTrace();
-});
-
 exportNotesButton.addEventListener("click", async () => {
   await exportNotes();
 });
 
 exportChapterButton.addEventListener("click", async () => {
   await exportChapter();
-});
-
-exportLoraButton?.addEventListener("click", async () => {
-  await exportLoraDataset();
-});
-
-exportTrainKitButton?.addEventListener("click", () => {
-  window.location.assign("/api/lora-training-kit.zip");
-});
-
-exportPacketButton?.addEventListener("click", async () => {
-  await exportSubmissionPacket();
-});
-
-exportBundleButton?.addEventListener("click", () => {
-  window.location.assign("/api/demo-bundle.zip");
 });
 
 resetButton.addEventListener("click", () => {
@@ -171,7 +144,6 @@ async function bootstrap() {
   renderProvenance(data);
   renderTargets(session.targets);
   renderProfile(session.profile);
-  renderPrizeLedger(data.prize_ledger || null);
   renderRestoredSession(data);
   renderWhitespace(data.whitespace || []);
 }
@@ -215,7 +187,6 @@ function applyDemoSession(data) {
   renderTargets(session.targets);
   renderProfile(session.profile);
   renderIdeas(session.ideas || []);
-  renderTrace(session.trace || []);
   renderPlan(data.plan || session.last_plan || []);
   renderWhitespace(data.whitespace || []);
   if (currentArtifact?.wood_map) renderWoodMap(currentArtifact.wood_map);
@@ -225,11 +196,8 @@ function applyDemoSession(data) {
     renderProjects(data.projects || []);
   }
   exportButton.disabled = !currentArtifact;
-  setButtonDisabled(exportTraceButton, !(session.trace?.length));
   setButtonDisabled(exportNotesButton, !(session.trace?.length));
   setButtonDisabled(exportChapterButton, !(session.ideas?.length));
-  setButtonDisabled(exportLoraButton, !(session.trace?.length));
-  setButtonDisabled(exportPacketButton, !(session.trace?.length));
   corrections.textContent = `example loaded: ${data.turn_count || 0} advisor turns`;
   saveSession();
 }
@@ -262,12 +230,8 @@ function renderRestoredSession(data) {
   }
   renderIdeas(session.ideas || []);
   renderPlan(session.last_plan || []);
-  renderTrace(session.trace || []);
-  setButtonDisabled(exportTraceButton, !(session.trace?.length));
   setButtonDisabled(exportNotesButton, !(session.trace?.length));
   setButtonDisabled(exportChapterButton, !(session.ideas?.length));
-  setButtonDisabled(exportLoraButton, !(session.trace?.length));
-  setButtonDisabled(exportPacketButton, !(session.trace?.length));
 }
 
 function readSavedSession() {
@@ -353,53 +317,6 @@ function renderProfile(profile) {
   }
 }
 
-function renderPrizeLedger(ledger) {
-  if (!prizeLedgerEl) return;
-  prizeLedgerEl.innerHTML = "";
-  if (!ledger) {
-    prizeLedgerEl.innerHTML = `<div class="empty">No prize ledger loaded.</div>`;
-    return;
-  }
-  const readyBadges = (ledger.badges || []).filter((badge) => badge.status === "ready").length;
-  const badgeCount = (ledger.badges || []).length;
-  const header = document.createElement("div");
-  header.className = "ledger-summary";
-  header.innerHTML = `
-    <strong>${Number(ledger.total_params_b || 0).toFixed(2)}B params</strong>
-    <span>${ledger.tiny_titan_eligible ? "Tiny Titan eligible" : "Over Tiny Titan limit"}</span>
-    <span>${readyBadges}/${badgeCount} ready</span>
-    <span>${escapeHtml(ledger.runtime?.backend || "runtime")}</span>
-  `;
-  const badges = document.createElement("div");
-  badges.className = "badge-list";
-  for (const badge of (ledger.badges || []).slice(0, 7)) {
-    const item = document.createElement("div");
-    item.className = `badge-item ${badge.status || "planned"}`;
-    item.title = badge.evidence || badge.name;
-    item.innerHTML = `
-      <strong>${escapeHtml(badge.name)}</strong>
-      <span>${escapeHtml(badge.status)}</span>
-    `;
-    badges.append(item);
-  }
-  prizeLedgerEl.append(header, badges);
-  if (ledger.training_artifacts?.length) {
-    const artifacts = document.createElement("div");
-    artifacts.className = "training-artifact-list";
-    for (const artifact of ledger.training_artifacts.slice(0, 3)) {
-      const item = document.createElement("div");
-      item.className = "training-artifact";
-      item.title = artifact.endpoint || artifact.name;
-      item.innerHTML = `
-        <strong>${escapeHtml(artifact.name)}</strong>
-        <span>${escapeHtml(artifact.status)} · ${escapeHtml(artifact.format || "jsonl")}</span>
-      `;
-      artifacts.append(item);
-    }
-    prizeLedgerEl.append(artifacts);
-  }
-}
-
 function handleEvent(event) {
   if (event.type === "start") {
     if (event.corrections?.length) {
@@ -434,7 +351,6 @@ function handleEvent(event) {
     renderTargets(session.targets);
     renderProfile(session.profile);
     renderIdeas(session.ideas || []);
-    renderTrace(session.trace || []);
     renderPlan(event.plan || []);
     if (event.score) {
       verdictEl.textContent = event.score.verdict;
@@ -448,11 +364,8 @@ function handleEvent(event) {
       renderWoodMap(event.artifact.wood_map || null);
       exportButton.disabled = false;
     }
-    setButtonDisabled(exportTraceButton, !(session.trace?.length));
     setButtonDisabled(exportNotesButton, !(session.trace?.length));
     setButtonDisabled(exportChapterButton, !(session.ideas?.length));
-    setButtonDisabled(exportLoraButton, !(session.trace?.length));
-    setButtonDisabled(exportPacketButton, !(session.trace?.length));
     saveSession();
   }
 }
@@ -604,47 +517,20 @@ function renderPlan(steps) {
   }
 }
 
-function renderTrace(trace) {
-  if (!traceEl) return;
-  traceEl.innerHTML = "";
-  if (!trace.length) {
-    traceEl.innerHTML = `<div class="empty">No tool marks yet.</div>`;
-    return;
-  }
-  for (const event of trace.slice(-4).reverse()) {
-    const item = document.createElement("div");
-    item.className = "trace";
-    const tools = (event.tools || []).map((tool) => tool.name).join(" -> ") || "reply";
-    item.innerHTML = `
-      <strong>${escapeHtml(event.verdict || "TURN")} ${event.overall ? Number(event.overall).toFixed(1) : ""}</strong>
-      <p>${escapeHtml(tools)}</p>
-    `;
-    traceEl.append(item);
-  }
-}
-
 function setButtonDisabled(button, disabled) {
   if (button) button.disabled = disabled;
 }
 
 function setCommandDisabled(disabled) {
   document.querySelectorAll(".command-row button").forEach((button) => {
-    if (button.id === "export-train-kit") return;
-    if (button.id === "export-bundle") return;
     const isArtifact = button.id === "export-artifact";
-    const isTrace = button.id === "export-trace";
     const isNotes = button.id === "export-notes";
     const isChapter = button.id === "export-chapter";
-    const isLora = button.id === "export-lora";
-    const isPacket = button.id === "export-packet";
     button.disabled =
       disabled ||
       (isArtifact && !currentArtifact) ||
-      (isTrace && !session.trace?.length) ||
       (isNotes && !session.trace?.length) ||
-      (isChapter && !session.ideas?.length) ||
-      (isLora && !session.trace?.length) ||
-      (isPacket && !session.trace?.length);
+      (isChapter && !session.ideas?.length);
   });
 }
 
@@ -681,15 +567,6 @@ function syncCurrentIdeaTargets() {
   if (idea) idea.targets = [...(session.targets || [])];
 }
 
-async function exportTrace() {
-  const client = await clientPromise;
-  const result = await client.predict("/trace_artifact", {
-    session_json: JSON.stringify(session),
-  });
-  const data = Array.isArray(result.data) ? result.data[0] : result.data;
-  downloadText("hackathon-advisor-trace.jsonl", String(data || ""));
-}
-
 async function exportNotes() {
   const client = await clientPromise;
   const result = await client.predict("/field_notes", {
@@ -706,24 +583,6 @@ async function exportChapter() {
   });
   const data = Array.isArray(result.data) ? result.data[0] : result.data;
   downloadText("hackathon-advisor-chapter.md", String(data || ""), "text/markdown;charset=utf-8");
-}
-
-async function exportLoraDataset() {
-  const client = await clientPromise;
-  const result = await client.predict("/lora_dataset", {
-    session_json: JSON.stringify(session),
-  });
-  const data = Array.isArray(result.data) ? result.data[0] : result.data;
-  downloadText("hackathon-advisor-lora-sft.jsonl", String(data || ""));
-}
-
-async function exportSubmissionPacket() {
-  const client = await clientPromise;
-  const result = await client.predict("/submission_packet", {
-    session_json: JSON.stringify(session),
-  });
-  const data = Array.isArray(result.data) ? result.data[0] : result.data;
-  downloadText("hackathon-advisor-submission-packet.md", String(data || ""), "text/markdown;charset=utf-8");
 }
 
 function exportArtifact(artifact) {

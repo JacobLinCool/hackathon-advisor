@@ -80,14 +80,14 @@ def _demo_script(
     return [
         "## Demo Script",
         "",
-        "| Time | Beat | On-screen proof |",
+        "| Time | Beat | Proof |",
         "| --- | --- | --- |",
-        f"| 0:00 | Open The Unwritten Almanac and point to the local snapshot count. | Snapshot metadata and Prize Ledger are visible. |",
+        "| 0:00 | Open The Unwritten Almanac and point to the local snapshot count. | Snapshot metadata is visible in the provenance line. |",
         f"| 0:10 | Type the project instinct for `{title}`. | Streaming response starts, then the seal reads {verdict} at {overall}/10. |",
         f"| 0:30 | Show the nearest echo. | Page {page}: {echo_title}. |",
         f"| 0:45 | Press Gap or Plan to move from diagnosis to build path. | {plan_step} |",
-        f"| 1:05 | Export evidence artifacts. | JSONL, Notes, Chapter, LoRA, Packet, and PNG buttons are available after {turn_count} recorded turns. |",
-        "| 1:20 | Close with prize honesty. | Ready badges and planned badges are separated in the Prize Ledger. |",
+        f"| 1:05 | Export builder-facing artifacts. | Notes, Chapter, and PNG are available in the app after {turn_count} recorded turns. |",
+        "| 1:20 | Check submission evidence outside the main UI. | `/api/prize-ledger` separates ready and planned badge states; `/api/demo-bundle.zip` contains JSONL, LoRA, and packet exports. |",
         "",
     ]
 
