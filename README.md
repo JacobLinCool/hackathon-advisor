@@ -32,7 +32,7 @@ The current milestone is a deployable, deterministic vertical slice:
 - Offline search over project titles, tags, models, and descriptions.
 - Jargon correction for hackathon/model terms.
 - One-turn advisor loop with overlap citations, whitespace suggestions, scoring, and plans.
-- Custom `gradio.Server` frontend with streaming API events.
+- Custom `gradio.Server` frontend focused on the builder's idea workflow, with submission evidence kept in API exports.
 
 See [DESIGN.md](DESIGN.md) for the full product and model plan.
 
@@ -60,8 +60,9 @@ source, project order, and digest before the app starts.
 
 ## Trace Artifact
 
-The app exposes a `trace_artifact` Gradio API endpoint and a `JSONL` button in the UI. Both emit the same JSONL schema:
-a manifest row followed by one row per agent turn. `data/sample_trace.jsonl` is a checked-in, Hub-published sample trace.
+The app exposes a `trace_artifact` Gradio API endpoint for submission evidence and debugging. It emits a manifest row
+followed by one row per agent turn. `data/sample_trace.jsonl` is a checked-in, Hub-published sample trace. This endpoint
+is intentionally kept out of the main user workflow.
 
 ## Field Notes Artifact
 
@@ -77,45 +78,45 @@ the private Field Notes artifact.
 
 ## LoRA Dataset Artifact
 
-The `lora_dataset` Gradio API endpoint and `LoRA` button export a compact chat JSONL dataset from successful session
-turns. Each included turn yields a tool-call example and an advisor-response example for `openbmb/MiniCPM5-1B`, with the
-selected targets, parsed XML tool call, tool observations, and score context preserved. This prepares the Well-Tuned
-path without claiming that the adapter has already been trained or published.
+The `lora_dataset` Gradio API endpoint exports a compact chat JSONL dataset from successful session turns. Each included
+turn yields a tool-call example and an advisor-response example for `openbmb/MiniCPM5-1B`, with the selected targets,
+parsed XML tool call, tool observations, and score context preserved. This prepares the Well-Tuned path without claiming
+that the adapter has already been trained or published.
 
 ## LoRA Training Kit
 
-`/api/lora-training-kit.zip` and the `Train` button export a training kit for the deterministic demo session: SFT JSONL,
-training recipe, adapter model-card draft, and the exact training command. The included
-`scripts/train_minicpm_lora.py` entrypoint supports a dependency-light `--dry-run` validation path and a real
-`transformers + PEFT` training path after installing `pip install -e '.[train]'`. The Prize Ledger still marks
-Well-Tuned as training-kit-ready until a real adapter is trained and published.
+`/api/lora-training-kit.zip` exports a training kit for the deterministic demo session: SFT JSONL, training recipe,
+adapter model-card draft, and the exact training command. The included `scripts/train_minicpm_lora.py` entrypoint
+supports a dependency-light `--dry-run` validation path and a real `transformers + PEFT` training path after installing
+`pip install -e '.[train]'`. The Prize Ledger still marks Well-Tuned as training-kit-ready until a real adapter is
+trained and published.
 
 ## Submission Packet
 
-The `submission_packet` Gradio API endpoint and `Packet` button export a Markdown submission bundle for the current
-session: live links, snapshot provenance, a timed demo script, artifact checklist, Prize Ledger evidence, model budget,
-session trace summary, social post draft, and open badge gaps. This keeps the final submission story tied to the same
-auditable state as the app instead of a separate hand-curated checklist.
+The `submission_packet` Gradio API endpoint exports a Markdown submission bundle for the current session: live links,
+snapshot provenance, a timed demo script, artifact checklist, Prize Ledger evidence, model budget, session trace
+summary, social post draft, and open badge gaps. This keeps the final submission story tied to the same auditable state
+as the app instead of a separate hand-curated checklist.
 
 ## Demo Rehearsal
 
-`/api/demo-session` and the `Demo` button load a deterministic two-turn rehearsal: a complete project idea, profile,
-target badges, score seal, build plan, trace, wood map, and export-ready artifacts. It is built by running the same
-advisor engine as a normal user session, so the demo state can be used immediately with JSONL, Notes, Chapter, LoRA,
-Packet, and PNG exports.
+`/api/demo-session` and the `Example` button load a deterministic two-turn sample: a complete project idea, profile,
+target badges, score seal, build plan, trace, and wood map. It is built by running the same advisor engine as a normal
+user session, so the visible app stays focused on the builder's idea while API exports remain available for submission
+evidence.
 
 ## Demo Evidence Bundle
 
-`/api/demo-bundle.zip` and the `Bundle` button download a server-built ZIP for the deterministic demo session. The
-bundle includes a manifest, demo session JSON, Prize Ledger JSON, trace JSONL, Field Notes, Almanac chapter, LoRA SFT
-JSONL, LoRA training kit, Submission Packet, and a PNG export note. This gives judges or collaborators one auditable
-package without depending on browser `localStorage`.
+`/api/demo-bundle.zip` downloads a server-built ZIP for the deterministic demo session. The bundle includes a manifest,
+demo session JSON, Prize Ledger JSON, trace JSONL, Field Notes, Almanac chapter, LoRA SFT JSONL, LoRA training kit,
+Submission Packet, and a PNG export note. This gives judges or collaborators one auditable package without depending on
+browser `localStorage`.
 
 ## Prize Ledger
 
-`/api/prize-ledger` and the in-app Prize Ledger panel expose submission evidence: the documented model stack, total
-parameter budget, Tiny Titan eligibility, runtime backend, and badge readiness. This keeps the demo's prize claims tied
-to visible app state rather than hidden notes.
+`/api/prize-ledger` exposes submission evidence: the documented model stack, total parameter budget, Tiny Titan
+eligibility, runtime backend, and badge readiness. It is kept as an API artifact rather than a primary in-app panel so
+the user-facing app stays centered on idea evaluation.
 
 ## Wood Map
 

@@ -63,7 +63,7 @@ exportButton.addEventListener("click", () => {
   exportArtifact(currentArtifact);
 });
 
-exportTraceButton.addEventListener("click", async () => {
+exportTraceButton?.addEventListener("click", async () => {
   await exportTrace();
 });
 
@@ -75,19 +75,19 @@ exportChapterButton.addEventListener("click", async () => {
   await exportChapter();
 });
 
-exportLoraButton.addEventListener("click", async () => {
+exportLoraButton?.addEventListener("click", async () => {
   await exportLoraDataset();
 });
 
-exportTrainKitButton.addEventListener("click", () => {
+exportTrainKitButton?.addEventListener("click", () => {
   window.location.assign("/api/lora-training-kit.zip");
 });
 
-exportPacketButton.addEventListener("click", async () => {
+exportPacketButton?.addEventListener("click", async () => {
   await exportSubmissionPacket();
 });
 
-exportBundleButton.addEventListener("click", () => {
+exportBundleButton?.addEventListener("click", () => {
   window.location.assign("/api/demo-bundle.zip");
 });
 
@@ -181,7 +181,7 @@ async function loadDemoSession() {
   setCommandDisabled(true);
   ink.classList.remove("bleed", "gold");
   ink.classList.add("thinking");
-  ink.textContent = "The demo pages are turning.";
+  ink.textContent = "A sample page is being inked.";
   corrections.textContent = "";
   try {
     const response = await fetch("/api/demo-session");
@@ -225,12 +225,12 @@ function applyDemoSession(data) {
     renderProjects(data.projects || []);
   }
   exportButton.disabled = !currentArtifact;
-  exportTraceButton.disabled = !(session.trace?.length);
-  exportNotesButton.disabled = !(session.trace?.length);
-  exportChapterButton.disabled = !(session.ideas?.length);
-  exportLoraButton.disabled = !(session.trace?.length);
-  exportPacketButton.disabled = !(session.trace?.length);
-  corrections.textContent = `demo: ${data.turn_count || 0} recorded turns`;
+  setButtonDisabled(exportTraceButton, !(session.trace?.length));
+  setButtonDisabled(exportNotesButton, !(session.trace?.length));
+  setButtonDisabled(exportChapterButton, !(session.ideas?.length));
+  setButtonDisabled(exportLoraButton, !(session.trace?.length));
+  setButtonDisabled(exportPacketButton, !(session.trace?.length));
+  corrections.textContent = `example loaded: ${data.turn_count || 0} advisor turns`;
   saveSession();
 }
 
@@ -263,11 +263,11 @@ function renderRestoredSession(data) {
   renderIdeas(session.ideas || []);
   renderPlan(session.last_plan || []);
   renderTrace(session.trace || []);
-  exportTraceButton.disabled = !(session.trace?.length);
-  exportNotesButton.disabled = !(session.trace?.length);
-  exportChapterButton.disabled = !(session.ideas?.length);
-  exportLoraButton.disabled = !(session.trace?.length);
-  exportPacketButton.disabled = !(session.trace?.length);
+  setButtonDisabled(exportTraceButton, !(session.trace?.length));
+  setButtonDisabled(exportNotesButton, !(session.trace?.length));
+  setButtonDisabled(exportChapterButton, !(session.ideas?.length));
+  setButtonDisabled(exportLoraButton, !(session.trace?.length));
+  setButtonDisabled(exportPacketButton, !(session.trace?.length));
 }
 
 function readSavedSession() {
@@ -354,6 +354,7 @@ function renderProfile(profile) {
 }
 
 function renderPrizeLedger(ledger) {
+  if (!prizeLedgerEl) return;
   prizeLedgerEl.innerHTML = "";
   if (!ledger) {
     prizeLedgerEl.innerHTML = `<div class="empty">No prize ledger loaded.</div>`;
@@ -447,11 +448,11 @@ function handleEvent(event) {
       renderWoodMap(event.artifact.wood_map || null);
       exportButton.disabled = false;
     }
-    exportTraceButton.disabled = !(session.trace?.length);
-    exportNotesButton.disabled = !(session.trace?.length);
-    exportChapterButton.disabled = !(session.ideas?.length);
-    exportLoraButton.disabled = !(session.trace?.length);
-    exportPacketButton.disabled = !(session.trace?.length);
+    setButtonDisabled(exportTraceButton, !(session.trace?.length));
+    setButtonDisabled(exportNotesButton, !(session.trace?.length));
+    setButtonDisabled(exportChapterButton, !(session.ideas?.length));
+    setButtonDisabled(exportLoraButton, !(session.trace?.length));
+    setButtonDisabled(exportPacketButton, !(session.trace?.length));
     saveSession();
   }
 }
@@ -604,6 +605,7 @@ function renderPlan(steps) {
 }
 
 function renderTrace(trace) {
+  if (!traceEl) return;
   traceEl.innerHTML = "";
   if (!trace.length) {
     traceEl.innerHTML = `<div class="empty">No tool marks yet.</div>`;
@@ -619,6 +621,10 @@ function renderTrace(trace) {
     `;
     traceEl.append(item);
   }
+}
+
+function setButtonDisabled(button, disabled) {
+  if (button) button.disabled = disabled;
 }
 
 function setCommandDisabled(disabled) {

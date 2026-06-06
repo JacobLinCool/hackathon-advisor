@@ -27,19 +27,14 @@
               <button id="submit" type="submit" title="Ink the page">Ink</button>
             </form>
             <div class="command-row" aria-label="Advisor commands">
-              <button type="button" id="load-demo" title="Load a complete demo session">Demo</button>
+              <button type="button" id="load-demo" title="Load a sample idea">Example</button>
               <button type="button" data-command="write bolder and find whitespace" title="Find a gold margin">
                 Gap
               </button>
               <button type="button" data-command="make a build plan" title="Draft a build plan">Plan</button>
               <button type="button" data-command="compare ideas" title="Compare the idea board">Rank</button>
-              <button type="button" id="export-trace" title="Export the tool trace" disabled>JSONL</button>
               <button type="button" id="export-notes" title="Export Field Notes" disabled>Notes</button>
               <button type="button" id="export-chapter" title="Export the Almanac chapter" disabled>Chapter</button>
-              <button type="button" id="export-lora" title="Export the LoRA SFT dataset" disabled>LoRA</button>
-              <button type="button" id="export-train-kit" title="Download the LoRA training kit">Train</button>
-              <button type="button" id="export-packet" title="Export the submission packet" disabled>Packet</button>
-              <button type="button" id="export-bundle" title="Download the demo evidence bundle">Bundle</button>
               <button type="button" id="export-artifact" title="Export the current fate page" disabled>PNG</button>
               <button type="button" id="reset-session" title="Clear the saved session">Reset</button>
             </div>
@@ -66,10 +61,6 @@
                 <h2>Profile</h2>
                 <div id="profile" class="profile-grid"></div>
               </article>
-              <article class="wide-panel">
-                <h2>Prize Ledger</h2>
-                <div id="prize-ledger" class="prize-ledger"></div>
-              </article>
               <article>
                 <h2>Idea Board</h2>
                 <div id="ideas" class="idea-list"></div>
@@ -85,10 +76,6 @@
               <article>
                 <h2>Build Plan</h2>
                 <ol id="plan" class="plan-list"></ol>
-              </article>
-              <article>
-                <h2>Trace</h2>
-                <div id="trace" class="trace-list"></div>
               </article>
             </div>
           </section>
