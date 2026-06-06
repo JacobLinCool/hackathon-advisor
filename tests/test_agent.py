@@ -70,6 +70,18 @@ def test_plan_command_uses_current_idea() -> None:
     assert planned.state["ideas"][0]["title"] == first.artifact["title"]
 
 
+def test_distinct_idea_turns_append_to_board() -> None:
+    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    engine = AdvisorEngine(index)
+
+    first = engine.turn("A local-first archive cartographer for family photos", {})
+    second = engine.turn("write bolder and find whitespace", first.state)
+
+    assert len(second.state["ideas"]) == 2
+    assert second.state["ideas"][0]["title"] == first.artifact["title"]
+    assert second.state["ideas"][1]["title"] == second.artifact["title"]
+
+
 def test_plan_preserves_unwritten_whitespace_verdict() -> None:
     index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
     engine = AdvisorEngine(index)

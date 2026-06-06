@@ -20,6 +20,7 @@ const overallEl = document.querySelector("#overall");
 const exportButton = document.querySelector("#export-artifact");
 const exportTraceButton = document.querySelector("#export-trace");
 const exportNotesButton = document.querySelector("#export-notes");
+const exportChapterButton = document.querySelector("#export-chapter");
 const resetButton = document.querySelector("#reset-session");
 
 const SESSION_STORAGE_KEY = "hackathon-advisor-session-v1";
@@ -58,6 +59,10 @@ exportTraceButton.addEventListener("click", async () => {
 
 exportNotesButton.addEventListener("click", async () => {
   await exportNotes();
+});
+
+exportChapterButton.addEventListener("click", async () => {
+  await exportChapter();
 });
 
 resetButton.addEventListener("click", () => {
@@ -175,6 +180,7 @@ function renderRestoredSession(data) {
   renderTrace(session.trace || []);
   exportTraceButton.disabled = !(session.trace?.length);
   exportNotesButton.disabled = !(session.trace?.length);
+  exportChapterButton.disabled = !(session.ideas?.length);
 }
 
 function readSavedSession() {
@@ -310,6 +316,7 @@ function handleEvent(event) {
     }
     exportTraceButton.disabled = !(session.trace?.length);
     exportNotesButton.disabled = !(session.trace?.length);
+    exportChapterButton.disabled = !(session.ideas?.length);
     saveSession();
   }
 }
@@ -484,11 +491,13 @@ function setCommandDisabled(disabled) {
     const isArtifact = button.id === "export-artifact";
     const isTrace = button.id === "export-trace";
     const isNotes = button.id === "export-notes";
+    const isChapter = button.id === "export-chapter";
     button.disabled =
       disabled ||
       (isArtifact && !currentArtifact) ||
       (isTrace && !session.trace?.length) ||
-      (isNotes && !session.trace?.length);
+      (isNotes && !session.trace?.length) ||
+      (isChapter && !session.ideas?.length);
   });
 }
 
@@ -541,6 +550,15 @@ async function exportNotes() {
   });
   const data = Array.isArray(result.data) ? result.data[0] : result.data;
   downloadText("hackathon-advisor-field-notes.md", String(data || ""), "text/markdown;charset=utf-8");
+}
+
+async function exportChapter() {
+  const client = await clientPromise;
+  const result = await client.predict("/chapter", {
+    session_json: JSON.stringify(session),
+  });
+  const data = Array.isArray(result.data) ? result.data[0] : result.data;
+  downloadText("hackathon-advisor-chapter.md", String(data || ""), "text/markdown;charset=utf-8");
 }
 
 function exportArtifact(artifact) {

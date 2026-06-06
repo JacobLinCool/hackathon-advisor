@@ -2,6 +2,7 @@ import json
 
 from app import (
     bootstrap,
+    chapter_artifact,
     engine,
     field_notes_artifact,
     health,
@@ -59,6 +60,18 @@ def test_field_notes_endpoint_exports_markdown() -> None:
     assert "Targets: Field Notes" in payload
     assert "## Turn Trace" in payload
     assert "Record the trace and write Field Notes" in payload
+
+
+def test_chapter_endpoint_exports_markdown() -> None:
+    state = engine.turn("A local-first archive cartographer for family photos", {}).state
+    state = engine.turn("write bolder and find whitespace", state).state
+
+    payload = chapter_artifact(json.dumps(state))
+
+    assert payload.startswith("# The Unwritten Almanac Chapter")
+    assert "## Page 1:" in payload
+    assert "## Page 2:" in payload
+    assert "Closest inked pages:" in payload
 
 
 def test_tool_contracts_endpoint_exposes_schemas() -> None:

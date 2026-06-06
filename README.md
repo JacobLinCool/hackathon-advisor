@@ -69,6 +69,12 @@ The `field_notes` Gradio API endpoint and `Notes` button export a Markdown build
 builder profile, target badges, idea board, cited Spaces, latest build plan, planner calls, and the share caption. This
 keeps the Field Notes badge path tied to auditable app evidence instead of a separate hand-written summary.
 
+## Chapter Artifact
+
+The `chapter` Gradio API endpoint and `Chapter` button export the public-facing idea board as an Almanac chapter:
+one fate page per idea, each with verdict, score, targets, and closest cited pages. It is the shareable companion to
+the private Field Notes artifact.
+
 ## Wood Map
 
 Every scored fate page now carries a deterministic `wood_map` artifact: background dots for inked Spaces, red dots for

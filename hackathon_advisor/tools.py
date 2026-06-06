@@ -89,7 +89,7 @@ class AdvisorTools:
         current_id = state.get("current_idea_id")
         targets = targets_from_state(state)
         idea = next((item for item in ideas if item.id == current_id), None)
-        if idea is None:
+        if idea is None or _is_new_idea(idea, title, pitch):
             idea = Idea(id=uuid.uuid4().hex[:8], title=title, pitch=pitch, targets=targets)
             ideas.append(idea)
         else:
@@ -131,6 +131,10 @@ def idea_from_text(text: str) -> tuple[str, str]:
     if len(title) < len(cleaned):
         title = f"{title[:58].strip()}..."
     return _display_title(title), cleaned
+
+
+def _is_new_idea(current: Idea, title: str, pitch: str) -> bool:
+    return current.title.strip().casefold() != title.strip().casefold() or current.pitch.strip() != pitch.strip()
 
 
 def _display_title(title: str) -> str:
