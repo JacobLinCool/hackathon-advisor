@@ -1,0 +1,2116 @@
+{
+  "generated_at": "2026-06-06T19:20:47+00:00",
+  "source": "https://huggingface.co/api/spaces?author=build-small-hackathon&limit=100",
+  "projects": [
+    {
+      "id": "build-small-hackathon/Advent_of_a_World_of_Flowering_Trees",
+      "title": "Advent Of A World Of Flowering Trees",
+      "summary": "This space is for Huggingface build small hackathon",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "CohereLabs/tiny-aya-global-GGUF"
+      ],
+      "datasets": [],
+      "likes": 1,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-05T12:21:42.000Z",
+      "last_modified": "2026-06-05T19:53:45.000Z",
+      "host": "https://build-small-hackathon-advent-of-a-world-of-flowe-468ebe3.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/Advent_of_a_World_of_Flowering_Trees"
+    },
+    {
+      "id": "build-small-hackathon/agent-swarm-workbench",
+      "title": "Backyard Demo Builder",
+      "summary": "Build tiny real-person demos before scaling custom software.",
+      "tags": [
+        "agents",
+        "ai-agents",
+        "backyard-ai",
+        "build-small-hackathon",
+        "demo-builder",
+        "gradio",
+        "real-estate",
+        "small-language-model"
+      ],
+      "models": [
+        "unsloth/gemma-4-12B-it-qat-GGUF",
+        "Qwen/Qwen2.5-7B-Instruct",
+        "nvidia/Nemotron-3.5-Content-Safety"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-03T07:06:14.000Z",
+      "last_modified": "2026-06-06T13:57:48.000Z",
+      "host": "https://build-small-hackathon-agent-swarm-workbench.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/agent-swarm-workbench"
+    },
+    {
+      "id": "build-small-hackathon/AI-agent-Evaluation-pipeline",
+      "title": "ai agent evaluation pipeline",
+      "summary": "Evaluate AI agents at Session, Trace & Span levels",
+      "tags": [
+        "agents",
+        "evaluation",
+        "gradio",
+        "llm",
+        "observability"
+      ],
+      "models": [
+        "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
+        "Qwen/Qwen3.6-27B",
+        "Qwen/QwQ-32B"
+      ],
+      "datasets": [
+        "build-small-hackathon/agent-eval-golden-dataset"
+      ],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-05T13:27:06.000Z",
+      "last_modified": "2026-06-06T16:22:19.000Z",
+      "host": "https://build-small-hackathon-ai-agent-evaluation-pipeline.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/AI-agent-Evaluation-pipeline"
+    },
+    {
+      "id": "build-small-hackathon/AI-Puppet-Theater",
+      "title": "AI Puppet Theater",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "openai/gpt-oss-20b"
+      ],
+      "datasets": [],
+      "likes": 1,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-05T17:19:57.000Z",
+      "last_modified": "2026-06-05T17:19:58.000Z",
+      "host": "https://build-small-hackathon-ai-puppet-theater.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/AI-Puppet-Theater"
+    },
+    {
+      "id": "build-small-hackathon/ai-study-buddy",
+      "title": "Ai Study Buddy",
+      "summary": "AI Study Buddy — your smart learning companion 📚 ",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "meta-llama/Llama-3.1-8B-Instruct"
+      ],
+      "datasets": [],
+      "likes": 1,
+      "sdk": "gradio",
+      "license": "apache-2.0",
+      "created_at": "2026-06-01T13:45:43.000Z",
+      "last_modified": "2026-06-05T13:42:30.000Z",
+      "host": "https://build-small-hackathon-ai-study-buddy.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/ai-study-buddy"
+    },
+    {
+      "id": "build-small-hackathon/amnesiac",
+      "title": "AMNESIAC",
+      "summary": "Reverse-Turing webcam interrogation game.",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "openbmb/MiniCPM-o-4_5"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "apache-2.0",
+      "created_at": "2026-06-05T09:51:49.000Z",
+      "last_modified": "2026-06-05T13:44:41.000Z",
+      "host": "https://build-small-hackathon-amnesiac.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/amnesiac"
+    },
+    {
+      "id": "build-small-hackathon/attention-firewall",
+      "title": "Attention Firewall",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-05T23:02:34.000Z",
+      "last_modified": "2026-06-05T23:04:42.000Z",
+      "host": "https://build-small-hackathon-attention-firewall.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/attention-firewall"
+    },
+    {
+      "id": "build-small-hackathon/awaaz",
+      "title": "Apni Awaaz",
+      "summary": "",
+      "tags": [
+        "backyard-ai",
+        "dubbing",
+        "hindi",
+        "translation",
+        "tts"
+      ],
+      "models": [
+        "openai/whisper-medium",
+        "Qwen/Qwen2.5-7B-Instruct"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-06T13:16:20.000Z",
+      "last_modified": "2026-06-06T14:14:31.000Z",
+      "host": "https://build-small-hackathon-awaaz.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/awaaz"
+    },
+    {
+      "id": "build-small-hackathon/backyard-dudu-destroyer",
+      "title": "Backyard Dudu Destroyer",
+      "summary": "A gradio interface for starting VLA and policy",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "apache-2.0",
+      "created_at": "2026-06-05T19:51:00.000Z",
+      "last_modified": "2026-06-05T19:51:00.000Z",
+      "host": "https://build-small-hackathon-backyard-dudu-destroyer.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/backyard-dudu-destroyer"
+    },
+    {
+      "id": "build-small-hackathon/backyard-raccoon-deterrent",
+      "title": "Backyard Raccoon Deterrent",
+      "summary": "Edge-AI raccoon deterrent. Tiny YOLO, fully offline.",
+      "tags": [
+        "build-small-hackathon",
+        "edge-ai",
+        "object-detection",
+        "raccoon",
+        "yolov8"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-05T19:17:40.000Z",
+      "last_modified": "2026-06-06T14:06:45.000Z",
+      "host": "https://build-small-hackathon-backyard-raccoon-deterrent.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/backyard-raccoon-deterrent"
+    },
+    {
+      "id": "build-small-hackathon/borderless",
+      "title": "Borderless",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "Qwen/Qwen3.6-27B"
+      ],
+      "datasets": [],
+      "likes": 1,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-05T05:26:45.000Z",
+      "last_modified": "2026-06-06T07:32:19.000Z",
+      "host": "https://build-small-hackathon-borderless.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/borderless"
+    },
+    {
+      "id": "build-small-hackathon/bridge-troll",
+      "title": "Bridge Troll",
+      "summary": "Talk your way past a fine-tuned troll, if your argument is ",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "10Pratibh/gorm-lora",
+        "Qwen/Qwen2.5-7B-Instruct"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-05T06:01:32.000Z",
+      "last_modified": "2026-06-06T10:11:58.000Z",
+      "host": "https://build-small-hackathon-bridge-troll.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/bridge-troll"
+    },
+    {
+      "id": "build-small-hackathon/briefing-32",
+      "title": "briefing-32",
+      "summary": "A 32B-class AI-news briefing the maker runs every 2 hours.",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "Qwen/Qwen3-32B"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "apache-2.0",
+      "created_at": "2026-05-18T19:55:29.000Z",
+      "last_modified": "2026-05-18T20:10:19.000Z",
+      "host": "https://build-small-hackathon-briefing-32.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/briefing-32"
+    },
+    {
+      "id": "build-small-hackathon/business-order-assistant",
+      "title": "Business Order Assistant",
+      "summary": "AI that gets order  in any format and creates an  invoice",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 1,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-05T08:14:41.000Z",
+      "last_modified": "2026-06-05T21:16:24.000Z",
+      "host": "https://build-small-hackathon-business-order-assistant.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/business-order-assistant"
+    },
+    {
+      "id": "build-small-hackathon/Case-Lantern",
+      "title": "Case Lantern",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "lastmass/Qwen3.5-Medical-GSPO"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "apache-2.0",
+      "created_at": "2026-06-04T04:28:14.000Z",
+      "last_modified": "2026-06-04T07:51:49.000Z",
+      "host": "https://build-small-hackathon-case-lantern.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/Case-Lantern"
+    },
+    {
+      "id": "build-small-hackathon/chorus",
+      "title": "Chorus",
+      "summary": "Discover the signal without having to read the noise",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-06T14:29:28.000Z",
+      "last_modified": "2026-06-06T15:25:57.000Z",
+      "host": "https://build-small-hackathon-chorus.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/chorus"
+    },
+    {
+      "id": "build-small-hackathon/CodeFlow",
+      "title": "CodeFlow",
+      "summary": "Turn Python code into a readable Mermaid.js flowchart 📊",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-05T14:31:59.000Z",
+      "last_modified": "2026-06-06T19:12:05.000Z",
+      "host": "https://build-small-hackathon-codeflow.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/CodeFlow"
+    },
+    {
+      "id": "build-small-hackathon/come-and-compare",
+      "title": "Come And Compare",
+      "summary": "Real-time price comparison across Amazon, Flipkart & Myntra",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "Qwen/Qwen2.5-7B-Instruct"
+      ],
+      "datasets": [],
+      "likes": 1,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-05-27T07:54:43.000Z",
+      "last_modified": "2026-06-06T12:22:50.000Z",
+      "host": "https://build-small-hackathon-come-and-compare.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/come-and-compare"
+    },
+    {
+      "id": "build-small-hackathon/compliment-forest",
+      "title": "The Compliment Forest",
+      "summary": "Walk through a watercolor path of grounded encouragement.",
+      "tags": [
+        "build-small-hackathon",
+        "gradio",
+        "llama.cpp",
+        "local-first",
+        "watercolor"
+      ],
+      "models": [
+        "build-small-hackathon/compliment-forest-minicpm5-1b",
+        "build-small-hackathon/compliment-forest-flux-lora"
+      ],
+      "datasets": [
+        "build-small-hackathon/compliment-forest-sft",
+        "build-small-hackathon/compliment-forest-watercolor",
+        "build-small-hackathon/compliment-forest-traces"
+      ],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-06T09:06:20.000Z",
+      "last_modified": "2026-06-06T09:16:04.000Z",
+      "host": "https://build-small-hackathon-compliment-forest.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/compliment-forest"
+    },
+    {
+      "id": "build-small-hackathon/Council-of-Tiny-Minds",
+      "title": "Council Of Tiny Minds",
+      "summary": "A faux chatroom where one user message wakes up a handful of",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "Qwen/Qwen3.5-9B"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-04T14:39:09.000Z",
+      "last_modified": "2026-06-04T14:45:24.000Z",
+      "host": "https://build-small-hackathon-council-of-tiny-minds.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/Council-of-Tiny-Minds"
+    },
+    {
+      "id": "build-small-hackathon/Darwin-35B-A3B-Opus",
+      "title": "Darwin 35B A3B Opus",
+      "summary": "The child surpassed both parents — that is evolution",
+      "tags": [
+        "gradio",
+        "mcp-server",
+        "region:us"
+      ],
+      "models": [
+        "FINAL-Bench/Darwin-35B-A3B-Opus",
+        "huggingface/documentation-images"
+      ],
+      "datasets": [
+        "FINAL-Bench/ALL-Bench-Leaderboard",
+        "huggingface/documentation-images"
+      ],
+      "likes": 2,
+      "sdk": "gradio",
+      "license": "apache-2.0",
+      "created_at": "2026-05-19T21:57:08.000Z",
+      "last_modified": "2026-06-03T13:18:48.000Z",
+      "host": "https://build-small-hackathon-darwin-35b-a3b-opus.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/Darwin-35B-A3B-Opus"
+    },
+    {
+      "id": "build-small-hackathon/dental-soap",
+      "title": "Dental SOAP",
+      "summary": "A small-model dental handoff for real patient stories.",
+      "tags": [
+        "agents",
+        "bilingual",
+        "healthcare",
+        "zero-gpu"
+      ],
+      "models": [
+        "Qwen/Qwen3-4B-Instruct-2507"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "apache-2.0",
+      "created_at": "2026-06-05T08:34:32.000Z",
+      "last_modified": "2026-06-06T16:00:40.000Z",
+      "host": "https://build-small-hackathon-dental-soap.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/dental-soap"
+    },
+    {
+      "id": "build-small-hackathon/dm-order-desk",
+      "title": "Dm Order Desk",
+      "summary": "Turn messy DMs into clean orders.",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "Qwen/Qwen2.5-1.5B-Instruct"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-06T08:52:31.000Z",
+      "last_modified": "2026-06-06T11:49:44.000Z",
+      "host": "https://build-small-hackathon-dm-order-desk.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/dm-order-desk"
+    },
+    {
+      "id": "build-small-hackathon/dream-customs",
+      "title": "Dream Customs",
+      "summary": "Turn dream declarations into a playful next-day pact.",
+      "tags": [
+        "build-small-hackathon",
+        "dream-journal",
+        "gradio",
+        "minicpm"
+      ],
+      "models": [
+        "openbmb/MiniCPM5-1B",
+        "openbmb/MiniCPM-V-4.6"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-05T04:17:23.000Z",
+      "last_modified": "2026-06-06T09:27:58.000Z",
+      "host": "https://build-small-hackathon-dream-customs.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/dream-customs"
+    },
+    {
+      "id": "build-small-hackathon/dream-museum",
+      "title": "Dream Museum",
+      "summary": "Draw a dream · Describe it · Watch it materialize",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "stabilityai/stable-diffusion-xl-base-1.0",
+        "xinsir/controlnet-scribble-sdxl-1.0"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-06T11:56:15.000Z",
+      "last_modified": "2026-06-06T18:11:57.000Z",
+      "host": "https://build-small-hackathon-dream-museum.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/dream-museum"
+    },
+    {
+      "id": "build-small-hackathon/dreamwall-mc",
+      "title": "DreamWall MC",
+      "summary": "",
+      "tags": [
+        "agent-trace",
+        "art",
+        "codex",
+        "game",
+        "gradio",
+        "minecraft",
+        "small-models"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "apache-2.0",
+      "created_at": "2026-06-05T10:11:24.000Z",
+      "last_modified": "2026-06-06T15:19:12.000Z",
+      "host": "https://build-small-hackathon-dreamwall-mc.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/dreamwall-mc"
+    },
+    {
+      "id": "build-small-hackathon/ducks-happen",
+      "title": "Ducks Happen",
+      "summary": "Rubber ducks materialize here.",
+      "tags": [
+        "art",
+        "flux",
+        "fun",
+        "generative-art",
+        "rubber-duck"
+      ],
+      "models": [
+        "black-forest-labs/FLUX.1-schnell"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-06T09:29:26.000Z",
+      "last_modified": "2026-06-06T13:27:27.000Z",
+      "host": "https://build-small-hackathon-ducks-happen.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/ducks-happen"
+    },
+    {
+      "id": "build-small-hackathon/espressocheese-chess-demo",
+      "title": "Espressocheese Chess Demo",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-05T18:02:39.000Z",
+      "last_modified": "2026-06-05T18:02:39.000Z",
+      "host": "https://build-small-hackathon-espressocheese-chess-demo.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/espressocheese-chess-demo"
+    },
+    {
+      "id": "build-small-hackathon/exam-panic-rescue",
+      "title": "Exam Panic Rescue",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "nvidia/Nemotron-Mini-4B-Instruct",
+        "openbmb/MiniCPM4.1-8B",
+        "openbmb/MiniCPM4.1-8B-GGUF"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-05T10:07:01.000Z",
+      "last_modified": "2026-06-06T18:14:13.000Z",
+      "host": "https://build-small-hackathon-exam-panic-rescue.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/exam-panic-rescue"
+    },
+    {
+      "id": "build-small-hackathon/Family-Bill-Assistant",
+      "title": "Family Bill Assistant",
+      "summary": "Smart AI Agent that simplifies and categorizes family bills",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "nvidia/NVIDIA-Nemotron-Parse-v1.2",
+        "openbmb/MiniCPM-V-4.6",
+        "openbmb/MiniCPM4.1-8B"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-06T10:19:08.000Z",
+      "last_modified": "2026-06-06T19:16:30.000Z",
+      "host": "https://build-small-hackathon-family-bill-assistant.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/Family-Bill-Assistant"
+    },
+    {
+      "id": "build-small-hackathon/First-Principle-AI",
+      "title": "First-Principle AI",
+      "summary": "Phase-3 Q8 GGUF lab console with llama.cpp.",
+      "tags": [
+        "build-small-hackathon",
+        "chatbot",
+        "gguf",
+        "gradio",
+        "llama-cpp",
+        "model-lab",
+        "zerogpu"
+      ],
+      "models": [
+        "build-small-hackathon/phase-3-gguf"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-04T21:54:27.000Z",
+      "last_modified": "2026-06-06T04:54:02.000Z",
+      "host": "https://build-small-hackathon-first-principle-ai.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/First-Principle-AI"
+    },
+    {
+      "id": "build-small-hackathon/gemma-task-agent-trace",
+      "title": "Gemma Task Agent Trace",
+      "summary": "A lightweight task agent prototype with visual reasoning tra",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-02T09:07:39.000Z",
+      "last_modified": "2026-06-02T09:11:42.000Z",
+      "host": "https://build-small-hackathon-gemma-task-agent-trace.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/gemma-task-agent-trace"
+    },
+    {
+      "id": "build-small-hackathon/gemma4chat",
+      "title": "Gemma4chat",
+      "summary": "",
+      "tags": [
+        "docker",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "docker",
+      "license": "",
+      "created_at": "2026-06-06T09:09:50.000Z",
+      "last_modified": "2026-06-06T09:11:50.000Z",
+      "host": "https://build-small-hackathon-gemma4chat.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/gemma4chat"
+    },
+    {
+      "id": "build-small-hackathon/gitopadesh",
+      "title": "Gitopadesh",
+      "summary": "The Bhagavad Gita as a living advisor powered by AI",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "Qwen/Qwen2.5-7B-Instruct",
+        "sentence-transformers/all-MiniLM-L6-v2"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-05T03:38:32.000Z",
+      "last_modified": "2026-06-06T09:23:11.000Z",
+      "host": "https://build-small-hackathon-gitopadesh.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/gitopadesh"
+    },
+    {
+      "id": "build-small-hackathon/GRM-2.6-Opus",
+      "title": "GRM-2.6-Opus",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "OrionLLM/GRM-2.6-Opus"
+      ],
+      "datasets": [],
+      "likes": 1,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-05-19T22:04:00.000Z",
+      "last_modified": "2026-05-14T15:48:55.000Z",
+      "host": "https://build-small-hackathon-grm-2-6-opus.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/GRM-2.6-Opus"
+    },
+    {
+      "id": "build-small-hackathon/GTROX",
+      "title": "GTROX",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "openai/gpt-oss-20b"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-04T19:08:30.000Z",
+      "last_modified": "2026-06-04T19:08:31.000Z",
+      "host": "https://build-small-hackathon-gtrox.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/GTROX"
+    },
+    {
+      "id": "build-small-hackathon/guitar-singalong",
+      "title": "Guitar Singalong Generator",
+      "summary": "",
+      "tags": [
+        "accompaniment",
+        "audio",
+        "demucs",
+        "guitar",
+        "music",
+        "musicgen"
+      ],
+      "models": [
+        "facebook/musicgen-melody"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-05T16:48:57.000Z",
+      "last_modified": "2026-06-05T23:31:38.000Z",
+      "host": "https://build-small-hackathon-guitar-singalong.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/guitar-singalong"
+    },
+    {
+      "id": "build-small-hackathon/her",
+      "title": "Her · हेर",
+      "summary": "A detective for your Claude Code sessions",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "nvidia/Nemotron-Mini-4B-Instruct"
+      ],
+      "datasets": [],
+      "likes": 2,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-06T14:39:33.000Z",
+      "last_modified": "2026-06-06T14:39:39.000Z",
+      "host": "https://build-small-hackathon-her.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/her"
+    },
+    {
+      "id": "build-small-hackathon/InContext",
+      "title": "InContext",
+      "summary": "Learn reusable English expressions from real-world content.",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "Qwen/Qwen2.5-0.5B-Instruct"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-06T00:37:36.000Z",
+      "last_modified": "2026-06-06T02:50:47.000Z",
+      "host": "https://build-small-hackathon-incontext.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/InContext"
+    },
+    {
+      "id": "build-small-hackathon/innerspace",
+      "title": "InnerSpace",
+      "summary": "Privacy-first offline cognitive journal & reflection coach",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "build-small-hackathon/inner-space-1b-sft-cbt",
+        "openbmb/MiniCPM5-1B-SFT"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-06T08:39:42.000Z",
+      "last_modified": "2026-06-06T16:56:17.000Z",
+      "host": "https://build-small-hackathon-innerspace.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/innerspace"
+    },
+    {
+      "id": "build-small-hackathon/investigative-news-agent",
+      "title": "Investigative News Agent",
+      "summary": "Traceable news analysis assistant for independent journalist",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-03T23:27:21.000Z",
+      "last_modified": "2026-06-03T23:27:21.000Z",
+      "host": "https://build-small-hackathon-investigative-news-agent.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/investigative-news-agent"
+    },
+    {
+      "id": "build-small-hackathon/jackailocal",
+      "title": "Jackailocal",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-04T18:38:48.000Z",
+      "last_modified": "2026-06-04T18:38:48.000Z",
+      "host": "https://build-small-hackathon-jackailocal.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/jackailocal"
+    },
+    {
+      "id": "build-small-hackathon/job-search-assistant",
+      "title": "Job Searcher",
+      "summary": "Drop your resume. Get matches with reasoning.",
+      "tags": [
+        "distillation",
+        "gguf",
+        "jobs",
+        "llama-cpp",
+        "lora",
+        "qwen3",
+        "resume"
+      ],
+      "models": [
+        "emrekuruu/job-searcher-qwen3-8B",
+        "emrekuruu/job-searcher-qwen3-8B-gguf"
+      ],
+      "datasets": [
+        "emrekuruu/job-search-distill"
+      ],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-06T15:20:53.000Z",
+      "last_modified": "2026-06-06T14:14:51.000Z",
+      "host": "https://build-small-hackathon-job-search-assistant.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/job-search-assistant"
+    },
+    {
+      "id": "build-small-hackathon/karim-lab",
+      "title": "Karim Lab",
+      "summary": "Small-model legal workflow assistant prototype.",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-04T22:20:12.000Z",
+      "last_modified": "2026-06-04T22:26:21.000Z",
+      "host": "https://build-small-hackathon-karim-lab.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/karim-lab"
+    },
+    {
+      "id": "build-small-hackathon/Kasualdad_LFED",
+      "title": "Kasualdad LFED",
+      "summary": "Local First Education Data Analytics for school admins",
+      "tags": [
+        "duckdb",
+        "education",
+        "gguf",
+        "gradio",
+        "llama-cpp",
+        "local-first",
+        "text-to-sql"
+      ],
+      "models": [
+        "mradermacher/Qwen2.5-Coder-7B-Instruct-GGUF",
+        "unsloth/Qwen2.5-Coder-7B-Instruct"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-06T01:32:03.000Z",
+      "last_modified": "2026-06-06T16:36:54.000Z",
+      "host": "https://build-small-hackathon-kasualdad-lfed.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/Kasualdad_LFED"
+    },
+    {
+      "id": "build-small-hackathon/Kintsugi-Garden",
+      "title": "The Kintsugi Garden",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "microsoft/Phi-4-mini-instruct",
+        "Qwen/Qwen3-8B"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-04T13:02:44.000Z",
+      "last_modified": "2026-06-06T15:16:43.000Z",
+      "host": "https://build-small-hackathon-kintsugi-garden.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/Kintsugi-Garden"
+    },
+    {
+      "id": "build-small-hackathon/legawa",
+      "title": "Legawa",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "Qwen/Qwen3.5-27B",
+        "Qwen/Qwen3.5-9B"
+      ],
+      "datasets": [],
+      "likes": 1,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-05-29T11:56:15.000Z",
+      "last_modified": "2026-05-29T12:41:46.000Z",
+      "host": "https://build-small-hackathon-legawa.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/legawa"
+    },
+    {
+      "id": "build-small-hackathon/LocalDuo",
+      "title": "LocalDuo",
+      "summary": "🇰🇷✨ LocalDuo - Learn Korean from Documents",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "Qwen/Qwen3.5-2B",
+        "Qwen/Qwen3.5-9B"
+      ],
+      "datasets": [],
+      "likes": 1,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-06T08:23:40.000Z",
+      "last_modified": "2026-06-06T12:29:55.000Z",
+      "host": "https://build-small-hackathon-localduo.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/LocalDuo"
+    },
+    {
+      "id": "build-small-hackathon/lolaby",
+      "title": "Lolaby",
+      "summary": "AI-powered lullabies.",
+      "tags": [
+        "agentic",
+        "backyard-ai",
+        "build-small-hackathon",
+        "children",
+        "fine-tuned",
+        "gradio",
+        "llama-cpp",
+        "lullaby",
+        "on-device",
+        "small-models",
+        "text-to-audio"
+      ],
+      "models": [
+        "build-small-hackathon/lolaby-llama-3b",
+        "openbmb/MiniCPM-V-4_6",
+        "hexgrad/Kokoro-82M"
+      ],
+      "datasets": [
+        "build-small-hackathon/lolaby-traces"
+      ],
+      "likes": 2,
+      "sdk": "gradio",
+      "license": "llama3.2",
+      "created_at": "2026-06-05T16:18:44.000Z",
+      "last_modified": "2026-06-06T09:59:58.000Z",
+      "host": "https://build-small-hackathon-lolaby.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/lolaby"
+    },
+    {
+      "id": "build-small-hackathon/lore-lens",
+      "title": "Local in 30s — Lore Lens",
+      "summary": "Snap anything abroad. Get what locals actually know.",
+      "tags": [
+        "culture",
+        "minicpm",
+        "multimodal",
+        "travel",
+        "tts"
+      ],
+      "models": [
+        "openbmb/MiniCPM-V-4.6",
+        "openbmb/VoxCPM2"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-06T16:45:47.000Z",
+      "last_modified": "2026-06-06T17:31:59.000Z",
+      "host": "https://build-small-hackathon-lore-lens.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/lore-lens"
+    },
+    {
+      "id": "build-small-hackathon/lovegpt",
+      "title": "loveGPT",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "microsoft/Phi-4-mini-instruct"
+      ],
+      "datasets": [],
+      "likes": 3,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-05T11:55:29.000Z",
+      "last_modified": "2026-06-06T19:13:02.000Z",
+      "host": "https://build-small-hackathon-lovegpt.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/lovegpt"
+    },
+    {
+      "id": "build-small-hackathon/Mediassist",
+      "title": "Mediassist",
+      "summary": "Medical Reasoning Assistant for Underserved Communities",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-05T12:33:40.000Z",
+      "last_modified": "2026-06-05T13:53:13.000Z",
+      "host": "https://build-small-hackathon-mediassist.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/Mediassist"
+    },
+    {
+      "id": "build-small-hackathon/metabolic-forensics",
+      "title": "Metabolic Forensics",
+      "summary": "N-of-1 biosignal evidence engine. Forensics, not coaching.",
+      "tags": [
+        "backyard-ai",
+        "build-small-hackathon"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-04T21:48:56.000Z",
+      "last_modified": "2026-06-04T21:49:01.000Z",
+      "host": "https://build-small-hackathon-metabolic-forensics.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/metabolic-forensics"
+    },
+    {
+      "id": "build-small-hackathon/my-build-small-hackathon",
+      "title": "My Build Small Hackathon",
+      "summary": "This is my submission for the  build-small-hackathon",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "apache-2.0",
+      "created_at": "2026-06-05T07:32:13.000Z",
+      "last_modified": "2026-06-05T07:50:03.000Z",
+      "host": "https://build-small-hackathon-my-build-small-hackathon.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/my-build-small-hackathon"
+    },
+    {
+      "id": "build-small-hackathon/mycelium",
+      "title": "Mycelium",
+      "summary": "Local-first personal knowledge agent",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "nvidia/Nemotron-Mini-4B-Instruct",
+        "Qwen/Qwen2.5-VL-7B-Instruct",
+        "sentence-transformers/all-MiniLM-L6-v2"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-06T04:29:40.000Z",
+      "last_modified": "2026-06-06T05:36:51.000Z",
+      "host": "https://build-small-hackathon-mycelium.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/mycelium"
+    },
+    {
+      "id": "build-small-hackathon/Myspace",
+      "title": "Myspace",
+      "summary": "Todo",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "openai/gpt-oss-20b"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-04T20:20:12.000Z",
+      "last_modified": "2026-06-04T20:20:13.000Z",
+      "host": "https://build-small-hackathon-myspace.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/Myspace"
+    },
+    {
+      "id": "build-small-hackathon/mythograph-atelier",
+      "title": "Mythograph Atelier",
+      "summary": "AI abstract art with personal meaning",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "black-forest-labs/FLUX.2-klein-4B",
+        "lmstudio-community/Qwen3.5-0.8B-GGUF"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-06T09:28:40.000Z",
+      "last_modified": "2026-06-06T18:49:06.000Z",
+      "host": "https://build-small-hackathon-mythograph-atelier.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/mythograph-atelier"
+    },
+    {
+      "id": "build-small-hackathon/neighbourhood-guide",
+      "title": "Neighbourhood Guide",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "CohereLabs/tiny-aya-global",
+        "CohereLabs/cohere-transcribe-03-2026",
+        "nvidia/magpie_tts_multilingual_357m"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "apache-2.0",
+      "created_at": "2026-06-06T04:15:44.000Z",
+      "last_modified": "2026-06-06T18:36:24.000Z",
+      "host": "https://build-small-hackathon-neighbourhood-guide.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/neighbourhood-guide"
+    },
+    {
+      "id": "build-small-hackathon/neilA",
+      "title": "First Contact",
+      "summary": "Teach an alien that knows words but has never lived a life.",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "Qwen/Qwen2.5-7B-Instruct"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-05T15:41:30.000Z",
+      "last_modified": "2026-06-05T21:55:20.000Z",
+      "host": "https://build-small-hackathon-neila.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/neilA"
+    },
+    {
+      "id": "build-small-hackathon/NextClue",
+      "title": "NextClue",
+      "summary": "Research assistant to help design the next-best experiments ",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-04T17:44:39.000Z",
+      "last_modified": "2026-06-04T17:44:40.000Z",
+      "host": "https://build-small-hackathon-nextclue.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/NextClue"
+    },
+    {
+      "id": "build-small-hackathon/NEXUS-Visual-Weaver",
+      "title": "NEXUS Visual Weaver",
+      "summary": "hackaton project from NEXUS OS and doppleground foundation",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "black-forest-labs/FLUX.2-klein-4B"
+      ],
+      "datasets": [],
+      "likes": 1,
+      "sdk": "gradio",
+      "license": "apache-2.0",
+      "created_at": "2026-06-06T06:12:35.000Z",
+      "last_modified": "2026-06-06T08:22:34.000Z",
+      "host": "https://build-small-hackathon-nexus-visual-weaver.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/NEXUS-Visual-Weaver"
+    },
+    {
+      "id": "build-small-hackathon/Objection-Your-Honour",
+      "title": "Objection Your Honour",
+      "summary": "A whimsical game",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "openai/gpt-oss-20b"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-04T06:55:49.000Z",
+      "last_modified": "2026-06-04T06:55:51.000Z",
+      "host": "https://build-small-hackathon-objection-your-honour.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/Objection-Your-Honour"
+    },
+    {
+      "id": "build-small-hackathon/octopus-ai",
+      "title": "Octopus AI — Stress Test the Octopus",
+      "summary": "Can you break a self-monitoring modular AI?",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "CognitiveEngineering/octopus-dev-checkpoints",
+        "mistralai/Mixtral-8x7B-v0.1"
+      ],
+      "datasets": [],
+      "likes": 1,
+      "sdk": "gradio",
+      "license": "apache-2.0",
+      "created_at": "2026-06-05T17:47:03.000Z",
+      "last_modified": "2026-06-06T12:09:30.000Z",
+      "host": "https://build-small-hackathon-octopus-ai.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/octopus-ai"
+    },
+    {
+      "id": "build-small-hackathon/oneiros",
+      "title": "Oneiros",
+      "summary": "Map your dreams with a small model — no ChatGPT API.",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "Qwen/Qwen2.5-7B-Instruct-GGUF"
+      ],
+      "datasets": [
+        "adindamochamad/oneiros-agent-traces"
+      ],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-03T02:34:28.000Z",
+      "last_modified": "2026-06-03T13:12:12.000Z",
+      "host": "https://build-small-hackathon-oneiros.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/oneiros"
+    },
+    {
+      "id": "build-small-hackathon/oracle-ternary-flame",
+      "title": "Oracle Ternary Flame",
+      "summary": "Cryptic oracle speaking in cosmic, elemental poetry.",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "google/gemma-4-12B-it",
+        "keypa/oracle-gemma4-12b-lora"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-05T10:03:17.000Z",
+      "last_modified": "2026-06-05T11:03:19.000Z",
+      "host": "https://build-small-hackathon-oracle-ternary-flame.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/oracle-ternary-flame"
+    },
+    {
+      "id": "build-small-hackathon/patient-virtuel-dentiste",
+      "title": "Patient Virtuel · Hygiéniste Pro",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "Qwen/Qwen3.6-27B"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "apache-2.0",
+      "created_at": "2026-06-04T10:23:14.000Z",
+      "last_modified": "2026-06-04T15:33:38.000Z",
+      "host": "https://build-small-hackathon-patient-virtuel-dentiste.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/patient-virtuel-dentiste"
+    },
+    {
+      "id": "build-small-hackathon/pawmap",
+      "title": "PawMap",
+      "summary": "Mapeamento colaborativo de animais de rua com IA",
+      "tags": [
+        "docker",
+        "region:us"
+      ],
+      "models": [
+        "meta-llama/Llama-3.2-11B-Vision-Instruct"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "docker",
+      "license": "mit",
+      "created_at": "2026-06-04T17:55:07.000Z",
+      "last_modified": "2026-06-06T16:37:03.000Z",
+      "host": "https://build-small-hackathon-pawmap.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/pawmap"
+    },
+    {
+      "id": "build-small-hackathon/persona-atlas",
+      "title": "Persona Atlas",
+      "summary": "Build personas of public figures and compare how they think",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "google/gemma-4-26B-A4B-it",
+        "microsoft/harrier-oss-v1-0.6b"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-06T06:46:34.000Z",
+      "last_modified": "2026-06-06T11:53:48.000Z",
+      "host": "https://build-small-hackathon-persona-atlas.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/persona-atlas"
+    },
+    {
+      "id": "build-small-hackathon/planpalette",
+      "title": "PlanPalette",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "Lykon/dreamshaper-xl-lightning"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-06T12:33:33.000Z",
+      "last_modified": "2026-06-06T18:11:05.000Z",
+      "host": "https://build-small-hackathon-planpalette.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/planpalette"
+    },
+    {
+      "id": "build-small-hackathon/pocket-weather-theater",
+      "title": "Pocket Weather Theater",
+      "summary": "Tiny local weather plays from pocket props.",
+      "tags": [
+        "build-small-hackathon",
+        "gradio",
+        "local-inference",
+        "thousand-token-wood",
+        "tiny-models",
+        "transformers"
+      ],
+      "models": [
+        "HuggingFaceTB/SmolLM2-135M-Instruct",
+        "PratikBuilds/pocket-weather-theater-smollm2-135m-lora"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-05T20:54:06.000Z",
+      "last_modified": "2026-06-06T16:13:34.000Z",
+      "host": "https://build-small-hackathon-pocket-weather-theater.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/pocket-weather-theater"
+    },
+    {
+      "id": "build-small-hackathon/rarebirds",
+      "title": "rarebirds",
+      "summary": "Aircraft rarity classifier with live ADS-B map",
+      "tags": [
+        "ads-b",
+        "aircraft",
+        "gemma",
+        "gradio"
+      ],
+      "models": [
+        "google/gemma-3-27b-it"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-04T04:50:56.000Z",
+      "last_modified": "2026-06-06T05:03:49.000Z",
+      "host": "https://build-small-hackathon-rarebirds.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/rarebirds"
+    },
+    {
+      "id": "build-small-hackathon/receipt_scanner",
+      "title": "Receipt Scanner",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "openbmb/MiniCPM-V",
+        "openbmb/MiniCPM-V-4.6"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-05T19:57:46.000Z",
+      "last_modified": "2026-06-06T14:51:10.000Z",
+      "host": "https://build-small-hackathon-receipt-scanner.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/receipt_scanner"
+    },
+    {
+      "id": "build-small-hackathon/Retail-Insight-AI",
+      "title": "Retail Insight AI Pro",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-03T14:00:54.000Z",
+      "last_modified": "2026-06-05T15:12:12.000Z",
+      "host": "https://build-small-hackathon-retail-insight-ai.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/Retail-Insight-AI"
+    },
+    {
+      "id": "build-small-hackathon/roadb-other-screen",
+      "title": "Road B: The Other Screen",
+      "summary": "Talk to the self who chose differently.",
+      "tags": [
+        "build-small-hackathon",
+        "custom-frontend",
+        "gguf",
+        "gradio",
+        "gradio-server",
+        "interactive-fiction",
+        "llama-cpp",
+        "modal",
+        "qwen",
+        "small-models"
+      ],
+      "models": [
+        "unsloth/Qwen3.5-9B-GGUF"
+      ],
+      "datasets": [],
+      "likes": 1,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-05-26T00:51:52.000Z",
+      "last_modified": "2026-06-05T07:11:03.000Z",
+      "host": "https://build-small-hackathon-roadb-other-screen.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/roadb-other-screen"
+    },
+    {
+      "id": "build-small-hackathon/roast-my-repo",
+      "title": "Roast My Repo",
+      "summary": "AI-powered brutal code review for your GitHub repos",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "openbmb/MiniCPM4-8B"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-04T07:33:38.000Z",
+      "last_modified": "2026-06-06T11:14:59.000Z",
+      "host": "https://build-small-hackathon-roast-my-repo.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/roast-my-repo"
+    },
+    {
+      "id": "build-small-hackathon/SlideAI",
+      "title": "SlideAI",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "Qwen/Qwen2.5-7B-Instruct"
+      ],
+      "datasets": [],
+      "likes": 1,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-06T10:01:57.000Z",
+      "last_modified": "2026-06-06T12:20:39.000Z",
+      "host": "https://build-small-hackathon-slideai.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/SlideAI"
+    },
+    {
+      "id": "build-small-hackathon/Spooky-From-a-Distance",
+      "title": "Spooky From A Distance",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "apache-2.0",
+      "created_at": "2026-06-05T01:38:09.000Z",
+      "last_modified": "2026-06-05T01:38:09.000Z",
+      "host": "https://build-small-hackathon-spooky-from-a-distance.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/Spooky-From-a-Distance"
+    },
+    {
+      "id": "build-small-hackathon/storybook",
+      "title": "Storybook",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-04T21:27:20.000Z",
+      "last_modified": "2026-06-04T21:27:20.000Z",
+      "host": "https://build-small-hackathon-storybook.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/storybook"
+    },
+    {
+      "id": "build-small-hackathon/Structured-Data-Rescuer",
+      "title": "Structured Data Rescuer",
+      "summary": "Unstructured data is entered and structured data is returned",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "meta-llama/Llama-3.1-8B-Instruct"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "apache-2.0",
+      "created_at": "2026-06-05T16:51:25.000Z",
+      "last_modified": "2026-06-06T18:09:14.000Z",
+      "host": "https://build-small-hackathon-structured-data-rescuer.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/Structured-Data-Rescuer"
+    },
+    {
+      "id": "build-small-hackathon/surgical-tissue-segmentation",
+      "title": "Surgical Tissue Segmentation",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "meta-llama/Llama-3.1-8B-Instruct",
+        "sugan04/cholec-yolo26n-seg"
+      ],
+      "datasets": [],
+      "likes": 1,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-03T06:44:42.000Z",
+      "last_modified": "2026-06-06T08:02:16.000Z",
+      "host": "https://build-small-hackathon-surgical-tissue-segmentation.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/surgical-tissue-segmentation"
+    },
+    {
+      "id": "build-small-hackathon/tarook",
+      "title": "Tarook",
+      "summary": "",
+      "tags": [
+        "docker",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "docker",
+      "license": "",
+      "created_at": "2026-05-14T23:10:44.000Z",
+      "last_modified": "2026-05-14T23:11:42.000Z",
+      "host": "https://build-small-hackathon-tarook.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/tarook"
+    },
+    {
+      "id": "build-small-hackathon/team_lunch_app_v1",
+      "title": "Team Lunch App V1",
+      "summary": "Individual & Team Lunch organizer",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "Qwen/Qwen2.5-1.5B-Instruct"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "apache-2.0",
+      "created_at": "2026-06-05T08:39:39.000Z",
+      "last_modified": "2026-06-06T00:01:47.000Z",
+      "host": "https://build-small-hackathon-team-lunch-app-v1.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/team_lunch_app_v1"
+    },
+    {
+      "id": "build-small-hackathon/the-echo",
+      "title": "The Echo",
+      "summary": "an agentic tree of the lives you didn't live",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "Qwen/Qwen2.5-3B-Instruct"
+      ],
+      "datasets": [],
+      "likes": 1,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-05T21:02:40.000Z",
+      "last_modified": "2026-06-05T23:29:29.000Z",
+      "host": "https://build-small-hackathon-the-echo.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/the-echo"
+    },
+    {
+      "id": "build-small-hackathon/the-i3-ghost-matrix-v5",
+      "title": "The i3 Ghost Matrix v5.2",
+      "summary": "A delightfully weird off-the-grid i3 ghost agent.",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "apache-2.0",
+      "created_at": "2026-06-05T15:39:16.000Z",
+      "last_modified": "2026-06-06T13:40:59.000Z",
+      "host": "https://build-small-hackathon-the-i3-ghost-matrix-v5.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/the-i3-ghost-matrix-v5"
+    },
+    {
+      "id": "build-small-hackathon/the-pixelforge-klein",
+      "title": "The Pixelforge Klein",
+      "summary": "A tiny retro pixel-art game asset generator tool.",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "apache-2.0",
+      "created_at": "2026-06-06T05:50:56.000Z",
+      "last_modified": "2026-06-06T08:36:42.000Z",
+      "host": "https://build-small-hackathon-the-pixelforge-klein.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/the-pixelforge-klein"
+    },
+    {
+      "id": "build-small-hackathon/The-Shrine",
+      "title": "The Shrine",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-03T04:50:34.000Z",
+      "last_modified": "2026-06-03T09:58:20.000Z",
+      "host": "https://build-small-hackathon-the-shrine.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/The-Shrine"
+    },
+    {
+      "id": "build-small-hackathon/thousand-token-wood",
+      "title": "Thousand Token Wood",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-05T19:18:01.000Z",
+      "last_modified": "2026-06-05T19:27:14.000Z",
+      "host": "https://build-small-hackathon-thousand-token-wood.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/thousand-token-wood"
+    },
+    {
+      "id": "build-small-hackathon/thousand-token-wood-sim",
+      "title": "Thousand Token Wood",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "AdmiralTaco/ttw-trader-0.5b",
+        "nvidia/Nemotron-Mini-4B-Instruct",
+        "openai/gpt-oss-20b",
+        "openbmb/MiniCPM3-4B",
+        "Qwen/Qwen2.5-0.5B-Instruct",
+        "Qwen/Qwen2.5-1.5B-Instruct",
+        "Qwen/Qwen2.5-3B-Instruct",
+        "Qwen/Qwen2.5-7B-Instruct"
+      ],
+      "datasets": [
+        "build-small-hackathon/thousand-token-wood-traces"
+      ],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-05T21:47:45.000Z",
+      "last_modified": "2026-06-06T17:03:53.000Z",
+      "host": "https://build-small-hackathon-thousand-token-wood-sim.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/thousand-token-wood-sim"
+    },
+    {
+      "id": "build-small-hackathon/tiny-army",
+      "title": "Tiny Army",
+      "summary": "Tiny Army — fighters write their own true legends",
+      "tags": [
+        "docker",
+        "region:us"
+      ],
+      "models": [
+        "black-forest-labs/FLUX.1-dev",
+        "black-forest-labs/FLUX.1-schnell",
+        "black-forest-labs/FLUX.2-klein-4B",
+        "prism-ml/bonsai-image-binary-4B-mlx-1bit",
+        "prism-ml/bonsai-image-ternary-4B-mlx-2bit",
+        "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+        "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+        "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+        "Tongyi-MAI/Z-Image-Turbo"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "docker",
+      "license": "mit",
+      "created_at": "2026-06-03T15:28:19.000Z",
+      "last_modified": "2026-06-06T19:20:04.000Z",
+      "host": "https://build-small-hackathon-tiny-army.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/tiny-army"
+    },
+    {
+      "id": "build-small-hackathon/tiny-dispatch-coach",
+      "title": "Tiny Dispatch Coach",
+      "summary": "Small-model route coach",
+      "tags": [
+        "gradio",
+        "hackathon",
+        "logistics",
+        "operations-research",
+        "small-models"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-02T02:04:10.000Z",
+      "last_modified": "2026-06-02T02:17:05.000Z",
+      "host": "https://build-small-hackathon-tiny-dispatch-coach.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/tiny-dispatch-coach"
+    },
+    {
+      "id": "build-small-hackathon/tricket",
+      "title": "Tricket",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "openai/gpt-oss-20b"
+      ],
+      "datasets": [],
+      "likes": 1,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-04T02:53:12.000Z",
+      "last_modified": "2026-06-04T02:53:13.000Z",
+      "host": "https://build-small-hackathon-tricket.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/tricket"
+    },
+    {
+      "id": "build-small-hackathon/Trollsona",
+      "title": "Trollsona",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "Qwen/Qwen2.5-0.5B-Instruct",
+        "RthItalia/nano_compact_3b_qkvfp16"
+      ],
+      "datasets": [],
+      "likes": 1,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-05T19:08:56.000Z",
+      "last_modified": "2026-06-05T19:37:07.000Z",
+      "host": "https://build-small-hackathon-trollsona.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/Trollsona"
+    },
+    {
+      "id": "build-small-hackathon/ux-crime-scene",
+      "title": "UX Crime Scene",
+      "summary": "A noir detective investigates your UI as a crime scene.",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-06T15:02:25.000Z",
+      "last_modified": "2026-06-06T15:35:57.000Z",
+      "host": "https://build-small-hackathon-ux-crime-scene.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/ux-crime-scene"
+    },
+    {
+      "id": "build-small-hackathon/voice-sales-logger",
+      "title": "Voice Sales Logger",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "nvidia/nemotron-3.5-asr-streaming-0.6b",
+        "Qwen/Qwen2.5-1.5B-Instruct"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-06T02:11:31.000Z",
+      "last_modified": "2026-06-06T04:16:09.000Z",
+      "host": "https://build-small-hackathon-voice-sales-logger.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/voice-sales-logger"
+    },
+    {
+      "id": "build-small-hackathon/VoiceGate",
+      "title": "VoiceGate",
+      "summary": "Multilingual dubbing with subtitles and ambience.",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "Kijai/MelBandRoFormer_comfy",
+        "openbmb/VoxCPM2",
+        "Qwen/Qwen3-ASR-1.7B",
+        "Qwen/Qwen3-ForcedAligner-0.6B"
+      ],
+      "datasets": [],
+      "likes": 1,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-04T22:15:11.000Z",
+      "last_modified": "2026-06-06T07:36:54.000Z",
+      "host": "https://build-small-hackathon-voicegate.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/VoiceGate"
+    },
+    {
+      "id": "build-small-hackathon/wan2-2-fp8da-aoti-14B-fast",
+      "title": "Wan2.2 14B Fast Preview",
+      "summary": "generate a video from an image with a text prompt",
+      "tags": [
+        "gradio",
+        "mcp-server",
+        "region:us"
+      ],
+      "models": [
+        "cbensimon/WanTransformer3DModel-sm120-cu130-raa",
+        "r3gm/RIFE",
+        "TestOrganizationPleaseIgnore/wamu-tools",
+        "Wan-AI/Wan2.2-I2V-A14B-Diffusers"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "",
+      "created_at": "2026-06-04T11:21:36.000Z",
+      "last_modified": "2026-05-16T22:14:21.000Z",
+      "host": "https://build-small-hackathon-wan2-2-fp8da-aoti-14b-fast.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/wan2-2-fp8da-aoti-14B-fast"
+    },
+    {
+      "id": "build-small-hackathon/WitGym",
+      "title": "WitGym",
+      "summary": "",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "BAAI/bge-small-en-v1.5",
+        "cross-encoder/ettin-reranker-32m-v1",
+        "Qwen/Qwen3.5-9B"
+      ],
+      "datasets": [
+        "jxm/the_office_lines"
+      ],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "apache-2.0",
+      "created_at": "2026-06-04T10:53:06.000Z",
+      "last_modified": "2026-06-05T11:12:44.000Z",
+      "host": "https://build-small-hackathon-witgym.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/WitGym"
+    },
+    {
+      "id": "build-small-hackathon/wonderland",
+      "title": "wonderland",
+      "summary": "A text adventure with a 1000 token model guiding you.",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
+        "nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16",
+        "nvidia/NVIDIA-Nemotron-3-Nano-4B-FP8",
+        "nvidia/NVIDIA-Nemotron-3-Nano-4B-GGUF"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-05T18:46:14.000Z",
+      "last_modified": "2026-06-06T05:37:37.000Z",
+      "host": "https://build-small-hackathon-wonderland.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/wonderland"
+    },
+    {
+      "id": "build-small-hackathon/wpl-discovery",
+      "title": "Wpl Discovery",
+      "summary": "Discover what your library actually offers",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-06T14:50:27.000Z",
+      "last_modified": "2026-06-06T14:50:27.000Z",
+      "host": "https://build-small-hackathon-wpl-discovery.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/wpl-discovery"
+    },
+    {
+      "id": "build-small-hackathon/Yui-Home-Assisstant",
+      "title": "Yui Home Assisstant",
+      "summary": "Local voice assistant configured for home asssitant",
+      "tags": [
+        "gradio",
+        "region:us"
+      ],
+      "models": [
+        "openai/gpt-oss-20b"
+      ],
+      "datasets": [],
+      "likes": 0,
+      "sdk": "gradio",
+      "license": "mit",
+      "created_at": "2026-06-06T08:54:43.000Z",
+      "last_modified": "2026-06-06T08:54:44.000Z",
+      "host": "https://build-small-hackathon-yui-home-assisstant.hf.space",
+      "url": "https://huggingface.co/spaces/build-small-hackathon/Yui-Home-Assisstant"
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>The Unwritten Almanac</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="stage" aria-label="The Unwritten Almanac">
+        <div class="canopy"></div>
+        <div class="book">
+          <section class="page page-left">
+            <div class="kicker">The Unwritten Almanac</div>
+            <h1>Mothback</h1>
+            <p id="ink" class="ink">
+              The book is open. The next page waits for its first line.
+            </p>
+            <form id="turn-form" class="prompt-row">
+              <input
+                id="message"
+                name="message"
+                autocomplete="off"
+                placeholder="A local-first agent for..."
+              />
+              <button id="submit" type="submit" title="Ink the page">Ink</button>
+            </form>
+            <div id="corrections" class="corrections" aria-live="polite"></div>
+          </section>
+
+          <section class="page page-right">
+            <div class="seal" id="seal">
+              <span id="verdict">UNWRITTEN</span>
+              <strong id="overall">0.0</strong>
+            </div>
+            <div class="panels">
+              <article>
+                <h2>Echoes</h2>
+                <div id="projects" class="project-list"></div>
+              </article>
+              <article>
+                <h2>Gold Margins</h2>
+                <div id="whitespace" class="whitespace-list"></div>
+              </article>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/static/app.js"></script>
+  </body>
+</html>
