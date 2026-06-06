@@ -38,6 +38,7 @@ let turnWatchdog = null;
 let sawTurnToken = false;
 let bootstrapData = null;
 let sessionRevision = 0;
+let sessionControlsLocked = false;
 
 bootstrap().catch(handleBootstrapError);
 
@@ -108,6 +109,7 @@ async function runTurn(message) {
   input.value = "";
   submit.disabled = true;
   setCommandDisabled(true);
+  setSessionControlsDisabled(true);
   ink.classList.remove("bleed", "gold");
   corrections.textContent = "";
   planEl.innerHTML = "";
@@ -137,6 +139,7 @@ async function runTurn(message) {
     clearTurnWatchdog();
     submit.disabled = false;
     setCommandDisabled(false);
+    setSessionControlsDisabled(false);
     input.focus();
   }
 }
@@ -167,6 +170,7 @@ function handleBootstrapError(error) {
   submit.disabled = true;
   input.disabled = true;
   setCommandDisabled(true);
+  setSessionControlsDisabled(true);
   ink.textContent = `The project index could not be opened: ${error.message}`;
   ink.classList.remove("thinking", "gold");
   ink.classList.add("bleed");
@@ -206,6 +210,19 @@ function restoreExportButtonLabels() {
   exportButton.textContent = PNG_EXPORT_LABEL;
 }
 
+function setSessionControlsDisabled(disabled) {
+  sessionControlsLocked = disabled;
+  targetsEl.querySelectorAll("input[data-target]").forEach((target) => {
+    target.disabled = disabled;
+  });
+  profileEl.querySelectorAll("input[data-profile-field]").forEach((field) => {
+    field.disabled = disabled;
+  });
+  ideasEl.querySelectorAll("button[data-idea-id]").forEach((idea) => {
+    idea.disabled = disabled;
+  });
+}
+
 function resetSession() {
   if (!bootstrapData) return;
   bumpSessionRevision();
@@ -215,6 +232,7 @@ function resetSession() {
   currentArtifact = null;
   submit.disabled = false;
   input.disabled = false;
+  setSessionControlsDisabled(false);
   input.value = "";
   ink.textContent = "The book is open. The next page waits for its first line.";
   ink.classList.remove("thinking", "bleed", "gold");
@@ -241,6 +259,7 @@ async function loadDemoSession() {
   bumpSessionRevision();
   submit.disabled = true;
   setCommandDisabled(true);
+  setSessionControlsDisabled(true);
   ink.classList.remove("bleed", "gold");
   ink.classList.add("thinking");
   ink.textContent = "A sample page is being inked.";
@@ -256,6 +275,7 @@ async function loadDemoSession() {
   } finally {
     submit.disabled = false;
     setCommandDisabled(false);
+    setSessionControlsDisabled(false);
     input.focus();
   }
 }
@@ -418,6 +438,7 @@ function renderTargets(selectedTargets) {
         type="checkbox"
         data-target="${escapeAttribute(option)}"
         aria-label="${escapeAttribute(profile.label)}"
+        ${sessionControlsLocked ? "disabled" : ""}
         ${selected.has(option) ? "checked" : ""}
       />
       <span class="target-copy">
@@ -444,6 +465,7 @@ function renderProfile(profile) {
         data-profile-field="${escapeAttribute(field)}"
         value="${escapeAttribute(profile?.[field] || "")}"
         autocomplete="off"
+        ${sessionControlsLocked ? "disabled" : ""}
       />
     `;
     profileEl.append(row);
@@ -518,6 +540,7 @@ function renderIdeas(ideas) {
     const item = document.createElement("button");
     item.type = "button";
     item.className = `idea ${selected ? "current" : ""}`;
+    item.disabled = sessionControlsLocked;
     item.dataset.ideaId = idea.id || "";
     item.setAttribute("aria-pressed", selected ? "true" : "false");
     item.innerHTML = `

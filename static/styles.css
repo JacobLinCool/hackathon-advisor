@@ -334,6 +334,17 @@ button:disabled {
   background: rgba(255, 241, 196, 0.56);
 }
 
+.idea:disabled,
+.target-toggle:has(input:disabled),
+.profile-field:has(input:disabled) {
+  opacity: 0.64;
+  cursor: wait;
+}
+
+.idea:disabled {
+  cursor: wait;
+}
+
 .idea:focus-visible {
   outline: 2px solid rgba(47, 122, 73, 0.5);
   outline-offset: 2px;
