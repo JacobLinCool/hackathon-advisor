@@ -20,6 +20,9 @@ const overallEl = document.querySelector("#overall");
 const exportButton = document.querySelector("#export-artifact");
 const exportTraceButton = document.querySelector("#export-trace");
 const exportNotesButton = document.querySelector("#export-notes");
+const resetButton = document.querySelector("#reset-session");
+
+const SESSION_STORAGE_KEY = "hackathon-advisor-session-v1";
 
 let session = {};
 let clientPromise = Client.connect(window.location.origin);
@@ -57,6 +60,11 @@ exportNotesButton.addEventListener("click", async () => {
   await exportNotes();
 });
 
+resetButton.addEventListener("click", () => {
+  clearSavedSession();
+  window.location.reload();
+});
+
 targetsEl.addEventListener("change", (event) => {
   const target = event.target;
   if (!(target instanceof HTMLInputElement) || !target.dataset.target) return;
@@ -65,6 +73,7 @@ targetsEl.addEventListener("change", (event) => {
   );
   session.targets = targetOptions.filter((option) => checked.has(option));
   syncCurrentIdeaTargets();
+  saveSession();
   renderIdeas(session.ideas || []);
 });
 
@@ -79,6 +88,7 @@ profileEl.addEventListener("input", (event) => {
     delete profile[target.dataset.profileField];
   }
   session.profile = profile;
+  saveSession();
 });
 
 async function runTurn(message) {
@@ -126,16 +136,12 @@ async function bootstrap() {
     profile: {},
     targets: data.default_targets || targetOptions.slice(0, 3),
   };
+  session = normalizeSession(readSavedSession(), session);
   renderProvenance(data);
   renderTargets(session.targets);
   renderProfile(session.profile);
-  renderProjects(data.top_projects || []);
+  renderRestoredSession(data);
   renderWhitespace(data.whitespace || []);
-  renderIdeas([]);
-  renderWoodMap(null);
-  renderScore(null);
-  renderPlan([]);
-  renderTrace([]);
 }
 
 function renderProvenance(data) {
@@ -143,6 +149,76 @@ function renderProvenance(data) {
   const index = shortDate(data.index_generated_at);
   const digest = String(data.snapshot_digest || "").slice(0, 10);
   provenanceEl.textContent = `${data.index_algorithm || "index"} · snapshot ${snapshot} · index ${index} · ${digest}`;
+}
+
+function renderRestoredSession(data) {
+  currentArtifact = session.last_artifact || null;
+  if (currentArtifact?.seal) {
+    renderScore(currentArtifact.seal);
+    verdictEl.textContent = currentArtifact.verdict || currentArtifact.seal.verdict || "UNWRITTEN";
+    overallEl.textContent = Number(currentArtifact.overall || currentArtifact.seal.overall || 0).toFixed(1);
+    renderWoodMap(currentArtifact.wood_map || null);
+    if (currentArtifact.seal.echoes?.length) {
+      renderCitations(currentArtifact.seal.echoes);
+    } else {
+      renderProjects(data.top_projects || []);
+    }
+    exportButton.disabled = false;
+  } else {
+    renderScore(null);
+    renderWoodMap(null);
+    renderProjects(data.top_projects || []);
+    exportButton.disabled = true;
+  }
+  renderIdeas(session.ideas || []);
+  renderPlan(session.last_plan || []);
+  renderTrace(session.trace || []);
+  exportTraceButton.disabled = !(session.trace?.length);
+  exportNotesButton.disabled = !(session.trace?.length);
+}
+
+function readSavedSession() {
+  try {
+    const raw = window.localStorage.getItem(SESSION_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeSession(savedSession, defaultSession) {
+  const normalized = { ...defaultSession };
+  if (!savedSession) return normalized;
+  normalized.profile = savedSession.profile && typeof savedSession.profile === "object" ? savedSession.profile : {};
+  const savedTargets = Array.isArray(savedSession.targets) ? savedSession.targets : defaultSession.targets;
+  normalized.targets = targetOptions.filter((option) => savedTargets.includes(option));
+  if (!normalized.targets.length && defaultSession.targets?.length) normalized.targets = [...defaultSession.targets];
+  if (Array.isArray(savedSession.ideas)) normalized.ideas = savedSession.ideas;
+  if (Array.isArray(savedSession.trace)) normalized.trace = savedSession.trace;
+  if (Array.isArray(savedSession.last_plan)) normalized.last_plan = savedSession.last_plan;
+  if (savedSession.current_idea_id) normalized.current_idea_id = savedSession.current_idea_id;
+  if (savedSession.current_whitespace) normalized.current_whitespace = savedSession.current_whitespace;
+  if (savedSession.last_tool_resolution) normalized.last_tool_resolution = savedSession.last_tool_resolution;
+  if (savedSession.last_artifact) normalized.last_artifact = savedSession.last_artifact;
+  return normalized;
+}
+
+function saveSession() {
+  try {
+    window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+  } catch {
+    // Storage may be disabled in some embeds; the app still works in-memory.
+  }
+}
+
+function clearSavedSession() {
+  try {
+    window.localStorage.removeItem(SESSION_STORAGE_KEY);
+  } catch {
+    // Nothing else to clear when storage is unavailable.
+  }
 }
 
 function renderTargets(selectedTargets) {
@@ -234,6 +310,7 @@ function handleEvent(event) {
     }
     exportTraceButton.disabled = !(session.trace?.length);
     exportNotesButton.disabled = !(session.trace?.length);
+    saveSession();
   }
 }
 

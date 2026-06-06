@@ -80,6 +80,12 @@ map, so the share artifact visually proves whether the page sits in an empty mar
 The custom frontend shows optimistic ink immediately after submit. If the first streamed token is slow, a lightweight
 watchdog updates the page text so the demo never sits in a silent blank state during Space startup or model routing.
 
+## Session Persistence
+
+The frontend stores the current advisor session in browser `localStorage`: profile notes, selected targets, idea board,
+trace, latest build plan, and last share artifact. Refreshing the Space restores the same cockpit state; the `Reset`
+button clears the saved session and returns to the current snapshot defaults.
+
 ## Tool-Call Contract
 
 `/api/tool-contracts` exposes the JSON schemas intended for MiniCPM-style tool calling. `tool_contract_check` accepts a
