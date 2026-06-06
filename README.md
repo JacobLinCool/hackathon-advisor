@@ -82,6 +82,12 @@ The `Rank` command rescans the saved idea board, recalculates each seal against 
 strongest page as the active idea, and drafts the next build step. The app then moves that page to the top of the Idea
 Board and refreshes the seal, wood map, plan, and PNG artifact around the chosen direction.
 
+## Gap Exploration
+
+The `Gap` command walks through unused whitespace candidates instead of repeating the same first suggestion. Each chosen
+gap becomes a new Idea Board page, so users can compare several genuinely different directions before ranking or
+planning.
+
 ## LoRA Dataset Artifact
 
 The `lora_dataset` Gradio API endpoint exports a compact chat JSONL dataset from successful session turns. Each included

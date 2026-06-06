@@ -48,6 +48,19 @@ def test_agent_finds_whitespace() -> None:
     assert result.state["ideas"][0]["title"] == result.whitespace[0].label
 
 
+def test_gap_command_explores_unused_whitespace() -> None:
+    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    engine = AdvisorEngine(index)
+
+    first = engine.turn("write bolder and find whitespace", {})
+    second = engine.turn("write bolder and find whitespace", first.state)
+
+    assert len(second.state["ideas"]) == 2
+    assert first.whitespace[0].label != second.whitespace[0].label
+    assert second.state["ideas"][-1]["title"] == second.whitespace[0].label
+    assert second.state["current_whitespace"]["label"] == second.whitespace[0].label
+
+
 def test_agent_preserves_canonical_jargon_case() -> None:
     index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
     engine = AdvisorEngine(index)

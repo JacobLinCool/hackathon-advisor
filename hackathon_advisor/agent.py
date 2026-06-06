@@ -89,9 +89,11 @@ class AdvisorEngine:
             whitespace, event = self.tools.find_whitespace(limit=4)
             tool_events.append(event)
             if whitespace:
-                idea, event = self.tools.save_idea(state, whitespace[0].label, whitespace[0].pitch)
+                whitespace = self._prioritize_unused_whitespace(whitespace, state)
+                selected = whitespace[0]
+                idea, event = self.tools.save_idea(state, selected.label, selected.pitch)
                 tool_events.append(event)
-                state["current_whitespace"] = whitespace[0].to_dict()
+                state["current_whitespace"] = selected.to_dict()
             else:
                 title, pitch = idea_from_text(normalized)
                 idea, event = self.tools.save_idea(state, title, pitch)
@@ -405,6 +407,26 @@ class AdvisorEngine:
         if artifact.get("title") == idea.title and artifact.get("verdict") == "UNWRITTEN":
             return replace(score, originality=max(score.originality, 8), verdict="UNWRITTEN")
         return score
+
+    def _prioritize_unused_whitespace(
+        self,
+        items: list[WhitespaceItem],
+        state: dict[str, Any],
+    ) -> list[WhitespaceItem]:
+        used_labels = {
+            str(item.get("title") or "").strip().casefold()
+            for item in state.get("ideas", [])
+            if isinstance(item, dict)
+        }
+        current = state.get("current_whitespace")
+        if isinstance(current, dict):
+            used_labels.add(str(current.get("label") or "").strip().casefold())
+
+        selected = next(
+            (item for item in items if item.label.strip().casefold() not in used_labels),
+            items[0],
+        )
+        return [selected, *[item for item in items if item.label != selected.label]]
 
     def _rank_ideas(self, state: dict[str, Any]) -> list[tuple[Idea, ScoreCard]]:
         ranked: list[tuple[Idea, ScoreCard]] = []
