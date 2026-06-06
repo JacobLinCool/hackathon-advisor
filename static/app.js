@@ -36,6 +36,7 @@ let targetProfileById = new Map();
 let profileFields = [];
 let turnWatchdog = null;
 let sawTurnToken = false;
+let bootstrapData = null;
 
 bootstrap();
 
@@ -66,8 +67,7 @@ exportNotesButton.addEventListener("click", () => exportNotes());
 exportChapterButton.addEventListener("click", () => exportChapter());
 
 resetButton.addEventListener("click", () => {
-  clearSavedSession();
-  window.location.reload();
+  resetSession();
 });
 
 targetsEl.addEventListener("change", (event) => {
@@ -142,22 +142,53 @@ async function runTurn(message) {
 async function bootstrap() {
   const response = await fetch("/api/bootstrap");
   const data = await response.json();
+  bootstrapData = data;
   const rawProfiles = Array.isArray(data.target_profiles) ? data.target_profiles : [];
   const rawOptions = Array.isArray(data.target_options) ? data.target_options : [];
   targetProfiles = normalizeTargetProfiles(rawProfiles, rawOptions);
   targetOptions = targetProfiles.map((target) => target.id);
   targetProfileById = new Map(targetProfiles.map((target) => [target.id, target]));
   profileFields = data.profile_fields || [];
-  session = {
-    profile: {},
-    targets: data.default_targets || targetOptions.slice(0, 3),
-  };
-  session = normalizeSession(readSavedSession(), session);
+  session = normalizeSession(readSavedSession(), defaultSession(data));
   renderProvenance(data);
   renderTargets(session.targets);
   renderProfile(session.profile);
   renderRestoredSession(data);
   renderWhitespace(data.whitespace || []);
+}
+
+function defaultSession(data = bootstrapData) {
+  return {
+    profile: {},
+    targets: data?.default_targets || targetOptions.slice(0, 3),
+  };
+}
+
+function resetSession() {
+  if (!bootstrapData) return;
+  clearTurnWatchdog();
+  clearSavedSession();
+  session = defaultSession(bootstrapData);
+  currentArtifact = null;
+  input.value = "";
+  ink.textContent = "The book is open. The next page waits for its first line.";
+  ink.classList.remove("thinking", "bleed", "gold");
+  corrections.textContent = "Session reset.";
+  renderTargets(session.targets);
+  renderProfile(session.profile);
+  renderScore(null);
+  verdictEl.textContent = "UNWRITTEN";
+  overallEl.textContent = "0.0";
+  renderWoodMap(null);
+  renderIdeas([]);
+  renderPlan([]);
+  renderProjects(bootstrapData.top_projects || []);
+  renderWhitespace(bootstrapData.whitespace || []);
+  exportButton.disabled = true;
+  setButtonDisabled(exportNotesButton, true);
+  setButtonDisabled(exportChapterButton, true);
+  saveSession();
+  input.focus();
 }
 
 async function loadDemoSession() {
