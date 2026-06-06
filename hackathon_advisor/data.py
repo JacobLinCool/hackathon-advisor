@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
+from datetime import datetime, timezone
+from hashlib import sha256
 import json
 import math
 from pathlib import Path
@@ -151,20 +153,34 @@ WHITESPACE_SEEDS: tuple[WhitespaceSeed, ...] = (
 )
 
 
+INDEX_ALGORITHM = "tfidf-sparse-v1"
+
+
 class ProjectIndex:
-    def __init__(self, projects: list[Project], generated_at: str, source: str) -> None:
+    def __init__(
+        self,
+        projects: list[Project],
+        generated_at: str,
+        source: str,
+        index_payload: dict | None = None,
+    ) -> None:
         if not projects:
             raise ValueError("project index requires at least one project")
         self.projects = projects
         self.generated_at = generated_at
         self.source = source
-        self._documents = [Counter(tokenize(project.searchable_text)) for project in projects]
-        self._df = Counter(term for doc in self._documents for term in doc)
-        self._idf = {
-            term: math.log((1 + len(self._documents)) / (1 + freq)) + 1.0
-            for term, freq in self._df.items()
-        }
-        self._norms = [self._norm(doc) for doc in self._documents]
+        if index_payload is None:
+            index_payload = build_index_payload(projects, generated_at, source)
+        validate_index_payload(index_payload, projects, generated_at, source)
+        self.index_generated_at = str(index_payload["generated_at"])
+        self.index_algorithm = str(index_payload["algorithm"])
+        self.snapshot_digest = str(index_payload["snapshot_digest"])
+        self._idf = {str(term): float(value) for term, value in index_payload["idf"].items()}
+        self._documents = [
+            Counter({str(term): float(value) for term, value in document["weights"].items()})
+            for document in index_payload["documents"]
+        ]
+        self._norms = [float(document["norm"]) for document in index_payload["documents"]]
 
     @classmethod
     def from_file(cls, path: Path) -> "ProjectIndex":
@@ -174,6 +190,18 @@ class ProjectIndex:
             projects=projects,
             generated_at=str(data.get("generated_at") or ""),
             source=str(data.get("source") or ""),
+        )
+
+    @classmethod
+    def from_files(cls, project_path: Path, index_path: Path) -> "ProjectIndex":
+        data = json.loads(project_path.read_text(encoding="utf-8"))
+        index_payload = json.loads(index_path.read_text(encoding="utf-8"))
+        projects = [Project.from_dict(item) for item in data["projects"]]
+        return cls(
+            projects=projects,
+            generated_at=str(data.get("generated_at") or ""),
+            source=str(data.get("source") or ""),
+            index_payload=index_payload,
         )
 
     def top_projects(self, limit: int = 8) -> list[Project]:
@@ -198,7 +226,7 @@ class ProjectIndex:
             for term, count in query_doc.items():
                 if term not in doc:
                     continue
-                raw += count * doc[term] * self._idf.get(term, 1.0) ** 2
+                raw += (count * self._idf.get(term, 1.0)) * doc[term]
                 matched.append(term)
             if not matched:
                 continue
@@ -243,3 +271,79 @@ class ProjectIndex:
 
 def tokenize(text: str) -> list[str]:
     return [token.lower().strip("._-+") for token in TOKEN_RE.findall(text) if len(token.strip("._-+")) > 1]
+
+
+def build_index_payload(projects: list[Project], snapshot_generated_at: str, source: str) -> dict:
+    documents = [Counter(tokenize(project.searchable_text)) for project in projects]
+    df = Counter(term for document in documents for term in document)
+    idf = {
+        term: math.log((1 + len(documents)) / (1 + freq)) + 1.0
+        for term, freq in sorted(df.items())
+    }
+    indexed_documents = []
+    for project, document in zip(projects, documents, strict=True):
+        weights = {
+            term: round(count * idf.get(term, 1.0), 8)
+            for term, count in sorted(document.items())
+        }
+        norm = math.sqrt(sum(value * value for value in weights.values()))
+        indexed_documents.append(
+            {
+                "project_id": project.id,
+                "tokens": sum(document.values()),
+                "unique_terms": len(document),
+                "norm": round(norm, 8),
+                "weights": weights,
+            }
+        )
+    return {
+        "schema_version": 1,
+        "algorithm": INDEX_ALGORITHM,
+        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "snapshot_generated_at": snapshot_generated_at,
+        "snapshot_source": source,
+        "snapshot_digest": project_snapshot_digest(projects, snapshot_generated_at, source),
+        "document_count": len(projects),
+        "vocabulary_size": len(idf),
+        "idf": {term: round(value, 8) for term, value in idf.items()},
+        "documents": indexed_documents,
+    }
+
+
+def validate_index_payload(
+    payload: dict,
+    projects: list[Project],
+    snapshot_generated_at: str,
+    snapshot_source: str,
+) -> None:
+    if payload.get("schema_version") != 1:
+        raise ValueError("unsupported project index schema version")
+    if payload.get("algorithm") != INDEX_ALGORITHM:
+        raise ValueError(f"unsupported project index algorithm: {payload.get('algorithm')}")
+    if payload.get("snapshot_generated_at") != snapshot_generated_at:
+        raise ValueError("project index was built from a different snapshot timestamp")
+    if payload.get("snapshot_source") != snapshot_source:
+        raise ValueError("project index was built from a different snapshot source")
+    if payload.get("snapshot_digest") != project_snapshot_digest(
+        projects,
+        snapshot_generated_at,
+        snapshot_source,
+    ):
+        raise ValueError("project index digest does not match projects snapshot")
+    documents = payload.get("documents")
+    if not isinstance(documents, list) or len(documents) != len(projects):
+        raise ValueError("project index document count does not match projects snapshot")
+    project_ids = [project.id for project in projects]
+    indexed_ids = [document.get("project_id") for document in documents]
+    if indexed_ids != project_ids:
+        raise ValueError("project index project order does not match projects snapshot")
+
+
+def project_snapshot_digest(projects: list[Project], generated_at: str, source: str) -> str:
+    payload = {
+        "generated_at": generated_at,
+        "source": source,
+        "projects": [project.to_public_dict() for project in projects],
+    }
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    return sha256(encoded).hexdigest()

@@ -51,9 +51,11 @@ Then open <http://127.0.0.1:7860>.
 
 ```bash
 python scripts/crawl_hf_spaces.py --org build-small-hackathon --out data/projects.json
+python scripts/build_project_index.py --projects data/projects.json --out data/project_index.json
 ```
 
-The app uses `data/projects.json` at runtime, so deployed builds remain usable without live crawl calls.
+The app uses `data/projects.json` and `data/project_index.json` at runtime. The index validates the snapshot timestamp,
+source, project order, and digest before the app starts.
 
 ## Test
 

@@ -5,7 +5,7 @@ from hackathon_advisor.data import ProjectIndex
 
 
 def test_agent_scores_and_persists_idea() -> None:
-    index = ProjectIndex.from_file(Path("data/projects.json"))
+    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
     engine = AdvisorEngine(index)
 
     result = engine.turn("A local-first archive cartographer for family photos", {})
@@ -19,7 +19,7 @@ def test_agent_scores_and_persists_idea() -> None:
 
 
 def test_agent_finds_whitespace() -> None:
-    index = ProjectIndex.from_file(Path("data/projects.json"))
+    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
     engine = AdvisorEngine(index)
 
     result = engine.turn("write bolder and find whitespace", {})
@@ -30,7 +30,7 @@ def test_agent_finds_whitespace() -> None:
 
 
 def test_agent_preserves_canonical_jargon_case() -> None:
-    index = ProjectIndex.from_file(Path("data/projects.json"))
+    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
     engine = AdvisorEngine(index)
 
     result = engine.turn("use neutron and mini cpm on zero gpu", {})
@@ -40,7 +40,7 @@ def test_agent_preserves_canonical_jargon_case() -> None:
 
 
 def test_plan_command_uses_current_idea() -> None:
-    index = ProjectIndex.from_file(Path("data/projects.json"))
+    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
     engine = AdvisorEngine(index)
 
     first = engine.turn("A local-first archive cartographer for family photos", {})

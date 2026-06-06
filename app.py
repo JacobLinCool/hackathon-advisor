@@ -15,8 +15,9 @@ from hackathon_advisor.data import ProjectIndex
 ROOT = Path(__file__).parent
 STATIC_DIR = ROOT / "static"
 DATA_PATH = ROOT / "data" / "projects.json"
+INDEX_PATH = ROOT / "data" / "project_index.json"
 
-index = ProjectIndex.from_file(DATA_PATH)
+index = ProjectIndex.from_files(DATA_PATH, INDEX_PATH)
 engine = AdvisorEngine(index)
 app = Server()
 
@@ -44,6 +45,9 @@ def health() -> dict:
         "ok": True,
         "projects": len(index.projects),
         "snapshot_generated_at": index.generated_at,
+        "index_generated_at": index.index_generated_at,
+        "index_algorithm": index.index_algorithm,
+        "snapshot_digest": index.snapshot_digest,
     }
 
 
@@ -52,6 +56,9 @@ def bootstrap() -> dict:
     return {
         "project_count": len(index.projects),
         "snapshot_generated_at": index.generated_at,
+        "index_generated_at": index.index_generated_at,
+        "index_algorithm": index.index_algorithm,
+        "snapshot_digest": index.snapshot_digest,
         "top_projects": [project.to_public_dict() for project in index.top_projects(limit=8)],
         "whitespace": [item.to_dict() for item in index.find_whitespace(limit=5)],
     }

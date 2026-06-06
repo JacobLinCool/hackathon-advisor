@@ -11,6 +11,7 @@ const ideasEl = document.querySelector("#ideas");
 const scoreEl = document.querySelector("#score");
 const planEl = document.querySelector("#plan");
 const traceEl = document.querySelector("#trace");
+const provenanceEl = document.querySelector("#provenance");
 const verdictEl = document.querySelector("#verdict");
 const overallEl = document.querySelector("#overall");
 const exportButton = document.querySelector("#export-artifact");
@@ -75,12 +76,20 @@ async function runTurn(message) {
 async function bootstrap() {
   const response = await fetch("/api/bootstrap");
   const data = await response.json();
+  renderProvenance(data);
   renderProjects(data.top_projects || []);
   renderWhitespace(data.whitespace || []);
   renderIdeas([]);
   renderScore(null);
   renderPlan([]);
   renderTrace([]);
+}
+
+function renderProvenance(data) {
+  const snapshot = shortDate(data.snapshot_generated_at);
+  const index = shortDate(data.index_generated_at);
+  const digest = String(data.snapshot_digest || "").slice(0, 10);
+  provenanceEl.textContent = `${data.index_algorithm || "index"} · snapshot ${snapshot} · index ${index} · ${digest}`;
 }
 
 function handleEvent(event) {
@@ -340,4 +349,9 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function shortDate(value) {
+  if (!value) return "unknown";
+  return String(value).replace("T", " ").replace(/\+00:00$/, "Z").slice(0, 16);
 }
