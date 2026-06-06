@@ -9,7 +9,16 @@ from hackathon_advisor.data import Project, ProjectIndex, WhitespaceItem
 from hackathon_advisor.model_runtime import ToolPlanner, create_tool_planner, runtime_status
 from hackathon_advisor.scoring import ScoreCard
 from hackathon_advisor.tool_contracts import ToolCall
-from hackathon_advisor.tools import TARGETS, AdvisorTools, Idea, ToolEvent, idea_from_text, normalize_targets, targets_from_state
+from hackathon_advisor.tools import (
+    TARGETS,
+    AdvisorTools,
+    Idea,
+    ToolEvent,
+    idea_from_text,
+    normalize_targets,
+    targets_from_state,
+)
+from hackathon_advisor.wood_map import build_wood_map
 
 
 @dataclass
@@ -440,4 +449,5 @@ class AdvisorEngine:
             "overall": score.overall,
             "caption": f"Mothback inked my Build Small fate page: {idea.title} - {score.verdict}.",
             "seal": score.to_dict(),
+            "wood_map": build_wood_map(self.index, idea, score),
         }

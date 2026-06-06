@@ -10,6 +10,7 @@ const whitespaceEl = document.querySelector("#whitespace");
 const ideasEl = document.querySelector("#ideas");
 const targetsEl = document.querySelector("#targets");
 const profileEl = document.querySelector("#profile");
+const woodMapEl = document.querySelector("#wood-map");
 const scoreEl = document.querySelector("#score");
 const planEl = document.querySelector("#plan");
 const traceEl = document.querySelector("#trace");
@@ -126,6 +127,7 @@ async function bootstrap() {
   renderProjects(data.top_projects || []);
   renderWhitespace(data.whitespace || []);
   renderIdeas([]);
+  renderWoodMap(null);
   renderScore(null);
   renderPlan([]);
   renderTrace([]);
@@ -212,6 +214,7 @@ function handleEvent(event) {
     }
     if (event.artifact?.title) {
       currentArtifact = event.artifact;
+      renderWoodMap(event.artifact.wood_map || null);
       exportButton.disabled = false;
     }
     exportTraceButton.disabled = !(session.trace?.length);
@@ -259,6 +262,37 @@ function renderScore(score) {
       `,
     )
     .join("");
+}
+
+function renderWoodMap(map) {
+  woodMapEl.innerHTML = "";
+  if (!map?.dots?.length) {
+    woodMapEl.innerHTML = `<div class="empty">No page has been placed yet.</div>`;
+    return;
+  }
+  const field = document.createElement("div");
+  field.className = "wood-map-field";
+  for (const dot of map.dots) {
+    const marker = document.createElement(dot.url ? "a" : "span");
+    const verdictClass = dot.kind === "idea" && String(dot.verdict || "").startsWith("ECHO") ? "echo-idea" : "";
+    marker.className = `wood-dot ${dot.kind || "inked"} ${verdictClass}`.trim();
+    marker.style.left = `${boundedPercent(dot.x)}%`;
+    marker.style.top = `${boundedPercent(dot.y)}%`;
+    const radius = Math.max(3, Math.min(10, Number(dot.radius || 4)));
+    marker.style.width = `${radius * 2}px`;
+    marker.style.height = `${radius * 2}px`;
+    marker.title = dot.kind === "idea" ? `You: ${dot.title}` : `${dot.title}${dot.score ? ` (${dot.score})` : ""}`;
+    if (dot.url) {
+      marker.href = dot.url;
+      marker.target = "_blank";
+      marker.rel = "noreferrer";
+    }
+    field.append(marker);
+  }
+  const caption = document.createElement("p");
+  caption.className = "wood-map-caption";
+  caption.textContent = map.caption || "Your page is plotted against the current Wood.";
+  woodMapEl.append(field, caption);
 }
 
 function renderProjects(projects) {
@@ -415,6 +449,7 @@ function exportArtifact(artifact) {
     ctx.fillStyle = "#25160e";
     ctx.fillText(String(value), 582, y);
   });
+  drawWoodMap(ctx, artifact.wood_map, 742, 396, 330, 184, artifact.verdict);
 
   const link = document.createElement("a");
   link.download = `${slugify(artifact.title || "unwritten-page")}.png`;
@@ -447,6 +482,50 @@ function drawParchment(ctx, width, height) {
   ctx.strokeStyle = "rgba(72, 39, 18, 0.42)";
   ctx.lineWidth = 16;
   ctx.strokeRect(28, 28, width - 56, height - 56);
+}
+
+function drawWoodMap(ctx, map, x, y, width, height, verdict) {
+  if (!map?.dots?.length) return;
+  ctx.save();
+  ctx.fillStyle = "rgba(255, 241, 196, 0.38)";
+  ctx.strokeStyle = "rgba(80, 47, 22, 0.34)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(x, y, width, height, 8);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#6b4e35";
+  ctx.font = "800 18px Inter, sans-serif";
+  ctx.fillText("YOU VS THE WOOD", x, y - 14);
+
+  for (const dot of map.dots) {
+    const px = x + (width * boundedPercent(dot.x)) / 100;
+    const py = y + (height * boundedPercent(dot.y)) / 100;
+    const radius = Math.max(3, Math.min(10, Number(dot.radius || 4)));
+    if (dot.kind === "idea") {
+      ctx.fillStyle = verdict?.startsWith("UNWRITTEN") ? "#2f7a49" : "#8d2d26";
+      ctx.strokeStyle = "#fff0b5";
+      ctx.lineWidth = 3;
+    } else if (dot.kind === "echo") {
+      ctx.fillStyle = "#8d2d26";
+      ctx.strokeStyle = "rgba(255, 240, 181, 0.72)";
+      ctx.lineWidth = 1.5;
+    } else {
+      ctx.fillStyle = "rgba(80, 47, 22, 0.34)";
+      ctx.strokeStyle = "transparent";
+      ctx.lineWidth = 0;
+    }
+    ctx.beginPath();
+    ctx.arc(px, py, radius, 0, Math.PI * 2);
+    ctx.fill();
+    if (ctx.lineWidth) ctx.stroke();
+  }
+
+  ctx.fillStyle = "#6b4e35";
+  ctx.font = "700 15px Inter, sans-serif";
+  wrapText(ctx, map.caption || "", x, y + height + 24, width, 20);
+  ctx.restore();
 }
 
 function wrapText(ctx, text, x, y, maxWidth, lineHeight, align = "left") {
@@ -493,6 +572,10 @@ function fieldLabel(value) {
   return String(value)
     .replaceAll("_", " ")
     .replace(/^\w/, (char) => char.toUpperCase());
+}
+
+function boundedPercent(value) {
+  return Math.max(4, Math.min(96, Number(value || 50)));
 }
 
 function shortDate(value) {

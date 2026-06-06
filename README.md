@@ -69,6 +69,12 @@ The `field_notes` Gradio API endpoint and `Notes` button export a Markdown build
 builder profile, target badges, idea board, cited Spaces, latest build plan, planner calls, and the share caption. This
 keeps the Field Notes badge path tied to auditable app evidence instead of a separate hand-written summary.
 
+## Wood Map
+
+Every scored fate page now carries a deterministic `wood_map` artifact: background dots for inked Spaces, red dots for
+the closest cited echoes, and a green/red "you" dot for the current idea. The live UI and PNG export render the same
+map, so the share artifact visually proves whether the page sits in an empty margin or near existing work.
+
 ## Tool-Call Contract
 
 `/api/tool-contracts` exposes the JSON schemas intended for MiniCPM-style tool calling. `tool_contract_check` accepts a

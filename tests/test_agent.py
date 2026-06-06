@@ -29,6 +29,8 @@ def test_agent_scores_and_persists_idea() -> None:
     assert result.state["last_tool_resolution"]["call"]["name"] == "save_idea"
     assert result.state["trace"][0]["tool_resolution"]["call"]["name"] == "save_idea"
     assert result.state["last_artifact"]["title"] == result.artifact["title"]
+    assert result.artifact["wood_map"]["caption"]
+    assert {dot["kind"] for dot in result.artifact["wood_map"]["dots"]} >= {"idea", "echo", "inked"}
     assert result.response
 
 

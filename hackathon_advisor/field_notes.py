@@ -58,6 +58,20 @@ def build_field_notes_markdown(session: dict[str, Any], metadata: dict[str, Any]
     else:
         lines.append("No tool trace was recorded.")
 
+    wood_map = last_artifact.get("wood_map") if isinstance(last_artifact.get("wood_map"), dict) else {}
+    if wood_map:
+        lines.extend(["", "## Wood Map", "", _clean(wood_map.get("caption"))])
+        for dot in _list_of_dicts(wood_map.get("dots")):
+            if dot.get("kind") != "echo":
+                continue
+            title = _clean(dot.get("title"))
+            score = _clean(dot.get("score"))
+            url = _clean(dot.get("url"))
+            if url:
+                lines.append(f"- [{title}]({url}) - echo score {score}")
+            else:
+                lines.append(f"- {title} - echo score {score}")
+
     if last_artifact:
         lines.extend(
             [
