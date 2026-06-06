@@ -37,6 +37,7 @@ let profileFields = [];
 let turnWatchdog = null;
 let sawTurnToken = false;
 let bootstrapData = null;
+let sessionRevision = 0;
 
 bootstrap().catch(handleBootstrapError);
 
@@ -103,6 +104,7 @@ ideasEl.addEventListener("click", (event) => {
 });
 
 async function runTurn(message) {
+  bumpSessionRevision();
   input.value = "";
   submit.disabled = true;
   setCommandDisabled(true);
@@ -189,12 +191,30 @@ function defaultSession(data = bootstrapData) {
   };
 }
 
+function bumpSessionRevision() {
+  sessionRevision += 1;
+  return sessionRevision;
+}
+
+function isCurrentSessionRevision(revision) {
+  return revision === sessionRevision;
+}
+
+function restoreExportButtonLabels() {
+  exportNotesButton.textContent = "Notes";
+  exportChapterButton.textContent = "Chapter";
+  exportButton.textContent = PNG_EXPORT_LABEL;
+}
+
 function resetSession() {
   if (!bootstrapData) return;
+  bumpSessionRevision();
   clearTurnWatchdog();
   clearSavedSession();
   session = defaultSession(bootstrapData);
   currentArtifact = null;
+  submit.disabled = false;
+  input.disabled = false;
   input.value = "";
   ink.textContent = "The book is open. The next page waits for its first line.";
   ink.classList.remove("thinking", "bleed", "gold");
@@ -209,6 +229,7 @@ function resetSession() {
   renderPlan([]);
   renderProjects(bootstrapData.top_projects || []);
   renderWhitespace(bootstrapData.whitespace || []);
+  restoreExportButtonLabels();
   exportButton.disabled = true;
   setButtonDisabled(exportNotesButton, true);
   setButtonDisabled(exportChapterButton, true);
@@ -217,6 +238,7 @@ function resetSession() {
 }
 
 async function loadDemoSession() {
+  bumpSessionRevision();
   submit.disabled = true;
   setCommandDisabled(true);
   ink.classList.remove("bleed", "gold");
@@ -524,6 +546,7 @@ function selectIdea(ideaId) {
   if (!ideaId || !Array.isArray(session.ideas)) return;
   const idea = session.ideas.find((item) => item.id === ideaId);
   if (!idea) return;
+  bumpSessionRevision();
   session.current_idea_id = idea.id;
   if (Array.isArray(idea.targets) && idea.targets.length) {
     session.targets = targetOptions.filter((option) => idea.targets.includes(option));
@@ -757,6 +780,7 @@ async function exportChapter() {
 
 async function exportMarkdown({ endpoint, filename, button, busyLabel, pendingLabel, successLabel }) {
   if (!button || button.disabled) return;
+  const revision = sessionRevision;
   const idleLabel = button.textContent;
   button.disabled = true;
   button.textContent = busyLabel;
@@ -771,15 +795,18 @@ async function exportMarkdown({ endpoint, filename, button, busyLabel, pendingLa
     const data = Array.isArray(result.data) ? result.data[0] : result.data;
     const text = String(data || "");
     if (!text.trim()) throw new Error("empty export");
+    if (!isCurrentSessionRevision(revision)) return;
     downloadText(filename, text, "text/markdown;charset=utf-8");
     session.ui_status = `${successLabel}: ${filename}`;
     corrections.textContent = session.ui_status;
   } catch (error) {
+    if (!isCurrentSessionRevision(revision)) return;
     session.ui_status = `Export failed: ${error.message}`;
     corrections.textContent = session.ui_status;
   } finally {
-    saveSession();
     button.textContent = idleLabel;
+    if (!isCurrentSessionRevision(revision)) return;
+    saveSession();
     setCommandDisabled(false);
   }
 }
