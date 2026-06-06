@@ -137,6 +137,7 @@ def test_planner_profile_and_targets_update_state() -> None:
 
     assert targeted.state["profile"]["skills"] == "frontend"
     assert targeted.state["targets"] == ["Off the Grid", "Field Notes"]
+    assert "Local-first, Build notes" in targeted.response
 
 
 def test_session_targets_apply_to_new_and_current_ideas() -> None:

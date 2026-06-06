@@ -28,6 +28,8 @@ let session = {};
 let clientPromise = Client.connect(window.location.origin);
 let currentArtifact = null;
 let targetOptions = [];
+let targetProfiles = [];
+let targetProfileById = new Map();
 let profileFields = [];
 let turnWatchdog = null;
 let sawTurnToken = false;
@@ -134,7 +136,11 @@ async function runTurn(message) {
 async function bootstrap() {
   const response = await fetch("/api/bootstrap");
   const data = await response.json();
-  targetOptions = data.target_options || [];
+  const rawProfiles = Array.isArray(data.target_profiles) ? data.target_profiles : [];
+  const rawOptions = Array.isArray(data.target_options) ? data.target_options : [];
+  targetProfiles = normalizeTargetProfiles(rawProfiles, rawOptions);
+  targetOptions = targetProfiles.map((target) => target.id);
+  targetProfileById = new Map(targetProfiles.map((target) => [target.id, target]));
   profileFields = data.profile_fields || [];
   session = {
     profile: {},
@@ -262,6 +268,22 @@ function normalizeSession(savedSession, defaultSession) {
   return normalized;
 }
 
+function normalizeTargetProfiles(profiles, options) {
+  const byId = new Map(
+    profiles
+      .filter((profile) => profile && typeof profile.id === "string")
+      .map((profile) => [
+        profile.id,
+        {
+          id: profile.id,
+          label: String(profile.label || profile.id),
+          description: String(profile.description || ""),
+        },
+      ]),
+  );
+  return options.map((id) => byId.get(id) || { id, label: id, description: "" });
+}
+
 function saveSession() {
   try {
     window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
@@ -282,15 +304,24 @@ function renderTargets(selectedTargets) {
   const selected = new Set(selectedTargets || []);
   targetsEl.innerHTML = "";
   if (!targetOptions.length) {
-    targetsEl.innerHTML = `<div class="empty">No seals loaded.</div>`;
+    targetsEl.innerHTML = `<div class="empty">No goals loaded.</div>`;
     return;
   }
   for (const option of targetOptions) {
+    const profile = targetProfileById.get(option) || { label: option, description: "" };
     const label = document.createElement("label");
     label.className = "target-toggle";
     label.innerHTML = `
-      <input type="checkbox" data-target="${escapeAttribute(option)}" ${selected.has(option) ? "checked" : ""} />
-      <span>${escapeHtml(option)}</span>
+      <input
+        type="checkbox"
+        data-target="${escapeAttribute(option)}"
+        aria-label="${escapeAttribute(profile.label)}"
+        ${selected.has(option) ? "checked" : ""}
+      />
+      <span class="target-copy">
+        <strong>${escapeHtml(profile.label)}</strong>
+        ${profile.description ? `<small>${escapeHtml(profile.description)}</small>` : ""}
+      </span>
     `;
     targetsEl.append(label);
   }
@@ -378,7 +409,7 @@ function renderIdeas(ideas) {
   }
   for (const idea of visibleIdeas(ideas)) {
     const score = idea.score?.overall ? Number(idea.score.overall).toFixed(1) : "0.0";
-    const targets = (idea.targets || []).slice(0, 3).join(" · ");
+    const targets = (idea.targets || []).slice(0, 3).map(targetDisplayName).join(" · ");
     const item = document.createElement("div");
     item.className = "idea";
     item.innerHTML = `
@@ -396,6 +427,10 @@ function visibleIdeas(ideas) {
   const current = currentId ? ideas.find((idea) => idea.id === currentId) : null;
   const remaining = ideas.filter((idea) => idea.id !== currentId).slice(-3).reverse();
   return current ? [current, ...remaining] : ideas.slice(-4).reverse();
+}
+
+function targetDisplayName(target) {
+  return targetProfileById.get(target)?.label || target;
 }
 
 function renderScore(score) {

@@ -16,6 +16,7 @@ from hackathon_advisor.tools import (
     ToolEvent,
     idea_from_text,
     normalize_targets,
+    target_label,
     targets_from_state,
 )
 from hackathon_advisor.wood_map import build_wood_map
@@ -349,7 +350,8 @@ class AdvisorEngine:
             idea.targets = targets
             self._store_idea(state, idea)
         tool_events.append(ToolEvent("set_target", f"Set {len(targets)} target quests."))
-        response = "The seal will now bias toward: " + (", ".join(targets) or "no specific targets")
+        labels = [target_label(target) for target in targets]
+        response = "The seal will now bias toward: " + (", ".join(labels) or "no specific goals")
         return self._result(normalized, corrections, response, state, tool_events, [], [], None, [], {})
 
     def _idea_for_optional_id(self, call: ToolCall, state: dict[str, Any]) -> Idea | None:

@@ -5,7 +5,7 @@ from typing import Any
 
 DEMO_PROMPT = (
     "A local-first archive cartographer for family photos that runs offline, cites nearby Spaces, "
-    "and exports Field Notes."
+    "and exports build notes."
 )
 DEMO_PLAN_PROMPT = "make a build plan"
 DEMO_PROFILE = {

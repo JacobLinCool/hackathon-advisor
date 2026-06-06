@@ -17,6 +17,48 @@ TARGETS = [
     "Field Notes",
 ]
 
+TARGET_PROFILE_BY_ID = {
+    "Off the Grid": {
+        "label": "Local-first",
+        "description": "Favor ideas that work without proprietary inference APIs.",
+    },
+    "Well-Tuned": {
+        "label": "Trainable",
+        "description": "Shape good turns into a tiny fine-tune dataset.",
+    },
+    "Off-Brand": {
+        "label": "Distinct voice",
+        "description": "Leave room for an interface and tone people remember.",
+    },
+    "Llama Champion": {
+        "label": "llama.cpp path",
+        "description": "Prefer small-model choices that can run locally.",
+    },
+    "Sharing is Caring": {
+        "label": "Shareable artifact",
+        "description": "Make an output people can save, post, or compare.",
+    },
+    "Field Notes": {
+        "label": "Build notes",
+        "description": "Keep decisions easy to write up from the session trace.",
+    },
+}
+
+
+def target_profiles() -> list[dict[str, str]]:
+    return [
+        {
+            "id": target,
+            "label": TARGET_PROFILE_BY_ID[target]["label"],
+            "description": TARGET_PROFILE_BY_ID[target]["description"],
+        }
+        for target in TARGETS
+    ]
+
+
+def target_label(target: str) -> str:
+    return TARGET_PROFILE_BY_ID.get(target, {}).get("label", target)
+
 
 def normalize_targets(raw_targets: Any, default: list[str] | None = None) -> list[str]:
     if raw_targets is None:
@@ -111,7 +153,7 @@ class AdvisorTools:
             "Refresh the Space snapshot, then tune the bleed threshold against the closest echoes.",
             "Build the smallest happy path: input, citations, score seal, and shareable artifact.",
             "Add one prize hook only after the core loop is smooth enough to demo without narration.",
-            "Record the trace and write Field Notes from the exact build decisions.",
+            "Record the trace and write build notes from the exact decisions.",
         ]
         if any("Well" in target for target in idea.targets):
             plan.insert(4, "Prepare a tiny LoRA dataset from successful advisor turns before training.")
