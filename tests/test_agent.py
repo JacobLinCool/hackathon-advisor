@@ -13,6 +13,8 @@ def test_agent_scores_and_persists_idea() -> None:
     assert result.score is not None
     assert result.state["ideas"]
     assert result.state["ideas"][0]["score"] is not None
+    assert result.state["trace"]
+    assert result.state["last_artifact"]["title"] == result.artifact["title"]
     assert result.response
 
 
@@ -35,3 +37,15 @@ def test_agent_preserves_canonical_jargon_case() -> None:
 
     assert "MiniCPM5" in result.artifact["title"]
     assert "ZeroGPU" in result.artifact["title"]
+
+
+def test_plan_command_uses_current_idea() -> None:
+    index = ProjectIndex.from_file(Path("data/projects.json"))
+    engine = AdvisorEngine(index)
+
+    first = engine.turn("A local-first archive cartographer for family photos", {})
+    planned = engine.turn("make a build plan", first.state)
+
+    assert planned.plan
+    assert planned.artifact["title"] == first.artifact["title"]
+    assert planned.state["ideas"][0]["title"] == first.artifact["title"]

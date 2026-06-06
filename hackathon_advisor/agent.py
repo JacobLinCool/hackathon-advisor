@@ -70,6 +70,29 @@ class AdvisorEngine:
             tool_events.append(ToolEvent("compare_ideas", "Compared the current idea board."))
             return self._result(normalized, corrections, response, state, tool_events, [], [], None, [], {})
 
+        if PLAN_RE.search(normalized) and state.get("ideas"):
+            idea = self._current_idea(state)
+            if idea is not None:
+                score, event = self.tools.score_idea(idea)
+                self._store_idea(state, idea)
+                tool_events.append(event)
+                plan, event = self.tools.make_plan(idea)
+                tool_events.append(event)
+                response = self._plan_response(idea, score, plan)
+                artifact = self._artifact(idea, score)
+                return self._result(
+                    normalized,
+                    corrections,
+                    response,
+                    state,
+                    tool_events,
+                    [],
+                    [],
+                    score,
+                    plan,
+                    artifact,
+                )
+
         title, pitch = idea_from_text(normalized)
         idea, event = self.tools.save_idea(state, title, pitch)
         tool_events.append(event)
@@ -155,6 +178,7 @@ class AdvisorEngine:
         plan: list[str],
         artifact: dict[str, Any],
     ) -> TurnResult:
+        self._record_trace(state, normalized_text, response, tool_events, score, plan, artifact)
         return TurnResult(
             normalized_text=normalized_text,
             corrections=corrections,
@@ -172,6 +196,41 @@ class AdvisorEngine:
         state["ideas"] = [
             idea.to_dict() if item.get("id") == idea.id else item for item in state.get("ideas", [])
         ]
+
+    def _current_idea(self, state: dict[str, Any]) -> Idea | None:
+        current_id = state.get("current_idea_id")
+        for item in state.get("ideas", []):
+            if item.get("id") == current_id:
+                return Idea(**item)
+        if state.get("ideas"):
+            return Idea(**state["ideas"][-1])
+        return None
+
+    def _record_trace(
+        self,
+        state: dict[str, Any],
+        normalized_text: str,
+        response: str,
+        tool_events: list[ToolEvent],
+        score: ScoreCard | None,
+        plan: list[str],
+        artifact: dict[str, Any],
+    ) -> None:
+        trace = list(state.get("trace", []))
+        trace.append(
+            {
+                "input": normalized_text[:240],
+                "tools": [event.to_dict() for event in tool_events],
+                "verdict": score.verdict if score else "",
+                "overall": score.overall if score else None,
+                "plan_steps": len(plan),
+                "artifact_title": artifact.get("title", ""),
+                "response": response[:360],
+            }
+        )
+        state["trace"] = trace[-12:]
+        if artifact:
+            state["last_artifact"] = artifact
 
     def _align_score_with_whitespace(self, score: ScoreCard, item: WhitespaceItem) -> ScoreCard:
         if item.score < 0.70:
@@ -246,6 +305,7 @@ class AdvisorEngine:
         return {
             "title": idea.title,
             "verdict": score.verdict,
+            "overall": score.overall,
             "caption": f"Mothback inked my Build Small fate page: {idea.title} - {score.verdict}.",
             "seal": score.to_dict(),
         }

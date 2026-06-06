@@ -7,11 +7,17 @@ const ink = document.querySelector("#ink");
 const corrections = document.querySelector("#corrections");
 const projectsEl = document.querySelector("#projects");
 const whitespaceEl = document.querySelector("#whitespace");
+const ideasEl = document.querySelector("#ideas");
+const scoreEl = document.querySelector("#score");
+const planEl = document.querySelector("#plan");
+const traceEl = document.querySelector("#trace");
 const verdictEl = document.querySelector("#verdict");
 const overallEl = document.querySelector("#overall");
+const exportButton = document.querySelector("#export-artifact");
 
 let session = {};
 let clientPromise = Client.connect(window.location.origin);
+let currentArtifact = null;
 
 bootstrap();
 
@@ -19,11 +25,28 @@ form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const message = input.value.trim();
   if (!message) return;
+  await runTurn(message);
+});
+
+document.querySelectorAll("[data-command]").forEach((button) => {
+  button.addEventListener("click", async () => {
+    await runTurn(button.dataset.command);
+  });
+});
+
+exportButton.addEventListener("click", () => {
+  if (!currentArtifact) return;
+  exportArtifact(currentArtifact);
+});
+
+async function runTurn(message) {
   input.value = "";
   submit.disabled = true;
+  setCommandDisabled(true);
   ink.textContent = "";
   ink.classList.remove("bleed", "gold");
   corrections.textContent = "";
+  planEl.innerHTML = "";
 
   try {
     const client = await clientPromise;
@@ -44,15 +67,20 @@ form.addEventListener("submit", async (event) => {
     ink.classList.add("bleed");
   } finally {
     submit.disabled = false;
+    setCommandDisabled(false);
     input.focus();
   }
-});
+}
 
 async function bootstrap() {
   const response = await fetch("/api/bootstrap");
   const data = await response.json();
   renderProjects(data.top_projects || []);
   renderWhitespace(data.whitespace || []);
+  renderIdeas([]);
+  renderScore(null);
+  renderPlan([]);
+  renderTrace([]);
 }
 
 function handleEvent(event) {
@@ -74,13 +102,61 @@ function handleEvent(event) {
     session = event.state || {};
     if (event.projects?.length) renderProjects(event.projects);
     if (event.whitespace?.length) renderWhitespace(event.whitespace);
+    renderIdeas(session.ideas || []);
+    renderTrace(session.trace || []);
+    renderPlan(event.plan || []);
     if (event.score) {
       verdictEl.textContent = event.score.verdict;
       overallEl.textContent = Number(event.score.overall).toFixed(1);
+      renderScore(event.score);
       ink.classList.toggle("bleed", event.score.verdict.startsWith("ECHO"));
       ink.classList.toggle("gold", event.score.verdict.startsWith("UNWRITTEN"));
     }
+    if (event.artifact?.title) {
+      currentArtifact = event.artifact;
+      exportButton.disabled = false;
+    }
   }
+}
+
+function renderIdeas(ideas) {
+  ideasEl.innerHTML = "";
+  if (!ideas.length) {
+    ideasEl.innerHTML = `<div class="empty">No pages written.</div>`;
+    return;
+  }
+  for (const idea of ideas.slice(-4).reverse()) {
+    const score = idea.score?.overall ? Number(idea.score.overall).toFixed(1) : "0.0";
+    const item = document.createElement("div");
+    item.className = "idea";
+    item.innerHTML = `
+      <strong>${escapeHtml(idea.title)}</strong>
+      <p>${escapeHtml((idea.pitch || "").slice(0, 120))}</p>
+      <span>${escapeHtml(idea.score?.verdict || "DRAFT")} · ${score}</span>
+    `;
+    ideasEl.append(item);
+  }
+}
+
+function renderScore(score) {
+  const rows = [
+    ["Originality", score?.originality || 0],
+    ["Delight", score?.delight || 0],
+    ["AI Need", score?.ai_necessity || 0],
+    ["Feasible", score?.feasibility || 0],
+    ["Prize Fit", score?.prize_fit || 0],
+  ];
+  scoreEl.innerHTML = rows
+    .map(
+      ([label, value]) => `
+        <div class="score-row">
+          <span>${label}</span>
+          <meter min="0" max="10" value="${value}"></meter>
+          <strong>${value}</strong>
+        </div>
+      `,
+    )
+    .join("");
 }
 
 function renderProjects(projects) {
@@ -118,6 +194,143 @@ function renderWhitespace(items) {
     `;
     whitespaceEl.append(gap);
   }
+}
+
+function renderPlan(steps) {
+  planEl.innerHTML = "";
+  if (!steps.length) {
+    planEl.innerHTML = `<li class="empty">No wax path pressed.</li>`;
+    return;
+  }
+  for (const step of steps) {
+    const item = document.createElement("li");
+    item.textContent = step;
+    planEl.append(item);
+  }
+}
+
+function renderTrace(trace) {
+  traceEl.innerHTML = "";
+  if (!trace.length) {
+    traceEl.innerHTML = `<div class="empty">No tool marks yet.</div>`;
+    return;
+  }
+  for (const event of trace.slice(-4).reverse()) {
+    const item = document.createElement("div");
+    item.className = "trace";
+    const tools = (event.tools || []).map((tool) => tool.name).join(" -> ") || "reply";
+    item.innerHTML = `
+      <strong>${escapeHtml(event.verdict || "TURN")} ${event.overall ? Number(event.overall).toFixed(1) : ""}</strong>
+      <p>${escapeHtml(tools)}</p>
+    `;
+    traceEl.append(item);
+  }
+}
+
+function setCommandDisabled(disabled) {
+  document.querySelectorAll(".command-row button").forEach((button) => {
+    button.disabled = disabled || (button.id === "export-artifact" && !currentArtifact);
+  });
+}
+
+function exportArtifact(artifact) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1200;
+  canvas.height = 675;
+  const ctx = canvas.getContext("2d");
+  drawParchment(ctx, canvas.width, canvas.height);
+  const seal = artifact.seal || {};
+  ctx.fillStyle = "#25160e";
+  ctx.font = "700 58px Georgia, serif";
+  wrapText(ctx, artifact.title, 78, 112, 760, 66);
+  ctx.font = "28px Georgia, serif";
+  ctx.fillStyle = "#6b4e35";
+  wrapText(ctx, artifact.caption || "", 82, 252, 720, 36);
+
+  ctx.save();
+  ctx.translate(930, 226);
+  ctx.rotate(-0.08);
+  ctx.fillStyle = artifact.verdict?.startsWith("UNWRITTEN") ? "#b68a12" : "#8d2d26";
+  ctx.beginPath();
+  ctx.arc(0, 0, 120, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#fff0b5";
+  ctx.textAlign = "center";
+  ctx.font = "800 27px Inter, sans-serif";
+  wrapText(ctx, artifact.verdict || "UNWRITTEN", -92, -28, 184, 32, "center");
+  ctx.font = "700 58px Georgia, serif";
+  ctx.fillText(Number(artifact.overall || seal.overall || 0).toFixed(1), 0, 48);
+  ctx.restore();
+
+  const rows = [
+    ["Originality", seal.originality || 0],
+    ["Delight", seal.delight || 0],
+    ["AI Need", seal.ai_necessity || 0],
+    ["Feasible", seal.feasibility || 0],
+    ["Prize Fit", seal.prize_fit || 0],
+  ];
+  rows.forEach(([label, value], index) => {
+    const y = 418 + index * 34;
+    ctx.fillStyle = "#6b4e35";
+    ctx.font = "700 20px Inter, sans-serif";
+    ctx.fillText(label, 82, y);
+    ctx.fillStyle = "rgba(80, 47, 22, 0.22)";
+    ctx.fillRect(240, y - 17, 320, 16);
+    ctx.fillStyle = artifact.verdict?.startsWith("UNWRITTEN") ? "#2f7a49" : "#8d2d26";
+    ctx.fillRect(240, y - 17, 32 * Number(value), 16);
+    ctx.fillStyle = "#25160e";
+    ctx.fillText(String(value), 582, y);
+  });
+
+  const link = document.createElement("a");
+  link.download = `${slugify(artifact.title || "unwritten-page")}.png`;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+}
+
+function drawParchment(ctx, width, height) {
+  const gradient = ctx.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, "#ead7a7");
+  gradient.addColorStop(0.55, "#d4b476");
+  gradient.addColorStop(1, "#b98a4c");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = "rgba(59, 33, 15, 0.16)";
+  for (let i = 0; i < 360; i += 1) {
+    const x = (i * 73) % width;
+    const y = (i * 37) % height;
+    ctx.fillRect(x, y, 2 + (i % 7), 1);
+  }
+  ctx.strokeStyle = "rgba(72, 39, 18, 0.42)";
+  ctx.lineWidth = 16;
+  ctx.strokeRect(28, 28, width - 56, height - 56);
+}
+
+function wrapText(ctx, text, x, y, maxWidth, lineHeight, align = "left") {
+  const words = String(text).split(/\s+/);
+  let line = "";
+  const originalAlign = ctx.textAlign;
+  ctx.textAlign = align;
+  for (const word of words) {
+    const next = line ? `${line} ${word}` : word;
+    if (ctx.measureText(next).width > maxWidth && line) {
+      ctx.fillText(line, align === "center" ? x + maxWidth / 2 : x, y);
+      line = word;
+      y += lineHeight;
+    } else {
+      line = next;
+    }
+  }
+  if (line) ctx.fillText(line, align === "center" ? x + maxWidth / 2 : x, y);
+  ctx.textAlign = originalAlign;
+}
+
+function slugify(value) {
+  return String(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 60);
 }
 
 function escapeHtml(value) {

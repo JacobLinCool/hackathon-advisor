@@ -26,6 +26,14 @@
               />
               <button id="submit" type="submit" title="Ink the page">Ink</button>
             </form>
+            <div class="command-row" aria-label="Advisor commands">
+              <button type="button" data-command="write bolder and find whitespace" title="Find a gold margin">
+                Gap
+              </button>
+              <button type="button" data-command="make a build plan" title="Draft a build plan">Plan</button>
+              <button type="button" data-command="compare ideas" title="Compare the idea board">Rank</button>
+              <button type="button" id="export-artifact" title="Export the current fate page" disabled>PNG</button>
+            </div>
             <div id="corrections" class="corrections" aria-live="polite"></div>
           </section>
 
@@ -34,7 +42,12 @@
               <span id="verdict">UNWRITTEN</span>
               <strong id="overall">0.0</strong>
             </div>
+            <div id="score" class="score-grid" aria-label="Seal quadrants"></div>
             <div class="panels">
+              <article>
+                <h2>Idea Board</h2>
+                <div id="ideas" class="idea-list"></div>
+              </article>
               <article>
                 <h2>Echoes</h2>
                 <div id="projects" class="project-list"></div>
@@ -42,6 +55,14 @@
               <article>
                 <h2>Gold Margins</h2>
                 <div id="whitespace" class="whitespace-list"></div>
+              </article>
+              <article>
+                <h2>Build Plan</h2>
+                <ol id="plan" class="plan-list"></ol>
+              </article>
+              <article>
+                <h2>Trace</h2>
+                <div id="trace" class="trace-list"></div>
               </article>
             </div>
           </section>

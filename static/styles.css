@@ -160,9 +160,32 @@ h2 {
   cursor: pointer;
 }
 
-.prompt-row button:disabled {
+button:disabled {
   opacity: 0.58;
   cursor: wait;
+}
+
+.command-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.command-row button {
+  min-width: 0;
+  height: 38px;
+  border: 1px solid rgba(80, 47, 22, 0.34);
+  border-radius: 8px;
+  background: rgba(255, 243, 203, 0.46);
+  color: #2a170d;
+  font-size: 0.86rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.command-row button:hover:not(:disabled) {
+  background: rgba(255, 243, 203, 0.68);
 }
 
 .corrections {
@@ -205,19 +228,56 @@ h2 {
   line-height: 1;
 }
 
+.score-grid {
+  display: grid;
+  gap: 7px;
+  margin: 0 0 22px;
+}
+
+.score-row {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 9px;
+  color: var(--muted-ink);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.score-row meter {
+  width: 100%;
+  height: 9px;
+}
+
+.score-row meter::-webkit-meter-bar {
+  border: 0;
+  border-radius: 999px;
+  background: rgba(80, 47, 22, 0.2);
+}
+
+.score-row meter::-webkit-meter-optimum-value {
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--red), var(--gold), var(--leaf));
+}
+
 .panels {
   display: grid;
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
 }
 
 .project-list,
-.whitespace-list {
+.whitespace-list,
+.idea-list,
+.trace-list {
   display: grid;
-  gap: 10px;
+  gap: 9px;
 }
 
 .project,
-.gap {
+.gap,
+.idea,
+.trace {
   border-left: 3px solid rgba(80, 47, 22, 0.48);
   padding: 8px 10px;
   background: rgba(255, 241, 196, 0.34);
@@ -225,7 +285,9 @@ h2 {
 }
 
 .project strong,
-.gap strong {
+.gap strong,
+.idea strong,
+.trace strong {
   display: block;
   color: #2a170d;
   font-size: 0.98rem;
@@ -233,11 +295,36 @@ h2 {
 }
 
 .project p,
-.gap p {
+.gap p,
+.idea p,
+.trace p {
   margin: 4px 0 0;
   color: var(--muted-ink);
   font-size: 0.86rem;
   line-height: 1.35;
+}
+
+.idea span {
+  display: inline-block;
+  margin-top: 6px;
+  color: #70401e;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.plan-list {
+  display: grid;
+  gap: 7px;
+  min-height: 31px;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.plan-list li {
+  color: #2a170d;
+  font-size: 0.86rem;
+  line-height: 1.32;
 }
 
 .empty {
@@ -259,6 +346,7 @@ h2 {
     min-height: 100vh;
     grid-template-columns: 1fr;
     border-radius: 0;
+    overflow: visible;
   }
 
   .page {
@@ -267,5 +355,17 @@ h2 {
 
   .ink {
     min-height: 168px;
+  }
+
+  .panels {
+    grid-template-columns: 1fr;
+  }
+
+  .command-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .score-row {
+    grid-template-columns: 82px minmax(0, 1fr) 26px;
   }
 }
