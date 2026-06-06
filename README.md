@@ -96,6 +96,13 @@ target badges, score seal, build plan, trace, wood map, and export-ready artifac
 advisor engine as a normal user session, so the demo state can be used immediately with JSONL, Notes, Chapter, LoRA,
 Packet, and PNG exports.
 
+## Demo Evidence Bundle
+
+`/api/demo-bundle.zip` and the `Bundle` button download a server-built ZIP for the deterministic demo session. The
+bundle includes a manifest, demo session JSON, Prize Ledger JSON, trace JSONL, Field Notes, Almanac chapter, LoRA SFT
+JSONL, Submission Packet, and a PNG export note. This gives judges or collaborators one auditable package without
+depending on browser `localStorage`.
+
 ## Prize Ledger
 
 `/api/prize-ledger` and the in-app Prize Ledger panel expose submission evidence: the documented model stack, total

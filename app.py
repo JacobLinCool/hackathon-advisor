@@ -5,10 +5,11 @@ import os
 from pathlib import Path
 from typing import Iterator
 
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from gradio import Server
 
 from hackathon_advisor.agent import AdvisorEngine
+from hackathon_advisor.artifact_bundle import BUNDLE_FILENAME, build_demo_bundle_zip
 from hackathon_advisor.chapter import build_chapter_markdown
 from hackathon_advisor.data import ProjectIndex
 from hackathon_advisor.demo_rehearsal import build_demo_rehearsal
@@ -96,6 +97,22 @@ def tool_contracts() -> dict:
 @app.get("/api/demo-session")
 def demo_session() -> dict:
     return build_demo_rehearsal(engine)
+
+
+@app.get("/api/demo-bundle.zip")
+def demo_bundle() -> Response:
+    runtime_status = engine.runtime_status()
+    ledger = prize_ledger(runtime_status)
+    metadata = {
+        **trace_metadata(index),
+        "project_count": len(index.projects),
+    }
+    content = build_demo_bundle_zip(build_demo_rehearsal(engine), metadata, ledger)
+    return Response(
+        content=content,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{BUNDLE_FILENAME}"'},
+    )
 
 
 @app.api(name="tool_contract_check", concurrency_limit=8)

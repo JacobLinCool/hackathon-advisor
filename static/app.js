@@ -25,6 +25,7 @@ const exportNotesButton = document.querySelector("#export-notes");
 const exportChapterButton = document.querySelector("#export-chapter");
 const exportLoraButton = document.querySelector("#export-lora");
 const exportPacketButton = document.querySelector("#export-packet");
+const exportBundleButton = document.querySelector("#export-bundle");
 const resetButton = document.querySelector("#reset-session");
 
 const SESSION_STORAGE_KEY = "hackathon-advisor-session-v1";
@@ -79,6 +80,10 @@ exportLoraButton.addEventListener("click", async () => {
 
 exportPacketButton.addEventListener("click", async () => {
   await exportSubmissionPacket();
+});
+
+exportBundleButton.addEventListener("click", () => {
+  window.location.assign("/api/demo-bundle.zip");
 });
 
 resetButton.addEventListener("click", () => {
@@ -613,6 +618,7 @@ function renderTrace(trace) {
 
 function setCommandDisabled(disabled) {
   document.querySelectorAll(".command-row button").forEach((button) => {
+    if (button.id === "export-bundle") return;
     const isArtifact = button.id === "export-artifact";
     const isTrace = button.id === "export-trace";
     const isNotes = button.id === "export-notes";

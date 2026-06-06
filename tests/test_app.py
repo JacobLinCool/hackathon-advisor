@@ -1,8 +1,11 @@
 import json
+from io import BytesIO
+from zipfile import ZipFile
 
 from app import (
     bootstrap,
     chapter_artifact,
+    demo_bundle,
     demo_session,
     engine,
     field_notes_artifact,
@@ -127,6 +130,20 @@ def test_demo_session_endpoint_returns_export_ready_state() -> None:
     assert payload["plan"]
     assert payload["artifact"]["wood_map"]["dots"]
     assert payload["export_ready"]["submission_packet"] is True
+
+
+def test_demo_bundle_endpoint_returns_zip_attachment() -> None:
+    response = demo_bundle()
+
+    assert response.media_type == "application/zip"
+    assert "hackathon-advisor-demo-bundle.zip" in response.headers["content-disposition"]
+    with ZipFile(BytesIO(response.body)) as archive:
+        names = set(archive.namelist())
+        manifest = json.loads(archive.read("manifest.json"))
+
+    assert "submission-packet.md" in names
+    assert "lora-sft.jsonl" in names
+    assert manifest["turn_count"] == 2
 
 
 def test_tool_contract_check_endpoint_defaults_safely() -> None:
