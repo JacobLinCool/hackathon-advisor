@@ -11,6 +11,7 @@ def test_project_index_searches_snapshot() -> None:
 
     assert hits
     assert hits[0].project.id.startswith("build-small-hackathon/")
+    assert hits[0].page_number >= 1
     assert index.index_algorithm == "tfidf-sparse-v1"
 
 

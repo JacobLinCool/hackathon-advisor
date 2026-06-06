@@ -198,7 +198,11 @@ function handleEvent(event) {
     session = event.state || {};
     session.profile = session.profile || {};
     session.targets = Array.isArray(session.targets) ? session.targets : [];
-    if (event.projects?.length) renderProjects(event.projects);
+    if (event.score?.echoes?.length) {
+      renderCitations(event.score.echoes);
+    } else if (event.projects?.length) {
+      renderProjects(event.projects);
+    }
     if (event.whitespace?.length) renderWhitespace(event.whitespace);
     renderTargets(session.targets);
     renderProfile(session.profile);
@@ -315,6 +319,30 @@ function renderProjects(projects) {
   }
 }
 
+function renderCitations(echoes) {
+  projectsEl.innerHTML = "";
+  if (!echoes.length) {
+    projectsEl.innerHTML = `<div class="empty">No red ink yet.</div>`;
+    return;
+  }
+  for (const echo of echoes.slice(0, 5)) {
+    const project = echo.project || {};
+    const item = document.createElement("a");
+    item.className = "project citation";
+    item.href = project.url || project.host || "#";
+    item.target = "_blank";
+    item.rel = "noreferrer";
+    item.title = project.title || project.id || "Project citation";
+    const matched = (echo.matched_terms || []).slice(0, 5).join(", ") || "no shared terms";
+    item.innerHTML = `
+      <strong>Page ${escapeHtml(echo.page_number || "?")} · ${escapeHtml(project.title || project.id || "Untitled")}</strong>
+      <p>${escapeHtml(project.summary || project.id || "")}</p>
+      <span>${Number(echo.score || 0).toFixed(3)} · ${escapeHtml(matched)}</span>
+    `;
+    projectsEl.append(item);
+  }
+}
+
 function renderWhitespace(items) {
   whitespaceEl.innerHTML = "";
   if (!items.length) {
@@ -414,6 +442,7 @@ function exportArtifact(artifact) {
   ctx.font = "28px Georgia, serif";
   ctx.fillStyle = "#6b4e35";
   wrapText(ctx, artifact.caption || "", 82, 252, 720, 36);
+  drawCitationList(ctx, seal.echoes || [], 742, 330, 330);
 
   ctx.save();
   ctx.translate(930, 226);
@@ -525,6 +554,21 @@ function drawWoodMap(ctx, map, x, y, width, height, verdict) {
   ctx.fillStyle = "#6b4e35";
   ctx.font = "700 15px Inter, sans-serif";
   wrapText(ctx, map.caption || "", x, y + height + 24, width, 20);
+  ctx.restore();
+}
+
+function drawCitationList(ctx, echoes, x, y, maxWidth) {
+  if (!echoes.length) return;
+  ctx.save();
+  ctx.fillStyle = "#6b4e35";
+  ctx.font = "800 18px Inter, sans-serif";
+  ctx.fillText("CLOSEST PAGES", x, y);
+  ctx.font = "700 15px Inter, sans-serif";
+  echoes.slice(0, 3).forEach((echo, index) => {
+    const project = echo.project || {};
+    const label = `Page ${echo.page_number || "?"}: ${project.title || project.id || "Untitled"}`;
+    wrapText(ctx, label, x, y + 24 + index * 26, maxWidth, 18);
+  });
   ctx.restore();
 }
 

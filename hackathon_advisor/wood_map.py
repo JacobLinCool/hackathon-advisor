@@ -43,6 +43,7 @@ def _echo_dot(hit: SearchHit) -> dict[str, Any]:
     dot = _project_dot(hit.project, "echo")
     dot["score"] = round(hit.score, 3)
     dot["matched_terms"] = list(hit.matched_terms)
+    dot["page_number"] = hit.page_number
     dot["radius"] = max(5, min(9, round(4 + hit.score * 14)))
     return dot
 

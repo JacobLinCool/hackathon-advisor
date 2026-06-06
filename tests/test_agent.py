@@ -31,6 +31,8 @@ def test_agent_scores_and_persists_idea() -> None:
     assert result.state["last_artifact"]["title"] == result.artifact["title"]
     assert result.artifact["wood_map"]["caption"]
     assert {dot["kind"] for dot in result.artifact["wood_map"]["dots"]} >= {"idea", "echo", "inked"}
+    assert result.score.to_dict()["echoes"][0]["page_number"] >= 1
+    assert "page " in result.response
     assert result.response
 
 

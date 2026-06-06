@@ -40,6 +40,7 @@ class ScoreCard:
             "echoes": [
                 {
                     "score": round(hit.score, 3),
+                    "page_number": hit.page_number,
                     "matched_terms": list(hit.matched_terms),
                     "project": hit.project.to_public_dict(),
                 }

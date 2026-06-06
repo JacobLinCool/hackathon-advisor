@@ -67,10 +67,11 @@ def build_field_notes_markdown(session: dict[str, Any], metadata: dict[str, Any]
             title = _clean(dot.get("title"))
             score = _clean(dot.get("score"))
             url = _clean(dot.get("url"))
+            page = _clean(dot.get("page_number")) or "?"
             if url:
-                lines.append(f"- [{title}]({url}) - echo score {score}")
+                lines.append(f"- Page {page}: [{title}]({url}) - echo score {score}")
             else:
-                lines.append(f"- {title} - echo score {score}")
+                lines.append(f"- Page {page}: {title} - echo score {score}")
 
     if last_artifact:
         lines.extend(
@@ -107,10 +108,14 @@ def _idea_section(index: int, idea: dict[str, Any]) -> list[str]:
                 url = _clean(project.get("url") or project.get("host") or "")
                 matched = ", ".join(str(term) for term in echo.get("matched_terms") or [])
                 score_text = _clean(echo.get("score"))
+                page = _clean(echo.get("page_number")) or "?"
                 if url:
-                    lines.append(f"  - [{title}]({url}) - score {score_text}; matched {matched or 'no shared terms'}")
+                    lines.append(
+                        f"  - Page {page}: [{title}]({url}) - score {score_text}; "
+                        f"matched {matched or 'no shared terms'}"
+                    )
                 else:
-                    lines.append(f"  - {title} - score {score_text}; matched {matched or 'no shared terms'}")
+                    lines.append(f"  - Page {page}: {title} - score {score_text}; matched {matched or 'no shared terms'}")
     lines.append("")
     return lines
 

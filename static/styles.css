@@ -322,6 +322,15 @@ button:disabled {
   line-height: 1.35;
 }
 
+.project span {
+  display: inline-block;
+  margin-top: 6px;
+  color: #70401e;
+  font-size: 0.74rem;
+  line-height: 1.25;
+  font-weight: 900;
+}
+
 .idea span {
   display: inline-block;
   margin-top: 6px;

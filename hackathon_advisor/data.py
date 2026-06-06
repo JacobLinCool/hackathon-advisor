@@ -87,6 +87,7 @@ class SearchHit:
     project: Project
     score: float
     matched_terms: tuple[str, ...]
+    page_number: int
 
 
 @dataclass(frozen=True)
@@ -218,7 +219,10 @@ class ProjectIndex:
         query_doc = Counter(query_terms)
         query_norm = self._norm(query_doc)
         hits: list[SearchHit] = []
-        for project, doc, doc_norm in zip(self.projects, self._documents, self._norms, strict=True):
+        for page_number, (project, doc, doc_norm) in enumerate(
+            zip(self.projects, self._documents, self._norms, strict=True),
+            start=1,
+        ):
             if doc_norm == 0.0 or query_norm == 0.0:
                 continue
             raw = 0.0
@@ -233,7 +237,14 @@ class ProjectIndex:
             title_bonus = sum(0.08 for term in matched if term in tokenize(project.title))
             tag_bonus = sum(0.05 for term in matched if term in tokenize(" ".join(project.tags)))
             score = raw / (query_norm * doc_norm) + title_bonus + tag_bonus
-            hits.append(SearchHit(project=project, score=score, matched_terms=tuple(sorted(matched))))
+            hits.append(
+                SearchHit(
+                    project=project,
+                    score=score,
+                    matched_terms=tuple(sorted(matched)),
+                    page_number=page_number,
+                )
+            )
         hits.sort(key=lambda hit: (hit.score, hit.project.likes), reverse=True)
         return hits[:limit]
 

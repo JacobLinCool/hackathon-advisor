@@ -31,6 +31,7 @@ def test_field_notes_markdown_contains_session_decisions() -> None:
     assert "## Build Plan" in markdown
     assert "Record the trace and write Field Notes" in markdown
     assert "Closest cited Spaces" in markdown
+    assert "Page " in markdown
     assert "## Wood Map" in markdown
     assert "echo score" in markdown
     assert "Planner call: `make_plan`" in markdown

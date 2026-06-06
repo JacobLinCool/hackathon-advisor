@@ -398,7 +398,9 @@ class AdvisorEngine:
                 f"{score.verdict} at {score.overall}/10. Push the AI necessity harder: make the model decide, rank, "
                 "or personalize something a static app cannot."
             )
-        citations = "; ".join(f"page {idx + 1}: {project.title}" for idx, project in enumerate(projects[:3]))
+        citations = "; ".join(
+            f"page {hit.page_number}: {hit.project.title}" for hit in score.echoes[:3]
+        )
         return (
             f"The ink bleeds around {idea.title}. Closest echoes: {citations}. The seal reads "
             f"{score.verdict} at {score.overall}/10. Keep the audience, but change the mechanism or artifact so the "
