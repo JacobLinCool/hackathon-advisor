@@ -317,6 +317,28 @@ button:disabled {
   border-radius: 0 8px 8px 0;
 }
 
+.idea {
+  width: 100%;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  appearance: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.idea:hover,
+.idea:focus-visible,
+.idea.current {
+  border-left-color: var(--leaf);
+  background: rgba(255, 241, 196, 0.56);
+}
+
+.idea:focus-visible {
+  outline: 2px solid rgba(47, 122, 73, 0.5);
+  outline-offset: 2px;
+}
+
 .project strong,
 .gap strong,
 .idea strong {

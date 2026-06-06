@@ -97,6 +97,12 @@ profileEl.addEventListener("input", (event) => {
   saveSession();
 });
 
+ideasEl.addEventListener("click", (event) => {
+  const card = event.target.closest("[data-idea-id]");
+  if (!(card instanceof HTMLElement) || !ideasEl.contains(card)) return;
+  selectIdea(card.dataset.ideaId || "");
+});
+
 async function runTurn(message) {
   input.value = "";
   submit.disabled = true;
@@ -216,18 +222,21 @@ function renderProvenance(data) {
 }
 
 function renderRestoredSession(data) {
-  currentArtifact = session.last_artifact || null;
-  if (currentArtifact?.seal) {
-    renderScore(currentArtifact.seal);
-    verdictEl.textContent = currentArtifact.verdict || currentArtifact.seal.verdict || "UNWRITTEN";
-    overallEl.textContent = Number(currentArtifact.overall || currentArtifact.seal.overall || 0).toFixed(1);
-    renderWoodMap(currentArtifact.wood_map || null);
-    if (currentArtifact.seal.echoes?.length) {
-      renderCitations(currentArtifact.seal.echoes);
+  const idea = currentIdea();
+  const storedArtifact = session.last_artifact || null;
+  currentArtifact = !idea || storedArtifact?.title === idea.title ? storedArtifact : null;
+  const score = currentArtifact?.seal || idea?.score || null;
+  if (score) {
+    renderScore(score);
+    verdictEl.textContent = currentArtifact?.verdict || score.verdict || "UNWRITTEN";
+    overallEl.textContent = Number(currentArtifact?.overall || score.overall || 0).toFixed(1);
+    renderWoodMap(currentArtifact?.wood_map || null);
+    if (score.echoes?.length) {
+      renderCitations(score.echoes);
     } else {
       renderProjects(data.top_projects || []);
     }
-    exportButton.disabled = false;
+    exportButton.disabled = !currentArtifact;
   } else {
     renderScore(null);
     renderWoodMap(null);
@@ -410,8 +419,12 @@ function renderIdeas(ideas) {
   for (const idea of visibleIdeas(ideas)) {
     const score = idea.score?.overall ? Number(idea.score.overall).toFixed(1) : "0.0";
     const targets = (idea.targets || []).slice(0, 3).map(targetDisplayName).join(" · ");
-    const item = document.createElement("div");
-    item.className = "idea";
+    const selected = idea.id === session.current_idea_id;
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = `idea ${selected ? "current" : ""}`;
+    item.dataset.ideaId = idea.id || "";
+    item.setAttribute("aria-pressed", selected ? "true" : "false");
     item.innerHTML = `
       <strong>${escapeHtml(idea.title)}</strong>
       <p>${escapeHtml((idea.pitch || "").slice(0, 120))}</p>
@@ -427,6 +440,43 @@ function visibleIdeas(ideas) {
   const current = currentId ? ideas.find((idea) => idea.id === currentId) : null;
   const remaining = ideas.filter((idea) => idea.id !== currentId).slice(-3).reverse();
   return current ? [current, ...remaining] : ideas.slice(-4).reverse();
+}
+
+function currentIdea() {
+  const ideas = Array.isArray(session.ideas) ? session.ideas : [];
+  return ideas.find((idea) => idea.id === session.current_idea_id) || ideas[ideas.length - 1] || null;
+}
+
+function selectIdea(ideaId) {
+  if (!ideaId || !Array.isArray(session.ideas)) return;
+  const idea = session.ideas.find((item) => item.id === ideaId);
+  if (!idea) return;
+  session.current_idea_id = idea.id;
+  if (Array.isArray(idea.targets) && idea.targets.length) {
+    session.targets = targetOptions.filter((option) => idea.targets.includes(option));
+  }
+  const score = idea.score || null;
+  if (score) {
+    verdictEl.textContent = score.verdict || "DRAFT";
+    overallEl.textContent = Number(score.overall || 0).toFixed(1);
+    renderScore(score);
+    ink.classList.toggle("bleed", String(score.verdict || "").startsWith("ECHO"));
+    ink.classList.toggle("gold", String(score.verdict || "").startsWith("UNWRITTEN"));
+  }
+  if (session.last_artifact?.title === idea.title) {
+    currentArtifact = session.last_artifact;
+    renderWoodMap(currentArtifact.wood_map || null);
+    exportButton.disabled = false;
+  } else {
+    currentArtifact = null;
+    renderWoodMap(null);
+    exportButton.disabled = true;
+  }
+  renderTargets(session.targets || []);
+  renderIdeas(session.ideas);
+  renderPlan([]);
+  corrections.textContent = `selected: ${idea.title}`;
+  saveSession();
 }
 
 function targetDisplayName(target) {
