@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from dataclasses import replace
 from typing import Any
 import re
 
@@ -93,6 +94,9 @@ class AdvisorEngine:
                     idea.to_dict() if item.get("id") == idea.id else item for item in state.get("ideas", [])
                 ]
             score, event = self.tools.score_idea(idea)
+            if whitespace:
+                score = self._align_score_with_whitespace(score, whitespace[0])
+                idea.score = score.to_dict()
             self._store_idea(state, idea)
             tool_events.append(event)
             response = self._whitespace_response(idea, whitespace, score)
@@ -168,6 +172,15 @@ class AdvisorEngine:
         state["ideas"] = [
             idea.to_dict() if item.get("id") == idea.id else item for item in state.get("ideas", [])
         ]
+
+    def _align_score_with_whitespace(self, score: ScoreCard, item: WhitespaceItem) -> ScoreCard:
+        if item.score < 0.70:
+            return score
+        return replace(
+            score,
+            originality=max(score.originality, 8),
+            verdict="UNWRITTEN",
+        )
 
     def _opening_response(self, projects: list[Project]) -> str:
         names = ", ".join(project.title for project in projects[:4])

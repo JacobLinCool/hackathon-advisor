@@ -24,7 +24,7 @@ def test_agent_finds_whitespace() -> None:
 
     assert result.whitespace
     assert result.score is not None
-    assert result.artifact["verdict"]
+    assert result.artifact["verdict"] == "UNWRITTEN"
 
 
 def test_agent_preserves_canonical_jargon_case() -> None:
