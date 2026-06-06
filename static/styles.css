@@ -313,7 +313,8 @@ button:disabled {
 .idea,
 .trace,
 .target-toggle,
-.profile-field {
+.profile-field,
+.training-artifact {
   border-left: 3px solid rgba(80, 47, 22, 0.48);
   padding: 8px 10px;
   background: rgba(255, 241, 196, 0.34);
@@ -468,6 +469,10 @@ button:disabled {
   border-left-color: var(--gold);
 }
 
+.badge-item.dataset-ready {
+  border-left-color: #5f6d38;
+}
+
 .badge-item.planned {
   border-left-color: var(--muted-ink);
 }
@@ -476,6 +481,31 @@ button:disabled {
   color: var(--muted-ink);
   font-size: 0.68rem;
   text-transform: uppercase;
+}
+
+.training-artifact-list {
+  display: grid;
+  gap: 7px;
+}
+
+.training-artifact {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.training-artifact strong {
+  color: #2a170d;
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+.training-artifact span {
+  color: var(--muted-ink);
+  font-size: 0.72rem;
+  line-height: 1.25;
+  font-weight: 900;
+  overflow-wrap: anywhere;
 }
 
 .wood-map-field {

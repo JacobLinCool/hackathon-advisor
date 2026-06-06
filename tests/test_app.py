@@ -7,6 +7,7 @@ from app import (
     field_notes_artifact,
     health,
     index,
+    lora_dataset_artifact,
     prize_ledger_endpoint,
     runtime,
     tool_contract_check,
@@ -76,6 +77,23 @@ def test_chapter_endpoint_exports_markdown() -> None:
     assert "Closest inked pages:" in payload
 
 
+def test_lora_dataset_endpoint_exports_sft_jsonl() -> None:
+    state = engine.turn(
+        "A local-first archive cartographer for family photos",
+        {"targets": ["Well-Tuned"]},
+    ).state
+    state = engine.turn("make a build plan", state).state
+
+    payload = lora_dataset_artifact(json.dumps(state))
+    lines = [json.loads(line) for line in payload.splitlines()]
+
+    assert lines[0]["type"] == "lora_sft_manifest"
+    assert lines[0]["example_count"] == len(lines) - 1
+    assert lines[1]["example_kind"] == "tool_call"
+    assert lines[1]["base_model"] == "openbmb/MiniCPM5-1B"
+    assert lines[2]["example_kind"] == "advisor_response"
+
+
 def test_tool_contracts_endpoint_exposes_schemas() -> None:
     payload = tool_contracts()
 
@@ -104,3 +122,4 @@ def test_prize_ledger_endpoint_reports_submission_evidence() -> None:
     assert payload["runtime"]["backend"] == "rules"
     assert payload["tiny_titan_eligible"] is True
     assert any(badge["name"] == "Sharing is Caring" for badge in payload["badges"])
+    assert payload["training_artifacts"][0]["endpoint"] == "lora_dataset"

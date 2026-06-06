@@ -75,6 +75,13 @@ The `chapter` Gradio API endpoint and `Chapter` button export the public-facing 
 one fate page per idea, each with verdict, score, targets, and closest cited pages. It is the shareable companion to
 the private Field Notes artifact.
 
+## LoRA Dataset Artifact
+
+The `lora_dataset` Gradio API endpoint and `LoRA` button export a compact chat JSONL dataset from successful session
+turns. Each included turn yields a tool-call example and an advisor-response example for `openbmb/MiniCPM5-1B`, with the
+selected targets, parsed XML tool call, tool observations, and score context preserved. This prepares the Well-Tuned
+path without claiming that the adapter has already been trained or published.
+
 ## Prize Ledger
 
 `/api/prize-ledger` and the in-app Prize Ledger panel expose submission evidence: the documented model stack, total

@@ -22,6 +22,7 @@ const exportButton = document.querySelector("#export-artifact");
 const exportTraceButton = document.querySelector("#export-trace");
 const exportNotesButton = document.querySelector("#export-notes");
 const exportChapterButton = document.querySelector("#export-chapter");
+const exportLoraButton = document.querySelector("#export-lora");
 const resetButton = document.querySelector("#reset-session");
 
 const SESSION_STORAGE_KEY = "hackathon-advisor-session-v1";
@@ -64,6 +65,10 @@ exportNotesButton.addEventListener("click", async () => {
 
 exportChapterButton.addEventListener("click", async () => {
   await exportChapter();
+});
+
+exportLoraButton.addEventListener("click", async () => {
+  await exportLoraDataset();
 });
 
 resetButton.addEventListener("click", () => {
@@ -183,6 +188,7 @@ function renderRestoredSession(data) {
   exportTraceButton.disabled = !(session.trace?.length);
   exportNotesButton.disabled = !(session.trace?.length);
   exportChapterButton.disabled = !(session.ideas?.length);
+  exportLoraButton.disabled = !(session.trace?.length);
 }
 
 function readSavedSession() {
@@ -297,6 +303,21 @@ function renderPrizeLedger(ledger) {
     badges.append(item);
   }
   prizeLedgerEl.append(header, badges);
+  if (ledger.training_artifacts?.length) {
+    const artifacts = document.createElement("div");
+    artifacts.className = "training-artifact-list";
+    for (const artifact of ledger.training_artifacts.slice(0, 3)) {
+      const item = document.createElement("div");
+      item.className = "training-artifact";
+      item.title = artifact.endpoint || artifact.name;
+      item.innerHTML = `
+        <strong>${escapeHtml(artifact.name)}</strong>
+        <span>${escapeHtml(artifact.status)} · ${escapeHtml(artifact.format || "jsonl")}</span>
+      `;
+      artifacts.append(item);
+    }
+    prizeLedgerEl.append(artifacts);
+  }
 }
 
 function handleEvent(event) {
@@ -350,6 +371,7 @@ function handleEvent(event) {
     exportTraceButton.disabled = !(session.trace?.length);
     exportNotesButton.disabled = !(session.trace?.length);
     exportChapterButton.disabled = !(session.ideas?.length);
+    exportLoraButton.disabled = !(session.trace?.length);
     saveSession();
   }
 }
@@ -525,12 +547,14 @@ function setCommandDisabled(disabled) {
     const isTrace = button.id === "export-trace";
     const isNotes = button.id === "export-notes";
     const isChapter = button.id === "export-chapter";
+    const isLora = button.id === "export-lora";
     button.disabled =
       disabled ||
       (isArtifact && !currentArtifact) ||
       (isTrace && !session.trace?.length) ||
       (isNotes && !session.trace?.length) ||
-      (isChapter && !session.ideas?.length);
+      (isChapter && !session.ideas?.length) ||
+      (isLora && !session.trace?.length);
   });
 }
 
@@ -592,6 +616,15 @@ async function exportChapter() {
   });
   const data = Array.isArray(result.data) ? result.data[0] : result.data;
   downloadText("hackathon-advisor-chapter.md", String(data || ""), "text/markdown;charset=utf-8");
+}
+
+async function exportLoraDataset() {
+  const client = await clientPromise;
+  const result = await client.predict("/lora_dataset", {
+    session_json: JSON.stringify(session),
+  });
+  const data = Array.isArray(result.data) ? result.data[0] : result.data;
+  downloadText("hackathon-advisor-lora-sft.jsonl", String(data || ""));
 }
 
 function exportArtifact(artifact) {

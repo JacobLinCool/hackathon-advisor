@@ -63,14 +63,25 @@ BADGE_LEDGER = [
     },
     {
         "name": "Well-Tuned",
-        "status": "planned",
-        "evidence": "Plan includes a MiniCPM5 LoRA path; adapter publication remains a separate build milestone.",
+        "status": "dataset-ready",
+        "evidence": "LoRA SFT dataset export is generated from exact session traces; adapter publication remains a separate build milestone.",
     },
     {
         "name": "Llama Champion",
         "status": "planned",
         "evidence": "MiniCPM5 GGUF and EmbeddingGemma GGUF paths are documented; runtime does not depend on them yet.",
     },
+]
+
+
+TRAINING_ARTIFACTS = [
+    {
+        "name": "MiniCPM5 LoRA SFT dataset",
+        "status": "export-ready",
+        "endpoint": "lora_dataset",
+        "format": "chat-jsonl",
+        "base_model": "openbmb/MiniCPM5-1B",
+    }
 ]
 
 
@@ -88,4 +99,5 @@ def prize_ledger(runtime: dict[str, Any]) -> dict[str, Any]:
         "tiny_titan_limit_b": 4.0,
         "tiny_titan_eligible": total_params <= 4.0 and float(largest["params_b"]) <= 4.0,
         "badges": BADGE_LEDGER,
+        "training_artifacts": TRAINING_ARTIFACTS,
     }
