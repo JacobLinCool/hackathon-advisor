@@ -9,7 +9,7 @@ from hackathon_advisor.data import Project, ProjectIndex, WhitespaceItem
 from hackathon_advisor.model_runtime import ToolPlanner, create_tool_planner, runtime_status
 from hackathon_advisor.scoring import ScoreCard
 from hackathon_advisor.tool_contracts import ToolCall
-from hackathon_advisor.tools import AdvisorTools, Idea, ToolEvent, idea_from_text
+from hackathon_advisor.tools import TARGETS, AdvisorTools, Idea, ToolEvent, idea_from_text, normalize_targets, targets_from_state
 
 
 @dataclass
@@ -51,6 +51,8 @@ class AdvisorEngine:
     def turn(self, message: str, state: dict[str, Any] | None = None) -> TurnResult:
         state = dict(state or {})
         state.setdefault("ideas", [])
+        state.setdefault("profile", {})
+        state.setdefault("targets", TARGETS[:3])
         normalized, corrections = normalize_text(message)
         resolution = self.planner.plan(normalized, state)
         state["last_tool_resolution"] = resolution.to_dict()
@@ -149,18 +151,30 @@ class AdvisorEngine:
         )
 
     def _store_idea(self, state: dict[str, Any], idea: Idea) -> None:
-        state["ideas"] = [
-            idea.to_dict() if item.get("id") == idea.id else item for item in state.get("ideas", [])
-        ]
+        stored = []
+        replaced = False
+        for item in state.get("ideas", []):
+            if item.get("id") == idea.id:
+                stored.append(idea.to_dict())
+                replaced = True
+            else:
+                stored.append(item)
+        if not replaced:
+            stored.append(idea.to_dict())
+        state["ideas"] = stored
 
     def _current_idea(self, state: dict[str, Any]) -> Idea | None:
         current_id = state.get("current_idea_id")
         for item in state.get("ideas", []):
             if item.get("id") == current_id:
-                return Idea(**item)
+                return self._with_session_targets(Idea(**item), state)
         if state.get("ideas"):
-            return Idea(**state["ideas"][-1])
+            return self._with_session_targets(Idea(**state["ideas"][-1]), state)
         return None
+
+    def _with_session_targets(self, idea: Idea, state: dict[str, Any]) -> Idea:
+        idea.targets = targets_from_state(state)
+        return idea
 
     def _idea_research_turn(
         self,
@@ -297,7 +311,7 @@ class AdvisorEngine:
         state: dict[str, Any],
         tool_events: list[ToolEvent],
     ) -> TurnResult:
-        targets = [str(target) for target in call.arguments.get("side_quests", [])]
+        targets = normalize_targets(call.arguments.get("side_quests"), default=[])
         state["targets"] = targets
         idea = self._current_idea(state)
         if idea is not None:
@@ -312,7 +326,7 @@ class AdvisorEngine:
         if idea_id:
             for item in state.get("ideas", []):
                 if item.get("id") == idea_id:
-                    return Idea(**item)
+                    return self._with_session_targets(Idea(**item), state)
         return self._current_idea(state)
 
     def _record_trace(

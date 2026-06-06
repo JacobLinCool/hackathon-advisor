@@ -106,6 +106,31 @@ def test_planner_profile_and_targets_update_state() -> None:
     assert targeted.state["targets"] == ["Off the Grid", "Field Notes"]
 
 
+def test_session_targets_apply_to_new_and_current_ideas() -> None:
+    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    engine = AdvisorEngine(index)
+    state = {"targets": ["Field Notes"]}
+
+    first = engine.turn("A local-first archive cartographer for family photos", state)
+    first_idea = first.state["ideas"][0]
+    planned = engine.turn("make a build plan", first.state)
+
+    assert first_idea["targets"] == ["Field Notes"]
+    assert all("LoRA" not in step for step in planned.plan)
+
+
+def test_well_tuned_target_adds_training_step_to_plan() -> None:
+    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    engine = AdvisorEngine(index)
+    state = {"targets": ["Well-Tuned"]}
+
+    first = engine.turn("A local-first archive cartographer for family photos", state)
+    planned = engine.turn("make a build plan", first.state)
+
+    assert first.state["ideas"][0]["targets"] == ["Well-Tuned"]
+    assert any("LoRA" in step for step in planned.plan)
+
+
 def test_planner_score_idea_scores_current_idea() -> None:
     index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
     first = AdvisorEngine(index).turn("A local-first archive cartographer for family photos", {})

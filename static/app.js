@@ -8,6 +8,8 @@ const corrections = document.querySelector("#corrections");
 const projectsEl = document.querySelector("#projects");
 const whitespaceEl = document.querySelector("#whitespace");
 const ideasEl = document.querySelector("#ideas");
+const targetsEl = document.querySelector("#targets");
+const profileEl = document.querySelector("#profile");
 const scoreEl = document.querySelector("#score");
 const planEl = document.querySelector("#plan");
 const traceEl = document.querySelector("#trace");
@@ -20,6 +22,8 @@ const exportTraceButton = document.querySelector("#export-trace");
 let session = {};
 let clientPromise = Client.connect(window.location.origin);
 let currentArtifact = null;
+let targetOptions = [];
+let profileFields = [];
 
 bootstrap();
 
@@ -43,6 +47,30 @@ exportButton.addEventListener("click", () => {
 
 exportTraceButton.addEventListener("click", async () => {
   await exportTrace();
+});
+
+targetsEl.addEventListener("change", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement) || !target.dataset.target) return;
+  const checked = new Set(
+    Array.from(targetsEl.querySelectorAll("input[data-target]:checked")).map((input) => input.dataset.target),
+  );
+  session.targets = targetOptions.filter((option) => checked.has(option));
+  syncCurrentIdeaTargets();
+  renderIdeas(session.ideas || []);
+});
+
+profileEl.addEventListener("input", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement) || !target.dataset.profileField) return;
+  const profile = { ...(session.profile || {}) };
+  const value = target.value.trim();
+  if (value) {
+    profile[target.dataset.profileField] = value;
+  } else {
+    delete profile[target.dataset.profileField];
+  }
+  session.profile = profile;
 });
 
 async function runTurn(message) {
@@ -81,7 +109,15 @@ async function runTurn(message) {
 async function bootstrap() {
   const response = await fetch("/api/bootstrap");
   const data = await response.json();
+  targetOptions = data.target_options || [];
+  profileFields = data.profile_fields || [];
+  session = {
+    profile: {},
+    targets: data.default_targets || targetOptions.slice(0, 3),
+  };
   renderProvenance(data);
+  renderTargets(session.targets);
+  renderProfile(session.profile);
   renderProjects(data.top_projects || []);
   renderWhitespace(data.whitespace || []);
   renderIdeas([]);
@@ -95,6 +131,45 @@ function renderProvenance(data) {
   const index = shortDate(data.index_generated_at);
   const digest = String(data.snapshot_digest || "").slice(0, 10);
   provenanceEl.textContent = `${data.index_algorithm || "index"} · snapshot ${snapshot} · index ${index} · ${digest}`;
+}
+
+function renderTargets(selectedTargets) {
+  const selected = new Set(selectedTargets || []);
+  targetsEl.innerHTML = "";
+  if (!targetOptions.length) {
+    targetsEl.innerHTML = `<div class="empty">No seals loaded.</div>`;
+    return;
+  }
+  for (const option of targetOptions) {
+    const label = document.createElement("label");
+    label.className = "target-toggle";
+    label.innerHTML = `
+      <input type="checkbox" data-target="${escapeAttribute(option)}" ${selected.has(option) ? "checked" : ""} />
+      <span>${escapeHtml(option)}</span>
+    `;
+    targetsEl.append(label);
+  }
+}
+
+function renderProfile(profile) {
+  profileEl.innerHTML = "";
+  if (!profileFields.length) {
+    profileEl.innerHTML = `<div class="empty">No profile fields.</div>`;
+    return;
+  }
+  for (const field of profileFields) {
+    const row = document.createElement("label");
+    row.className = "profile-field";
+    row.innerHTML = `
+      <span>${escapeHtml(fieldLabel(field))}</span>
+      <input
+        data-profile-field="${escapeAttribute(field)}"
+        value="${escapeAttribute(profile?.[field] || "")}"
+        autocomplete="off"
+      />
+    `;
+    profileEl.append(row);
+  }
 }
 
 function handleEvent(event) {
@@ -114,8 +189,12 @@ function handleEvent(event) {
 
   if (event.type === "done") {
     session = event.state || {};
+    session.profile = session.profile || {};
+    session.targets = Array.isArray(session.targets) ? session.targets : [];
     if (event.projects?.length) renderProjects(event.projects);
     if (event.whitespace?.length) renderWhitespace(event.whitespace);
+    renderTargets(session.targets);
+    renderProfile(session.profile);
     renderIdeas(session.ideas || []);
     renderTrace(session.trace || []);
     renderPlan(event.plan || []);
@@ -142,12 +221,14 @@ function renderIdeas(ideas) {
   }
   for (const idea of ideas.slice(-4).reverse()) {
     const score = idea.score?.overall ? Number(idea.score.overall).toFixed(1) : "0.0";
+    const targets = (idea.targets || []).slice(0, 3).join(" · ");
     const item = document.createElement("div");
     item.className = "idea";
     item.innerHTML = `
       <strong>${escapeHtml(idea.title)}</strong>
       <p>${escapeHtml((idea.pitch || "").slice(0, 120))}</p>
       <span>${escapeHtml(idea.score?.verdict || "DRAFT")} · ${score}</span>
+      ${targets ? `<small>${escapeHtml(targets)}</small>` : ""}
     `;
     ideasEl.append(item);
   }
@@ -248,6 +329,13 @@ function setCommandDisabled(disabled) {
     const isTrace = button.id === "export-trace";
     button.disabled = disabled || (isArtifact && !currentArtifact) || (isTrace && !session.trace?.length);
   });
+}
+
+function syncCurrentIdeaTargets() {
+  const currentId = session.current_idea_id;
+  if (!currentId || !Array.isArray(session.ideas)) return;
+  const idea = session.ideas.find((item) => item.id === currentId);
+  if (idea) idea.targets = [...(session.targets || [])];
 }
 
 async function exportTrace() {
@@ -375,6 +463,16 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function escapeAttribute(value) {
+  return escapeHtml(value).replaceAll("`", "&#096;");
+}
+
+function fieldLabel(value) {
+  return String(value)
+    .replaceAll("_", " ")
+    .replace(/^\w/, (char) => char.toUpperCase());
 }
 
 function shortDate(value) {

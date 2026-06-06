@@ -11,6 +11,7 @@ from gradio import Server
 from hackathon_advisor.agent import AdvisorEngine
 from hackathon_advisor.data import ProjectIndex
 from hackathon_advisor.tool_contracts import resolve_tool_call, tool_schemas
+from hackathon_advisor.tools import TARGETS
 from hackathon_advisor.trace_export import build_trace_jsonl, trace_metadata
 
 
@@ -18,6 +19,7 @@ ROOT = Path(__file__).parent
 STATIC_DIR = ROOT / "static"
 DATA_PATH = ROOT / "data" / "projects.json"
 INDEX_PATH = ROOT / "data" / "project_index.json"
+PROFILE_FIELDS = ["skills", "time", "preferences", "constraints"]
 
 index = ProjectIndex.from_files(DATA_PATH, INDEX_PATH)
 engine = AdvisorEngine(index)
@@ -59,6 +61,9 @@ def bootstrap() -> dict:
         **trace_metadata(index),
         "top_projects": [project.to_public_dict() for project in index.top_projects(limit=8)],
         "whitespace": [item.to_dict() for item in index.find_whitespace(limit=5)],
+        "target_options": TARGETS,
+        "default_targets": TARGETS[:3],
+        "profile_fields": PROFILE_FIELDS,
     }
 
 

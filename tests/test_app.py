@@ -21,6 +21,8 @@ def test_bootstrap_exposes_index_metadata() -> None:
     assert payload["snapshot_digest"]
     assert payload["runtime"]["tool_count"] >= 8
     assert payload["top_projects"]
+    assert payload["default_targets"] == payload["target_options"][:3]
+    assert "skills" in payload["profile_fields"]
 
 
 def test_trace_artifact_endpoint_exports_jsonl() -> None:

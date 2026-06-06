@@ -18,6 +18,28 @@ TARGETS = [
 ]
 
 
+def normalize_targets(raw_targets: Any, default: list[str] | None = None) -> list[str]:
+    if raw_targets is None:
+        return list(default or [])
+    if not isinstance(raw_targets, list):
+        return list(default or [])
+
+    targets: list[str] = []
+    seen: set[str] = set()
+    for raw_target in raw_targets:
+        target = str(raw_target)
+        if target in TARGETS and target not in seen:
+            targets.append(target)
+            seen.add(target)
+    return targets
+
+
+def targets_from_state(state: dict[str, Any]) -> list[str]:
+    if "targets" not in state:
+        return TARGETS[:3]
+    return normalize_targets(state.get("targets"), default=[])
+
+
 @dataclass
 class Idea:
     id: str
@@ -65,13 +87,15 @@ class AdvisorTools:
     def save_idea(self, state: dict[str, Any], title: str, pitch: str) -> tuple[Idea, ToolEvent]:
         ideas = [Idea(**item) for item in state.get("ideas", [])]
         current_id = state.get("current_idea_id")
+        targets = targets_from_state(state)
         idea = next((item for item in ideas if item.id == current_id), None)
         if idea is None:
-            idea = Idea(id=uuid.uuid4().hex[:8], title=title, pitch=pitch)
+            idea = Idea(id=uuid.uuid4().hex[:8], title=title, pitch=pitch, targets=targets)
             ideas.append(idea)
         else:
             idea.title = title
             idea.pitch = pitch
+            idea.targets = targets
         state["ideas"] = [item.to_dict() for item in ideas]
         state["current_idea_id"] = idea.id
         return idea, ToolEvent("save_idea", f"Wrote idea page '{idea.title}'.")
