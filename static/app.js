@@ -15,6 +15,7 @@ const provenanceEl = document.querySelector("#provenance");
 const verdictEl = document.querySelector("#verdict");
 const overallEl = document.querySelector("#overall");
 const exportButton = document.querySelector("#export-artifact");
+const exportTraceButton = document.querySelector("#export-trace");
 
 let session = {};
 let clientPromise = Client.connect(window.location.origin);
@@ -38,6 +39,10 @@ document.querySelectorAll("[data-command]").forEach((button) => {
 exportButton.addEventListener("click", () => {
   if (!currentArtifact) return;
   exportArtifact(currentArtifact);
+});
+
+exportTraceButton.addEventListener("click", async () => {
+  await exportTrace();
 });
 
 async function runTurn(message) {
@@ -125,6 +130,7 @@ function handleEvent(event) {
       currentArtifact = event.artifact;
       exportButton.disabled = false;
     }
+    exportTraceButton.disabled = !(session.trace?.length);
   }
 }
 
@@ -238,8 +244,19 @@ function renderTrace(trace) {
 
 function setCommandDisabled(disabled) {
   document.querySelectorAll(".command-row button").forEach((button) => {
-    button.disabled = disabled || (button.id === "export-artifact" && !currentArtifact);
+    const isArtifact = button.id === "export-artifact";
+    const isTrace = button.id === "export-trace";
+    button.disabled = disabled || (isArtifact && !currentArtifact) || (isTrace && !session.trace?.length);
   });
+}
+
+async function exportTrace() {
+  const client = await clientPromise;
+  const result = await client.predict("/trace_artifact", {
+    session_json: JSON.stringify(session),
+  });
+  const data = Array.isArray(result.data) ? result.data[0] : result.data;
+  downloadText("hackathon-advisor-trace.jsonl", String(data || ""));
 }
 
 function exportArtifact(artifact) {
@@ -295,6 +312,15 @@ function exportArtifact(artifact) {
   link.download = `${slugify(artifact.title || "unwritten-page")}.png`;
   link.href = canvas.toDataURL("image/png");
   link.click();
+}
+
+function downloadText(filename, text) {
+  const blob = new Blob([text], { type: "application/jsonl;charset=utf-8" });
+  const link = document.createElement("a");
+  link.download = filename;
+  link.href = URL.createObjectURL(blob);
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 0);
 }
 
 function drawParchment(ctx, width, height) {

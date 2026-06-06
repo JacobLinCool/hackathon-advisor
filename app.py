@@ -10,6 +10,7 @@ from gradio import Server
 
 from hackathon_advisor.agent import AdvisorEngine
 from hackathon_advisor.data import ProjectIndex
+from hackathon_advisor.trace_export import build_trace_jsonl, trace_metadata
 
 
 ROOT = Path(__file__).parent
@@ -44,10 +45,7 @@ def health() -> dict:
     return {
         "ok": True,
         "projects": len(index.projects),
-        "snapshot_generated_at": index.generated_at,
-        "index_generated_at": index.index_generated_at,
-        "index_algorithm": index.index_algorithm,
-        "snapshot_digest": index.snapshot_digest,
+        **trace_metadata(index),
     }
 
 
@@ -55,13 +53,19 @@ def health() -> dict:
 def bootstrap() -> dict:
     return {
         "project_count": len(index.projects),
-        "snapshot_generated_at": index.generated_at,
-        "index_generated_at": index.index_generated_at,
-        "index_algorithm": index.index_algorithm,
-        "snapshot_digest": index.snapshot_digest,
+        **trace_metadata(index),
         "top_projects": [project.to_public_dict() for project in index.top_projects(limit=8)],
         "whitespace": [item.to_dict() for item in index.find_whitespace(limit=5)],
     }
+
+
+@app.api(name="trace_artifact", concurrency_limit=8)
+def trace_artifact(session_json: str = "{}") -> str:
+    try:
+        session = json.loads(session_json or "{}")
+    except json.JSONDecodeError:
+        session = {}
+    return build_trace_jsonl(session, trace_metadata(index))
 
 
 @app.api(name="agent_turn", concurrency_limit=4, stream_every=0.04)

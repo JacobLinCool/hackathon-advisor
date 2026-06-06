@@ -74,6 +74,8 @@ class AdvisorEngine:
             idea = self._current_idea(state)
             if idea is not None:
                 score, event = self.tools.score_idea(idea)
+                score = self._align_score_from_state(score, idea, state)
+                idea.score = score.to_dict()
                 self._store_idea(state, idea)
                 tool_events.append(event)
                 plan, event = self.tools.make_plan(idea)
@@ -93,29 +95,17 @@ class AdvisorEngine:
                     artifact,
                 )
 
-        title, pitch = idea_from_text(normalized)
-        idea, event = self.tools.save_idea(state, title, pitch)
-        tool_events.append(event)
-
-        if PLAN_RE.search(normalized):
-            score, event = self.tools.score_idea(idea)
-            self._store_idea(state, idea)
-            tool_events.append(event)
-            plan, event = self.tools.make_plan(idea)
-            tool_events.append(event)
-            response = self._plan_response(idea, score, plan)
-            artifact = self._artifact(idea, score)
-            return self._result(normalized, corrections, response, state, tool_events, [], [], score, plan, artifact)
-
         if WHITESPACE_RE.search(normalized):
             whitespace, event = self.tools.find_whitespace(limit=4)
             tool_events.append(event)
             if whitespace:
-                idea.title = whitespace[0].label
-                idea.pitch = whitespace[0].pitch
-                state["ideas"] = [
-                    idea.to_dict() if item.get("id") == idea.id else item for item in state.get("ideas", [])
-                ]
+                idea, event = self.tools.save_idea(state, whitespace[0].label, whitespace[0].pitch)
+                tool_events.append(event)
+                state["current_whitespace"] = whitespace[0].to_dict()
+            else:
+                title, pitch = idea_from_text(normalized)
+                idea, event = self.tools.save_idea(state, title, pitch)
+                tool_events.append(event)
             score, event = self.tools.score_idea(idea)
             if whitespace:
                 score = self._align_score_with_whitespace(score, whitespace[0])
@@ -136,6 +126,20 @@ class AdvisorEngine:
                 [],
                 artifact,
             )
+
+        title, pitch = idea_from_text(normalized)
+        idea, event = self.tools.save_idea(state, title, pitch)
+        tool_events.append(event)
+
+        if PLAN_RE.search(normalized):
+            score, event = self.tools.score_idea(idea)
+            self._store_idea(state, idea)
+            tool_events.append(event)
+            plan, event = self.tools.make_plan(idea)
+            tool_events.append(event)
+            response = self._plan_response(idea, score, plan)
+            artifact = self._artifact(idea, score)
+            return self._result(normalized, corrections, response, state, tool_events, [], [], score, plan, artifact)
 
         hits = self.index.search(normalized, limit=5)
         projects = [hit.project for hit in hits]
@@ -240,6 +244,12 @@ class AdvisorEngine:
             originality=max(score.originality, 8),
             verdict="UNWRITTEN",
         )
+
+    def _align_score_from_state(self, score: ScoreCard, idea: Idea, state: dict[str, Any]) -> ScoreCard:
+        artifact = state.get("last_artifact") or {}
+        if artifact.get("title") == idea.title and artifact.get("verdict") == "UNWRITTEN":
+            return replace(score, originality=max(score.originality, 8), verdict="UNWRITTEN")
+        return score
 
     def _opening_response(self, projects: list[Project]) -> str:
         names = ", ".join(project.title for project in projects[:4])

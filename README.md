@@ -52,10 +52,16 @@ Then open <http://127.0.0.1:7860>.
 ```bash
 python scripts/crawl_hf_spaces.py --org build-small-hackathon --out data/projects.json
 python scripts/build_project_index.py --projects data/projects.json --out data/project_index.json
+python scripts/generate_sample_trace.py --projects data/projects.json --index data/project_index.json --out data/sample_trace.jsonl
 ```
 
 The app uses `data/projects.json` and `data/project_index.json` at runtime. The index validates the snapshot timestamp,
 source, project order, and digest before the app starts.
+
+## Trace Artifact
+
+The app exposes a `trace_artifact` Gradio API endpoint and a `JSONL` button in the UI. Both emit the same JSONL schema:
+a manifest row followed by one row per agent turn. `data/sample_trace.jsonl` is a checked-in, Hub-published sample trace.
 
 ## Test
 

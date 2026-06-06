@@ -27,6 +27,7 @@ def test_agent_finds_whitespace() -> None:
     assert result.whitespace
     assert result.score is not None
     assert result.artifact["verdict"] == "UNWRITTEN"
+    assert result.state["ideas"][0]["title"] == result.whitespace[0].label
 
 
 def test_agent_preserves_canonical_jargon_case() -> None:
@@ -49,3 +50,15 @@ def test_plan_command_uses_current_idea() -> None:
     assert planned.plan
     assert planned.artifact["title"] == first.artifact["title"]
     assert planned.state["ideas"][0]["title"] == first.artifact["title"]
+
+
+def test_plan_preserves_unwritten_whitespace_verdict() -> None:
+    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    engine = AdvisorEngine(index)
+
+    whitespace = engine.turn("write bolder and find whitespace", {})
+    planned = engine.turn("make a build plan", whitespace.state)
+
+    assert whitespace.artifact["verdict"] == "UNWRITTEN"
+    assert planned.artifact["title"] == whitespace.artifact["title"]
+    assert planned.artifact["verdict"] == "UNWRITTEN"

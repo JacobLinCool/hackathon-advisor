@@ -1,0 +1,33 @@
+import json
+from pathlib import Path
+
+from hackathon_advisor.agent import AdvisorEngine
+from hackathon_advisor.data import ProjectIndex
+from hackathon_advisor.trace_export import build_trace_jsonl, trace_metadata
+
+
+def test_trace_jsonl_contains_manifest_and_turns() -> None:
+    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    engine = AdvisorEngine(index)
+    state = engine.turn("A local-first archive cartographer for family photos", {}).state
+    state = engine.turn("make a build plan", state).state
+
+    lines = [json.loads(line) for line in build_trace_jsonl(state, trace_metadata(index)).splitlines()]
+
+    assert lines[0]["type"] == "trace_manifest"
+    assert lines[0]["turn_count"] == 2
+    assert lines[0]["index"]["algorithm"] == "tfidf-sparse-v1"
+    assert lines[1]["type"] == "agent_turn"
+    assert lines[1]["tools"]
+    assert lines[2]["plan_steps"] > 0
+
+
+def test_checked_in_sample_trace_matches_schema() -> None:
+    lines = [
+        json.loads(line)
+        for line in Path("data/sample_trace.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+
+    assert lines[0]["type"] == "trace_manifest"
+    assert lines[0]["turn_count"] >= 3
+    assert all(line["schema_version"] == 1 for line in lines)
