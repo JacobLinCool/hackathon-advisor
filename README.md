@@ -75,6 +75,12 @@ The `chapter` Gradio API endpoint and `Chapter` button export the public-facing 
 one fate page per idea, each with verdict, score, targets, and closest cited pages. It is the shareable companion to
 the private Field Notes artifact.
 
+## Prize Ledger
+
+`/api/prize-ledger` and the in-app Prize Ledger panel expose submission evidence: the documented model stack, total
+parameter budget, Tiny Titan eligibility, runtime backend, and badge readiness. This keeps the demo's prize claims tied
+to visible app state rather than hidden notes.
+
 ## Wood Map
 
 Every scored fate page now carries a deterministic `wood_map` artifact: background dots for inked Spaces, red dots for

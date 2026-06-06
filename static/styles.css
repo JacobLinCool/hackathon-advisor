@@ -302,7 +302,8 @@ button:disabled {
 .trace-list,
 .target-list,
 .profile-grid,
-.wood-map {
+.wood-map,
+.prize-ledger {
   display: grid;
   gap: 9px;
 }
@@ -426,6 +427,57 @@ button:disabled {
   box-shadow: 0 0 0 3px rgba(47, 122, 73, 0.13);
 }
 
+.ledger-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ledger-summary strong,
+.ledger-summary span,
+.badge-item {
+  min-width: 0;
+  border-left: 3px solid rgba(80, 47, 22, 0.48);
+  border-radius: 0 8px 8px 0;
+  background: rgba(255, 241, 196, 0.34);
+  padding: 8px 10px;
+  color: #2a170d;
+  font-size: 0.76rem;
+  line-height: 1.25;
+  font-weight: 900;
+}
+
+.badge-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.badge-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.badge-item.ready {
+  border-left-color: var(--leaf);
+}
+
+.badge-item.eligible {
+  border-left-color: var(--gold);
+}
+
+.badge-item.planned {
+  border-left-color: var(--muted-ink);
+}
+
+.badge-item span {
+  color: var(--muted-ink);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+}
+
 .wood-map-field {
   position: relative;
   min-height: 138px;
@@ -523,6 +575,11 @@ button:disabled {
   }
 
   .target-list {
+    grid-template-columns: 1fr;
+  }
+
+  .ledger-summary,
+  .badge-list {
     grid-template-columns: 1fr;
   }
 

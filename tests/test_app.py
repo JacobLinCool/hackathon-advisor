@@ -7,6 +7,7 @@ from app import (
     field_notes_artifact,
     health,
     index,
+    prize_ledger_endpoint,
     runtime,
     tool_contract_check,
     tool_contracts,
@@ -34,6 +35,7 @@ def test_bootstrap_exposes_index_metadata() -> None:
     assert payload["top_projects"]
     assert payload["default_targets"] == payload["target_options"][:3]
     assert "skills" in payload["profile_fields"]
+    assert payload["prize_ledger"]["tiny_titan_eligible"] is True
 
 
 def test_trace_artifact_endpoint_exports_jsonl() -> None:
@@ -94,3 +96,11 @@ def test_runtime_endpoint_reports_planner() -> None:
     assert payload["backend"] == "rules"
     assert payload["model_id"] == "deterministic-tool-router"
     assert payload["loaded"] is True
+
+
+def test_prize_ledger_endpoint_reports_submission_evidence() -> None:
+    payload = prize_ledger_endpoint()
+
+    assert payload["runtime"]["backend"] == "rules"
+    assert payload["tiny_titan_eligible"] is True
+    assert any(badge["name"] == "Sharing is Caring" for badge in payload["badges"])

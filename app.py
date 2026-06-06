@@ -12,6 +12,7 @@ from hackathon_advisor.agent import AdvisorEngine
 from hackathon_advisor.chapter import build_chapter_markdown
 from hackathon_advisor.data import ProjectIndex
 from hackathon_advisor.field_notes import build_field_notes_markdown
+from hackathon_advisor.prize_ledger import prize_ledger
 from hackathon_advisor.tool_contracts import resolve_tool_call, tool_schemas
 from hackathon_advisor.tools import TARGETS
 from hackathon_advisor.trace_export import build_trace_jsonl, trace_metadata
@@ -57,21 +58,28 @@ def health() -> dict:
 
 @app.get("/api/bootstrap")
 def bootstrap() -> dict:
+    runtime_status = engine.runtime_status()
     return {
         "project_count": len(index.projects),
-        "runtime": engine.runtime_status(),
+        "runtime": runtime_status,
         **trace_metadata(index),
         "top_projects": [project.to_public_dict() for project in index.top_projects(limit=8)],
         "whitespace": [item.to_dict() for item in index.find_whitespace(limit=5)],
         "target_options": TARGETS,
         "default_targets": TARGETS[:3],
         "profile_fields": PROFILE_FIELDS,
+        "prize_ledger": prize_ledger(runtime_status),
     }
 
 
 @app.get("/api/runtime")
 def runtime() -> dict:
     return engine.runtime_status()
+
+
+@app.get("/api/prize-ledger")
+def prize_ledger_endpoint() -> dict:
+    return prize_ledger(engine.runtime_status())
 
 
 @app.get("/api/tool-contracts")

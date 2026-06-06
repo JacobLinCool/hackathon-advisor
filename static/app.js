@@ -10,6 +10,7 @@ const whitespaceEl = document.querySelector("#whitespace");
 const ideasEl = document.querySelector("#ideas");
 const targetsEl = document.querySelector("#targets");
 const profileEl = document.querySelector("#profile");
+const prizeLedgerEl = document.querySelector("#prize-ledger");
 const woodMapEl = document.querySelector("#wood-map");
 const scoreEl = document.querySelector("#score");
 const planEl = document.querySelector("#plan");
@@ -145,6 +146,7 @@ async function bootstrap() {
   renderProvenance(data);
   renderTargets(session.targets);
   renderProfile(session.profile);
+  renderPrizeLedger(data.prize_ledger || null);
   renderRestoredSession(data);
   renderWhitespace(data.whitespace || []);
 }
@@ -264,6 +266,37 @@ function renderProfile(profile) {
     `;
     profileEl.append(row);
   }
+}
+
+function renderPrizeLedger(ledger) {
+  prizeLedgerEl.innerHTML = "";
+  if (!ledger) {
+    prizeLedgerEl.innerHTML = `<div class="empty">No prize ledger loaded.</div>`;
+    return;
+  }
+  const readyBadges = (ledger.badges || []).filter((badge) => badge.status === "ready").length;
+  const badgeCount = (ledger.badges || []).length;
+  const header = document.createElement("div");
+  header.className = "ledger-summary";
+  header.innerHTML = `
+    <strong>${Number(ledger.total_params_b || 0).toFixed(2)}B params</strong>
+    <span>${ledger.tiny_titan_eligible ? "Tiny Titan eligible" : "Over Tiny Titan limit"}</span>
+    <span>${readyBadges}/${badgeCount} ready</span>
+    <span>${escapeHtml(ledger.runtime?.backend || "runtime")}</span>
+  `;
+  const badges = document.createElement("div");
+  badges.className = "badge-list";
+  for (const badge of (ledger.badges || []).slice(0, 7)) {
+    const item = document.createElement("div");
+    item.className = `badge-item ${badge.status || "planned"}`;
+    item.title = badge.evidence || badge.name;
+    item.innerHTML = `
+      <strong>${escapeHtml(badge.name)}</strong>
+      <span>${escapeHtml(badge.status)}</span>
+    `;
+    badges.append(item);
+  }
+  prizeLedgerEl.append(header, badges);
 }
 
 function handleEvent(event) {
