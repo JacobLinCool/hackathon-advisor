@@ -175,10 +175,16 @@ def idea_from_text(text: str) -> tuple[str, str]:
         if cleaned.lower().startswith(prefix):
             title = cleaned[len(prefix) :].strip(" :-")
             break
-    title = title[:64].strip(" .") or "Unwritten Page"
-    if len(title) < len(cleaned):
+    pitch = cleaned
+    explicit_pitch = False
+    if " -- " in title:
+        title, pitch = (part.strip() for part in title.split(" -- ", 1))
+        explicit_pitch = True
+    raw_title = title
+    title = raw_title[:64].strip(" .") or "Unwritten Page"
+    if len(raw_title) > 64 or (not explicit_pitch and len(title) < len(cleaned)):
         title = f"{title[:58].strip()}..."
-    return _display_title(title), cleaned
+    return _display_title(title), pitch
 
 
 def _is_new_idea(current: Idea, title: str, pitch: str) -> bool:

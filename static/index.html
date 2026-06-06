@@ -7,81 +7,227 @@
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <main class="shell">
-      <section class="stage" aria-label="The Unwritten Almanac">
-        <div class="canopy"></div>
-        <div class="book">
-          <section class="page page-left">
-            <div class="kicker">The Unwritten Almanac</div>
-            <h1>Mothback</h1>
-            <p id="ink" class="ink">
-              The book is open. The next page waits for its first line.
-            </p>
-            <form id="turn-form" class="prompt-row">
-              <input
+    <svg class="icon-sprite" aria-hidden="true">
+      <symbol id="icon-quill" viewBox="0 0 24 24">
+        <path d="M20 4c-6 1-11 5-13 11l-2 5 5-2c6-2 10-7 11-13z" />
+        <path d="M9 15c2-3 4-5 7-7" />
+      </symbol>
+      <symbol id="icon-gap" viewBox="0 0 24 24">
+        <path d="M12 3v4M12 17v4M3 12h4M17 12h4" />
+        <circle cx="12" cy="12" r="3.2" />
+      </symbol>
+      <symbol id="icon-plan" viewBox="0 0 24 24">
+        <path d="M5 4h11l3 3v13H5z" />
+        <path d="M9 9h6M9 13h6M9 17h3" />
+      </symbol>
+      <symbol id="icon-rank" viewBox="0 0 24 24">
+        <path d="M6 20V10M12 20V4M18 20v-7" />
+      </symbol>
+      <symbol id="icon-example" viewBox="0 0 24 24">
+        <path d="M12 3l2.2 5.6L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.8-.4z" />
+      </symbol>
+      <symbol id="icon-download" viewBox="0 0 24 24">
+        <path d="M12 4v11M7 11l5 5 5-5M5 20h14" />
+      </symbol>
+      <symbol id="icon-reset" viewBox="0 0 24 24">
+        <path d="M4 5v5h5" />
+        <path d="M5.5 14a7 7 0 1 0 1.2-6.7L4 10" />
+      </symbol>
+      <symbol id="icon-check" viewBox="0 0 24 24">
+        <path d="M5 12l4 4 10-11" />
+      </symbol>
+    </svg>
+
+    <div class="desk-glow"></div>
+    <main class="almanac">
+      <section class="sheet" aria-label="The Unwritten Almanac">
+        <header class="masthead">
+          <div class="masthead-l">
+            <svg class="crest" viewBox="0 0 64 64" aria-hidden="true">
+              <g
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M32 30c-6-12-18-16-26-10 2 9 9 17 20 18" />
+                <path d="M32 30c6-12 18-16 26-10-2 9-9 17-20 18" />
+                <path d="M32 32c-5 9-14 12-21 9 2-6 7-11 15-12" opacity=".6" />
+                <path d="M32 32c5 9 14 12 21 9-2-6-7-11-15-12" opacity=".6" />
+                <path
+                  d="M32 20c-2.4 0-4 2-4 6s1.6 14 4 18c2.4-4 4-14 4-18s-1.6-6-4-6z"
+                  fill="currentColor"
+                  fill-opacity=".08"
+                />
+                <circle cx="28.5" cy="24.5" r="2.3" fill="currentColor" fill-opacity=".15" />
+                <circle cx="35.5" cy="24.5" r="2.3" fill="currentColor" fill-opacity=".15" />
+                <circle cx="28.5" cy="24.5" r=".7" fill="currentColor" />
+                <circle cx="35.5" cy="24.5" r=".7" fill="currentColor" />
+                <path d="M30 19c-1-2-2-3.4-3.6-4M34 19c1-2 2-3.4 3.6-4" />
+              </g>
+            </svg>
+            <div>
+              <h1>The Unwritten Almanac</h1>
+              <div class="sub">Originality map and build plan for your next idea</div>
+            </div>
+          </div>
+          <div id="provenance" class="provenance" aria-live="polite">Opening the current map.</div>
+        </header>
+
+        <nav class="mobile-nav" aria-label="Sections">
+          <button type="button" class="active" data-tab="page">Page</button>
+          <button type="button" data-tab="proof">Proof</button>
+          <button type="button" data-tab="almanac">Board</button>
+        </nav>
+
+        <div id="spread" class="spread" data-tab="page">
+          <aside class="col col-margin" aria-label="Idea board and setup">
+            <section class="section">
+              <div class="eyebrow">Idea board <span id="idea-count" class="count">0</span></div>
+              <div id="ideas" class="idea-list"></div>
+            </section>
+
+            <section class="section">
+              <div class="eyebrow">Builder profile</div>
+              <div id="profile" class="profile-grid"></div>
+            </section>
+
+            <section class="section">
+              <div class="eyebrow">Goals <span id="target-count" class="count">0</span></div>
+              <div id="targets" class="target-list"></div>
+            </section>
+          </aside>
+
+          <section class="col col-page" aria-label="Current idea">
+            <form id="turn-form" class="composer">
+              <label class="sr-only" for="message">Describe your idea</label>
+              <textarea
                 id="message"
                 name="message"
+                class="prompt"
+                rows="2"
                 autocomplete="off"
-                placeholder="A local-first agent for..."
-              />
-              <button id="submit" type="submit" title="Ink the page">Ink</button>
+                placeholder="A local-first agent that helps..."
+              ></textarea>
+              <div class="underline"></div>
+
+              <div class="toolbar command-row" aria-label="Advisor commands">
+                <button id="submit" class="btn btn-ink" type="submit" title="Score this idea">
+                  <svg class="icon"><use href="#icon-quill"></use></svg>
+                  Ink
+                </button>
+                <button
+                  type="button"
+                  class="btn"
+                  data-command="write bolder and find whitespace"
+                  title="Find an under-explored direction"
+                >
+                  <svg class="icon"><use href="#icon-gap"></use></svg>
+                  Gap
+                </button>
+                <button
+                  type="button"
+                  class="btn"
+                  data-command="make a build plan"
+                  title="Draft a build plan for the current idea"
+                >
+                  <svg class="icon"><use href="#icon-plan"></use></svg>
+                  Plan
+                </button>
+                <button
+                  type="button"
+                  class="btn"
+                  data-command="compare ideas"
+                  title="Rank the saved idea board"
+                >
+                  <svg class="icon"><use href="#icon-rank"></use></svg>
+                  Compare
+                </button>
+                <span class="spacer"></span>
+                <button type="button" id="load-demo" class="btn btn-ghost" title="Load a sample session">
+                  <svg class="icon"><use href="#icon-example"></use></svg>
+                  Example
+                </button>
+                <button type="button" id="export-notes" class="btn btn-ghost" title="Export build notes" disabled>
+                  <svg class="icon"><use href="#icon-download"></use></svg>
+                  Notes
+                </button>
+                <button
+                  type="button"
+                  id="export-chapter"
+                  class="btn btn-ghost"
+                  title="Export the idea-board chapter"
+                  disabled
+                >
+                  <svg class="icon"><use href="#icon-download"></use></svg>
+                  Chapter
+                </button>
+                <button type="button" id="export-artifact" class="btn btn-ghost" title="Export the current page" disabled>
+                  <svg class="icon"><use href="#icon-download"></use></svg>
+                  PNG
+                </button>
+                <button type="button" id="reset-session" class="btn btn-ghost btn-icon" title="Reset the session">
+                  <svg class="icon"><use href="#icon-reset"></use></svg>
+                  <span class="sr-only">Reset</span>
+                </button>
+              </div>
             </form>
-            <div class="command-row" aria-label="Advisor commands">
-              <button type="button" id="load-demo" title="Load a sample idea">Example</button>
-              <button type="button" data-command="write bolder and find whitespace" title="Find a gold margin">
-                Gap
-              </button>
-              <button type="button" data-command="make a build plan" title="Draft a build plan">Plan</button>
-              <button type="button" data-command="compare ideas" title="Compare the idea board">Rank</button>
-              <button type="button" id="export-notes" title="Export build notes" disabled>Notes</button>
-              <button type="button" id="export-chapter" title="Export the Almanac chapter" disabled>Chapter</button>
-              <button type="button" id="export-artifact" title="Export the current fate page" disabled>PNG</button>
-              <button type="button" id="reset-session" title="Clear the saved session">Reset</button>
-            </div>
-            <div id="corrections" class="corrections" aria-live="polite"></div>
+
+            <div id="corrections" class="marginalia" aria-live="polite"></div>
+
+            <article class="fate">
+              <span id="verdict-stamp" class="verdict-stamp verdict-ready">
+                <span class="seal-dot"></span>
+                <span id="verdict">READY</span>
+              </span>
+              <p id="ink" class="prophecy">
+                The book is open. Describe a project idea, compare it against the current map, then turn the result into
+                a build plan.
+              </p>
+            </article>
+
+            <section class="section plan">
+              <div class="eyebrow">Build path</div>
+              <ol id="plan" class="plan-list"></ol>
+            </section>
           </section>
 
-          <section class="page page-right">
-            <div class="seal" id="seal">
-              <span id="verdict">UNWRITTEN</span>
-              <strong id="overall">0.0</strong>
-            </div>
-            <div id="provenance" class="provenance"></div>
-            <div id="score" class="score-grid" aria-label="Seal quadrants"></div>
-            <div class="panels">
-              <article class="wide-panel">
-                <h2>You vs the Wood</h2>
-                <div id="wood-map" class="wood-map"></div>
-              </article>
-              <article>
-                <h2>Goals</h2>
-                <div id="targets" class="target-list"></div>
-              </article>
-              <article>
-                <h2>Profile</h2>
-                <div id="profile" class="profile-grid"></div>
-              </article>
-              <article>
-                <h2>Idea Board</h2>
-                <div id="ideas" class="idea-list"></div>
-              </article>
-              <article>
-                <h2>Echoes</h2>
-                <div id="projects" class="project-list"></div>
-              </article>
-              <article>
-                <h2>Gold Margins</h2>
-                <div id="whitespace" class="whitespace-list"></div>
-              </article>
-              <article>
-                <h2>Build Plan</h2>
-                <ol id="plan" class="plan-list"></ol>
-              </article>
-            </div>
-          </section>
+          <aside class="col col-proof" aria-label="Score and evidence">
+            <section class="section">
+              <div class="eyebrow">Score</div>
+              <div class="seal-wrap">
+                <div id="seal" class="seal">
+                  <span id="overall" class="seal-overall">0.0</span>
+                  <span class="seal-of">out of ten</span>
+                </div>
+                <div class="seal-meta">
+                  <div id="seal-verdict" class="v ready">READY</div>
+                  <div id="seal-copy" class="t">No idea has been scored yet.</div>
+                </div>
+              </div>
+              <div id="score" class="quadrants" aria-label="Score breakdown"></div>
+            </section>
+
+            <section class="section">
+              <div class="eyebrow">You vs the Wood</div>
+              <div id="wood-map" class="wood-map"></div>
+            </section>
+
+            <section class="section">
+              <div class="eyebrow">Closest echoes</div>
+              <div id="projects" class="project-list"></div>
+            </section>
+
+            <section class="section">
+              <div class="eyebrow">Gold margins</div>
+              <div id="whitespace" class="whitespace-list"></div>
+            </section>
+          </aside>
         </div>
       </section>
     </main>
+
     <script type="module" src="/static/app.js"></script>
   </body>
 </html>

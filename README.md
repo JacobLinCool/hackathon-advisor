@@ -22,9 +22,8 @@ tags:
 # Hackathon Advisor
 
 **Hackathon Advisor** is a text-first project advisor for the Build Small Hackathon. The user-facing experience is
-**The Unwritten Almanac**: Mothback, an archivist of unwritten project pages, compares your idea against real Spaces in
-the `build-small-hackathon` organization, finds under-explored territory, scores the idea, and drafts a practical build
-plan.
+**The Unwritten Almanac**: a journal-style workspace that compares your idea against real Spaces in the
+`build-small-hackathon` organization, finds under-explored territory, scores the idea, and drafts a practical build plan.
 
 The current milestone is a deployable, deterministic vertical slice:
 

@@ -344,7 +344,7 @@ class AdvisorEngine:
         profile[field] = str(call.arguments["value"])
         state["profile"] = profile
         tool_events.append(ToolEvent("update_profile", f"Remembered {field}."))
-        response = f"Mothback adds a margin note: {field} = {profile[field]}."
+        response = f"Profile updated: {field} = {profile[field]}."
         return self._result(normalized, corrections, response, state, tool_events, [], [], None, [], {})
 
     def _target_turn(
@@ -463,9 +463,9 @@ class AdvisorEngine:
     def _opening_response(self, projects: list[Project]) -> str:
         names = ", ".join(project.title for project in projects[:4])
         return (
-            "Mothback opens the Almanac. The Wood is already inked with "
+            "The current map is open with "
             f"{len(self.index.projects)} project pages; the brightest current echoes include {names}. "
-            "Give me one project instinct and I will test whether it bleeds red or blooms gold."
+            "Describe one project idea and I will test where it overlaps, where it is quiet, and what to build next."
         )
 
     def _overlap_response(self, idea: Idea, projects: list[Project], score: ScoreCard) -> str:
@@ -506,7 +506,7 @@ class AdvisorEngine:
     def _plan_response(self, idea: Idea, score: ScoreCard, plan: list[str]) -> str:
         steps = " ".join(f"{idx + 1}. {step}" for idx, step in enumerate(plan))
         return (
-            f"Mothback presses the wax for {idea.title}: {score.overall}/10, {score.verdict}. "
+            f"The wax seal for {idea.title} reads {score.overall}/10, {score.verdict}. "
             f"The build path is: {steps}"
         )
 
@@ -530,7 +530,7 @@ class AdvisorEngine:
             "title": idea.title,
             "verdict": score.verdict,
             "overall": score.overall,
-            "caption": f"Mothback inked my Build Small fate page: {idea.title} - {score.verdict}.",
+            "caption": f"Idea page: {idea.title} - {score.verdict}.",
             "seal": score.to_dict(),
             "wood_map": build_wood_map(self.index, idea, score),
         }

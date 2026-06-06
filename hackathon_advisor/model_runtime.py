@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import os
 from typing import Any, Protocol
 
+from hackathon_advisor.tools import idea_from_text
 from hackathon_advisor.tool_contracts import ToolResolution, resolve_tool_call, tool_schemas
 
 
@@ -53,7 +54,12 @@ class RuleBasedPlanner:
         elif any(term in lower for term in ("search", "similar", "already", "existing", "overlap", "echo")):
             output = f'<function name="search_projects">{{"query":{_json_string(text)}}}</function>'
         else:
-            output = f'<function name="save_idea">{{"title":{_json_string(_title(text))},"pitch":{_json_string(text)}}}</function>'
+            title, pitch = idea_from_text(text)
+            output = (
+                f'<function name="save_idea">'
+                f'{{"title":{_json_string(title)},"pitch":{_json_string(pitch)}}}'
+                f"</function>"
+            )
         return resolve_tool_call(output, fallback_query=text)
 
 

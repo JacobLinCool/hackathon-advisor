@@ -16,6 +16,13 @@ const planEl = document.querySelector("#plan");
 const provenanceEl = document.querySelector("#provenance");
 const verdictEl = document.querySelector("#verdict");
 const overallEl = document.querySelector("#overall");
+const sealEl = document.querySelector("#seal");
+const sealVerdictEl = document.querySelector("#seal-verdict");
+const sealCopyEl = document.querySelector("#seal-copy");
+const verdictStampEl = document.querySelector("#verdict-stamp");
+const spreadEl = document.querySelector("#spread");
+const ideaCountEl = document.querySelector("#idea-count");
+const targetCountEl = document.querySelector("#target-count");
 const demoButton = document.querySelector("#load-demo");
 const exportButton = document.querySelector("#export-artifact");
 const exportNotesButton = document.querySelector("#export-notes");
@@ -47,6 +54,16 @@ form.addEventListener("submit", async (event) => {
   const message = input.value.trim();
   if (!message) return;
   await runTurn(message);
+});
+
+input.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" || event.shiftKey) return;
+  event.preventDefault();
+  form.requestSubmit();
+});
+
+document.querySelectorAll(".mobile-nav [data-tab]").forEach((button) => {
+  button.addEventListener("click", () => setActiveTab(button.dataset.tab || "page"));
 });
 
 document.querySelectorAll("[data-command]").forEach((button) => {
@@ -81,6 +98,7 @@ targetsEl.addEventListener("change", (event) => {
   session.targets = targetOptions.filter((option) => checked.has(option));
   syncCurrentIdeaTargets();
   saveSession();
+  renderTargets(session.targets);
   renderIdeas(session.ideas || []);
 });
 
@@ -104,8 +122,16 @@ ideasEl.addEventListener("click", (event) => {
   selectIdea(card.dataset.ideaId || "");
 });
 
+whitespaceEl.addEventListener("click", async (event) => {
+  const card = event.target.closest("[data-gap-prompt]");
+  if (!(card instanceof HTMLButtonElement) || !whitespaceEl.contains(card)) return;
+  if (card.disabled) return;
+  await runTurn(card.dataset.gapPrompt || "");
+});
+
 async function runTurn(message) {
   bumpSessionRevision();
+  setActiveTab("page");
   input.value = "";
   submit.disabled = true;
   setCommandDisabled(true);
@@ -177,8 +203,7 @@ function handleBootstrapError(error) {
   corrections.textContent = "Reload the page to try again.";
   provenanceEl.textContent = "index unavailable";
   renderScore(null);
-  verdictEl.textContent = "UNWRITTEN";
-  overallEl.textContent = "0.0";
+  setVerdictDisplay("INDEX CLOSED", 0, null);
   renderWoodMap(null);
   renderTargets([]);
   renderProfile({});
@@ -195,6 +220,44 @@ function defaultSession(data = bootstrapData) {
   };
 }
 
+function setActiveTab(tab) {
+  if (!spreadEl) return;
+  const next = ["page", "proof", "almanac"].includes(tab) ? tab : "page";
+  spreadEl.dataset.tab = next;
+  document.querySelectorAll(".mobile-nav [data-tab]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.tab === next);
+  });
+}
+
+function setVerdictDisplay(verdict = "READY", overall = 0, score = null) {
+  const text = String(verdict || "READY");
+  const isEcho = text.startsWith("ECHO");
+  const isUnwritten = text.startsWith("UNWRITTEN");
+  const numericOverall = Number(overall || score?.overall || 0);
+
+  verdictEl.textContent = text;
+  overallEl.textContent = numericOverall.toFixed(1);
+  sealEl.classList.toggle("echo", isEcho);
+  sealEl.classList.toggle("unwritten", isUnwritten);
+
+  sealVerdictEl.textContent = text;
+  sealVerdictEl.classList.toggle("echo", isEcho);
+  sealVerdictEl.classList.toggle("unwritten", isUnwritten);
+  sealVerdictEl.classList.toggle("ready", !isEcho && !isUnwritten);
+
+  verdictStampEl.classList.toggle("verdict-echo", isEcho);
+  verdictStampEl.classList.toggle("verdict-unwritten", isUnwritten);
+  verdictStampEl.classList.toggle("verdict-ready", !isEcho && !isUnwritten);
+
+  if (!score) {
+    sealCopyEl.textContent = text === "INDEX CLOSED" ? "The project map did not load." : "No idea has been scored yet.";
+  } else if (isEcho) {
+    sealCopyEl.textContent = "Nearby projects already cover parts of this idea.";
+  } else {
+    sealCopyEl.textContent = "This idea sits in a quieter part of the current map.";
+  }
+}
+
 function bumpSessionRevision() {
   sessionRevision += 1;
   return sessionRevision;
@@ -205,9 +268,26 @@ function isCurrentSessionRevision(revision) {
 }
 
 function restoreExportButtonLabels() {
-  exportNotesButton.textContent = "Notes";
-  exportChapterButton.textContent = "Chapter";
-  exportButton.textContent = PNG_EXPORT_LABEL;
+  setActionButtonLabel(exportNotesButton, "Notes");
+  setActionButtonLabel(exportChapterButton, "Chapter");
+  setActionButtonLabel(exportButton, PNG_EXPORT_LABEL);
+}
+
+function actionButtonLabel(button) {
+  return button?.dataset.actionLabel || button?.textContent.trim() || "";
+}
+
+function setActionButtonLabel(button, label) {
+  if (!button) return;
+  button.dataset.actionLabel = label;
+  const textNode = Array.from(button.childNodes).find(
+    (node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim(),
+  );
+  if (textNode) {
+    textNode.textContent = ` ${label}`;
+  } else {
+    button.append(document.createTextNode(` ${label}`));
+  }
 }
 
 function setSessionControlsDisabled(disabled) {
@@ -220,6 +300,9 @@ function setSessionControlsDisabled(disabled) {
   });
   ideasEl.querySelectorAll("button[data-idea-id]").forEach((idea) => {
     idea.disabled = disabled;
+  });
+  whitespaceEl.querySelectorAll("button[data-gap-prompt]").forEach((gap) => {
+    gap.disabled = disabled;
   });
 }
 
@@ -240,8 +323,7 @@ function resetSession() {
   renderTargets(session.targets);
   renderProfile(session.profile);
   renderScore(null);
-  verdictEl.textContent = "UNWRITTEN";
-  overallEl.textContent = "0.0";
+  setVerdictDisplay("READY", 0, null);
   renderWoodMap(null);
   renderIdeas([]);
   renderPlan([]);
@@ -257,6 +339,7 @@ function resetSession() {
 
 async function loadDemoSession() {
   bumpSessionRevision();
+  setActiveTab("page");
   submit.disabled = true;
   setCommandDisabled(true);
   setSessionControlsDisabled(true);
@@ -290,8 +373,7 @@ function applyDemoSession(data) {
   ink.textContent = data.response || "Demo rehearsal loaded.";
   ink.classList.remove("thinking");
   if (data.score) {
-    verdictEl.textContent = data.score.verdict;
-    overallEl.textContent = Number(data.score.overall).toFixed(1);
+    setVerdictDisplay(data.score.verdict, data.score.overall, data.score);
     renderScore(data.score);
     ink.classList.toggle("bleed", data.score.verdict.startsWith("ECHO"));
     ink.classList.toggle("gold", data.score.verdict.startsWith("UNWRITTEN"));
@@ -329,8 +411,7 @@ function renderRestoredSession(data) {
   if (score) {
     renderScore(score);
     const verdict = currentArtifact?.verdict || score.verdict || "UNWRITTEN";
-    verdictEl.textContent = verdict;
-    overallEl.textContent = Number(currentArtifact?.overall || score.overall || 0).toFixed(1);
+    setVerdictDisplay(verdict, currentArtifact?.overall || score.overall || 0, score);
     ink.classList.toggle("bleed", verdict.startsWith("ECHO"));
     ink.classList.toggle("gold", verdict.startsWith("UNWRITTEN"));
     renderWoodMap(currentArtifact?.wood_map || null);
@@ -342,6 +423,7 @@ function renderRestoredSession(data) {
     exportButton.disabled = !currentArtifact;
   } else {
     renderScore(null);
+    setVerdictDisplay("READY", 0, null);
     renderWoodMap(null);
     renderProjects(data.top_projects || []);
     exportButton.disabled = true;
@@ -424,6 +506,7 @@ function clearSavedSession() {
 
 function renderTargets(selectedTargets) {
   const selected = new Set(selectedTargets || []);
+  if (targetCountEl) targetCountEl.textContent = selected.size;
   targetsEl.innerHTML = "";
   if (!targetOptions.length) {
     targetsEl.innerHTML = `<div class="empty">No goals loaded.</div>`;
@@ -432,7 +515,7 @@ function renderTargets(selectedTargets) {
   for (const option of targetOptions) {
     const profile = targetProfileById.get(option) || { label: option, description: "" };
     const label = document.createElement("label");
-    label.className = "target-toggle";
+    label.className = `target-toggle goal ${selected.has(option) ? "on" : ""}`;
     label.innerHTML = `
       <input
         type="checkbox"
@@ -441,6 +524,9 @@ function renderTargets(selectedTargets) {
         ${sessionControlsLocked ? "disabled" : ""}
         ${selected.has(option) ? "checked" : ""}
       />
+      <span class="check" aria-hidden="true">
+        <svg class="icon"><use href="#icon-check"></use></svg>
+      </span>
       <span class="target-copy">
         <strong>${escapeHtml(profile.label)}</strong>
         ${profile.description ? `<small>${escapeHtml(profile.description)}</small>` : ""}
@@ -464,6 +550,7 @@ function renderProfile(profile) {
       <input
         data-profile-field="${escapeAttribute(field)}"
         value="${escapeAttribute(profile?.[field] || "")}"
+        placeholder="${escapeAttribute(fieldPlaceholder(field))}"
         autocomplete="off"
         ${sessionControlsLocked ? "disabled" : ""}
       />
@@ -510,8 +597,7 @@ function handleEvent(event) {
     renderIdeas(session.ideas || []);
     renderPlan(event.plan || []);
     if (event.score) {
-      verdictEl.textContent = event.score.verdict;
-      overallEl.textContent = Number(event.score.overall).toFixed(1);
+      setVerdictDisplay(event.score.verdict, event.score.overall, event.score);
       renderScore(event.score);
       ink.classList.toggle("bleed", event.score.verdict.startsWith("ECHO"));
       ink.classList.toggle("gold", event.score.verdict.startsWith("UNWRITTEN"));
@@ -528,25 +614,31 @@ function handleEvent(event) {
 }
 
 function renderIdeas(ideas) {
+  if (ideaCountEl) ideaCountEl.textContent = ideas.length;
   ideasEl.innerHTML = "";
   if (!ideas.length) {
-    ideasEl.innerHTML = `<div class="empty">No pages written.</div>`;
+    ideasEl.innerHTML = `<div class="empty">Your idea board is empty. Write an idea or open a gap.</div>`;
     return;
   }
   for (const idea of visibleIdeas(ideas)) {
     const score = idea.score?.overall ? Number(idea.score.overall).toFixed(1) : "0.0";
     const targets = (idea.targets || []).slice(0, 3).map(targetDisplayName).join(" · ");
     const selected = idea.id === session.current_idea_id;
+    const verdict = idea.score?.verdict || "DRAFT";
+    const isEcho = String(verdict).startsWith("ECHO");
     const item = document.createElement("button");
     item.type = "button";
-    item.className = `idea ${selected ? "current" : ""}`;
+    item.className = `idea idea-card ${selected ? "current" : ""} ${isEcho ? "bleed" : ""}`;
     item.disabled = sessionControlsLocked;
     item.dataset.ideaId = idea.id || "";
     item.setAttribute("aria-pressed", selected ? "true" : "false");
     item.innerHTML = `
-      <strong>${escapeHtml(idea.title)}</strong>
+      <div class="ihead">
+        <strong>${escapeHtml(idea.title)}</strong>
+        <span class="iscore">${score}</span>
+      </div>
       <p>${escapeHtml((idea.pitch || "").slice(0, 120))}</p>
-      <span>${escapeHtml(idea.score?.verdict || "DRAFT")} · ${score}</span>
+      <span class="iverdict ${isEcho ? "echo" : "unwritten"}">${escapeHtml(verdict)}</span>
       ${targets ? `<small>${escapeHtml(targets)}</small>` : ""}
     `;
     ideasEl.append(item);
@@ -576,8 +668,7 @@ function selectIdea(ideaId) {
   }
   const score = idea.score || null;
   if (score) {
-    verdictEl.textContent = score.verdict || "DRAFT";
-    overallEl.textContent = Number(score.overall || 0).toFixed(1);
+    setVerdictDisplay(score.verdict || "DRAFT", score.overall || 0, score);
     renderScore(score);
     ink.classList.toggle("bleed", String(score.verdict || "").startsWith("ECHO"));
     ink.classList.toggle("gold", String(score.verdict || "").startsWith("UNWRITTEN"));
@@ -605,19 +696,19 @@ function targetDisplayName(target) {
 
 function renderScore(score) {
   const rows = [
-    ["Originality", score?.originality || 0],
+    ["Original", score?.originality || 0],
     ["Delight", score?.delight || 0],
     ["AI Need", score?.ai_necessity || 0],
     ["Feasible", score?.feasibility || 0],
-    ["Prize Fit", score?.prize_fit || 0],
+    ["Goal Fit", score?.prize_fit || 0],
   ];
   scoreEl.innerHTML = rows
     .map(
       ([label, value]) => `
-        <div class="score-row">
-          <span>${label}</span>
-          <meter min="0" max="10" value="${value}"></meter>
-          <strong>${value}</strong>
+        <div class="quad">
+          <span class="ql">${label}</span>
+          <span class="qbar"><span class="qfill" style="width: ${Number(value) * 10}%"></span></span>
+          <span class="qv">${value}</span>
         </div>
       `,
     )
@@ -627,14 +718,14 @@ function renderScore(score) {
 function renderWoodMap(map) {
   woodMapEl.innerHTML = "";
   if (!map?.dots?.length) {
-    woodMapEl.innerHTML = `<div class="empty">No page has been placed yet.</div>`;
+    woodMapEl.innerHTML = `<div class="wood"><div class="empty wood-empty">No idea has been placed yet.</div></div>`;
     return;
   }
   const field = document.createElement("div");
-  field.className = "wood-map-field";
+  field.className = "wood";
   for (const dot of map.dots) {
     const marker = document.createElement(dot.url ? "a" : "span");
-    const verdictClass = dot.kind === "idea" && String(dot.verdict || "").startsWith("ECHO") ? "echo-idea" : "";
+    const verdictClass = dot.kind === "idea" && String(dot.verdict || "").startsWith("ECHO") ? "bleed" : "";
     marker.className = `wood-dot ${dot.kind || "inked"} ${verdictClass}`.trim();
     marker.style.left = `${boundedPercent(dot.x)}%`;
     marker.style.top = `${boundedPercent(dot.y)}%`;
@@ -649,10 +740,17 @@ function renderWoodMap(map) {
     }
     field.append(marker);
   }
+  const legend = document.createElement("div");
+  legend.className = "wood-legend";
+  legend.innerHTML = `
+    <span><i style="background: var(--leaf)"></i> You</span>
+    <span><i style="background: var(--oxblood)"></i> Echo</span>
+    <span><i style="background: rgba(73, 49, 22, 0.34)"></i> Indexed</span>
+  `;
   const caption = document.createElement("p");
-  caption.className = "wood-map-caption";
+  caption.className = "wood-cap";
   caption.textContent = map.caption || "Your page is plotted against the current Wood.";
-  woodMapEl.append(field, caption);
+  woodMapEl.append(field, legend, caption);
 }
 
 function renderProjects(projects) {
@@ -663,7 +761,7 @@ function renderProjects(projects) {
   }
   for (const project of projects.slice(0, 5)) {
     const item = document.createElement("a");
-    item.className = "project";
+    item.className = "project echo-item";
     item.href = project.url;
     item.target = "_blank";
     item.rel = "noreferrer";
@@ -684,7 +782,7 @@ function renderCitations(echoes) {
   for (const echo of echoes.slice(0, 5)) {
     const project = echo.project || {};
     const item = document.createElement("a");
-    item.className = "project citation";
+    item.className = "project echo-item citation";
     item.href = project.url || project.host || "#";
     item.target = "_blank";
     item.rel = "noreferrer";
@@ -693,7 +791,7 @@ function renderCitations(echoes) {
     item.innerHTML = `
       <strong>Page ${escapeHtml(echo.page_number || "?")} · ${escapeHtml(project.title || project.id || "Untitled")}</strong>
       <p>${escapeHtml(project.summary || project.id || "")}</p>
-      <span>${Number(echo.score || 0).toFixed(3)} · ${escapeHtml(matched)}</span>
+      <span class="matched">${Number(echo.score || 0).toFixed(3)} · ${escapeHtml(matched)}</span>
     `;
     projectsEl.append(item);
   }
@@ -706,11 +804,15 @@ function renderWhitespace(items) {
     return;
   }
   for (const item of items.slice(0, 4)) {
-    const gap = document.createElement("div");
-    gap.className = "gap";
+    const gap = document.createElement("button");
+    gap.type = "button";
+    gap.className = "gap gap-item";
+    gap.disabled = sessionControlsLocked;
+    gap.dataset.gapPrompt = `idea: ${item.label} -- ${item.pitch}`;
     gap.innerHTML = `
       <strong>${escapeHtml(item.label)}</strong>
       <p>${escapeHtml(item.pitch)}</p>
+      <span class="use">Use this direction</span>
     `;
     whitespaceEl.append(gap);
   }
@@ -804,9 +906,9 @@ async function exportChapter() {
 async function exportMarkdown({ endpoint, filename, button, busyLabel, pendingLabel, successLabel }) {
   if (!button || button.disabled) return;
   const revision = sessionRevision;
-  const idleLabel = button.textContent;
+  const idleLabel = actionButtonLabel(button);
   button.disabled = true;
-  button.textContent = busyLabel;
+  setActionButtonLabel(button, busyLabel);
   session.ui_status = pendingLabel;
   corrections.textContent = session.ui_status;
   saveSession();
@@ -827,7 +929,7 @@ async function exportMarkdown({ endpoint, filename, button, busyLabel, pendingLa
     session.ui_status = `Export failed: ${error.message}`;
     corrections.textContent = session.ui_status;
   } finally {
-    button.textContent = idleLabel;
+    setActionButtonLabel(button, idleLabel);
     if (!isCurrentSessionRevision(revision)) return;
     saveSession();
     setCommandDisabled(false);
@@ -835,9 +937,9 @@ async function exportMarkdown({ endpoint, filename, button, busyLabel, pendingLa
 }
 
 function exportArtifact(artifact) {
-  const idleLabel = exportButton.textContent;
+  const idleLabel = actionButtonLabel(exportButton);
   exportButton.disabled = true;
-  exportButton.textContent = "PNG...";
+  setActionButtonLabel(exportButton, "PNG...");
   session.ui_status = "Drawing PNG.";
   corrections.textContent = session.ui_status;
   saveSession();
@@ -857,7 +959,7 @@ function exportArtifact(artifact) {
     corrections.textContent = session.ui_status;
   } finally {
     saveSession();
-    exportButton.textContent = idleLabel || PNG_EXPORT_LABEL;
+    setActionButtonLabel(exportButton, idleLabel || PNG_EXPORT_LABEL);
     setCommandDisabled(false);
   }
 }
@@ -898,7 +1000,7 @@ function renderArtifactCanvas(artifact) {
     ["Delight", seal.delight || 0],
     ["AI Need", seal.ai_necessity || 0],
     ["Feasible", seal.feasibility || 0],
-    ["Prize Fit", seal.prize_fit || 0],
+    ["Goal Fit", seal.prize_fit || 0],
   ];
   rows.forEach(([label, value], index) => {
     const y = 418 + index * 34;
@@ -1046,6 +1148,16 @@ function fieldLabel(value) {
   return String(value)
     .replaceAll("_", " ")
     .replace(/^\w/, (char) => char.toUpperCase());
+}
+
+function fieldPlaceholder(value) {
+  const placeholders = {
+    skills: "frontend, notebooks, prompt design",
+    time: "one evening, weekend, 3 hours",
+    preferences: "visual, playful, practical",
+    constraints: "CPU-only, no paid APIs, solo build",
+  };
+  return placeholders[value] || "";
 }
 
 function boundedPercent(value) {

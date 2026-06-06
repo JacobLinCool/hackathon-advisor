@@ -49,6 +49,20 @@ def test_rule_planner_defaults_blank_to_list_projects() -> None:
     assert resolution.call.name == "list_projects"
 
 
+def test_rule_planner_splits_explicit_idea_pitch() -> None:
+    planner = RuleBasedPlanner()
+
+    resolution = planner.plan(
+        "idea: Hands-on science coach -- A lab-notebook companion for household experiments.",
+        {},
+    )
+
+    assert resolution.status == "valid"
+    assert resolution.call.name == "save_idea"
+    assert resolution.call.arguments["title"] == "Hands-on science coach"
+    assert resolution.call.arguments["pitch"] == "A lab-notebook companion for household experiments."
+
+
 def test_render_context_includes_state() -> None:
     context = render_context(
         "make a plan",
