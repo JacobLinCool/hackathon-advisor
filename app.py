@@ -10,6 +10,7 @@ from gradio import Server
 
 from hackathon_advisor.agent import AdvisorEngine
 from hackathon_advisor.data import ProjectIndex
+from hackathon_advisor.tool_contracts import resolve_tool_call, tool_schemas
 from hackathon_advisor.trace_export import build_trace_jsonl, trace_metadata
 
 
@@ -57,6 +58,19 @@ def bootstrap() -> dict:
         "top_projects": [project.to_public_dict() for project in index.top_projects(limit=8)],
         "whitespace": [item.to_dict() for item in index.find_whitespace(limit=5)],
     }
+
+
+@app.get("/api/tool-contracts")
+def tool_contracts() -> dict:
+    return {
+        "tool_count": len(tool_schemas()),
+        "tools": tool_schemas(),
+    }
+
+
+@app.api(name="tool_contract_check", concurrency_limit=8)
+def tool_contract_check(model_output: str, fallback_query: str = "") -> dict:
+    return resolve_tool_call(model_output, fallback_query=fallback_query).to_dict()
 
 
 @app.api(name="trace_artifact", concurrency_limit=8)

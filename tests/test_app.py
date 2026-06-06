@@ -1,6 +1,6 @@
 import json
 
-from app import bootstrap, engine, health, index, trace_artifact
+from app import bootstrap, engine, health, index, tool_contract_check, tool_contracts, trace_artifact
 
 
 def test_health_exposes_index_metadata() -> None:
@@ -29,3 +29,17 @@ def test_trace_artifact_endpoint_exports_jsonl() -> None:
     assert lines[0]["type"] == "trace_manifest"
     assert lines[0]["turn_count"] == 1
     assert lines[1]["type"] == "agent_turn"
+
+
+def test_tool_contracts_endpoint_exposes_schemas() -> None:
+    payload = tool_contracts()
+
+    assert payload["tool_count"] >= 8
+    assert any(tool["function"]["name"] == "search_projects" for tool in payload["tools"])
+
+
+def test_tool_contract_check_endpoint_defaults_safely() -> None:
+    payload = tool_contract_check("broken", "family archive")
+
+    assert payload["status"] == "defaulted"
+    assert payload["call"]["name"] == "search_projects"
