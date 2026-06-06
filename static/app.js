@@ -25,6 +25,7 @@ const resetButton = document.querySelector("#reset-session");
 const SESSION_STORAGE_KEY = "hackathon-advisor-session-v1";
 const FIELD_NOTES_FILENAME = "hackathon-advisor-field-notes.md";
 const CHAPTER_FILENAME = "hackathon-advisor-chapter.md";
+const PNG_EXPORT_LABEL = "PNG";
 
 let session = {};
 let clientPromise = Client.connect(window.location.origin);
@@ -728,10 +729,39 @@ async function exportMarkdown({ endpoint, filename, button, busyLabel, pendingLa
 }
 
 function exportArtifact(artifact) {
+  const idleLabel = exportButton.textContent;
+  exportButton.disabled = true;
+  exportButton.textContent = "PNG...";
+  session.ui_status = "Drawing PNG.";
+  corrections.textContent = session.ui_status;
+  saveSession();
+  try {
+    const filename = `${slugify(artifact.title || "unwritten-page")}.png`;
+    const canvas = renderArtifactCanvas(artifact);
+    const dataUrl = canvas.toDataURL("image/png");
+    if (!dataUrl.startsWith("data:image/png")) throw new Error("PNG rendering failed");
+    const link = document.createElement("a");
+    link.download = filename;
+    link.href = dataUrl;
+    link.click();
+    session.ui_status = `PNG saved: ${filename}`;
+    corrections.textContent = session.ui_status;
+  } catch (error) {
+    session.ui_status = `Export failed: ${error.message}`;
+    corrections.textContent = session.ui_status;
+  } finally {
+    saveSession();
+    exportButton.textContent = idleLabel || PNG_EXPORT_LABEL;
+    setCommandDisabled(false);
+  }
+}
+
+function renderArtifactCanvas(artifact) {
   const canvas = document.createElement("canvas");
   canvas.width = 1200;
   canvas.height = 675;
   const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("canvas is unavailable");
   drawParchment(ctx, canvas.width, canvas.height);
   const seal = artifact.seal || {};
   ctx.fillStyle = "#25160e";
@@ -777,11 +807,7 @@ function exportArtifact(artifact) {
     ctx.fillText(String(value), 582, y);
   });
   drawWoodMap(ctx, artifact.wood_map, 742, 396, 330, 184, artifact.verdict);
-
-  const link = document.createElement("a");
-  link.download = `${slugify(artifact.title || "unwritten-page")}.png`;
-  link.href = canvas.toDataURL("image/png");
-  link.click();
+  return canvas;
 }
 
 function downloadText(filename, text, type = "application/jsonl;charset=utf-8") {
