@@ -79,9 +79,7 @@ class AdvisorEngine:
             return self._result(normalized, corrections, response, state, tool_events, projects, [], None, [], {})
 
         if call.name == "compare_ideas":
-            response = self._compare_response(state)
-            tool_events.append(ToolEvent("compare_ideas", "Compared the current idea board."))
-            return self._result(normalized, corrections, response, state, tool_events, [], [], None, [], {})
+            return self._compare_turn(normalized, corrections, state, tool_events)
 
         if call.name == "make_plan":
             return self._plan_turn(call, normalized, corrections, state, tool_events)
@@ -254,6 +252,30 @@ class AdvisorEngine:
         artifact = self._artifact(idea, score)
         return self._result(normalized, corrections, response, state, tool_events, [], [], score, plan, artifact)
 
+    def _compare_turn(
+        self,
+        normalized: str,
+        corrections: list[Correction],
+        state: dict[str, Any],
+        tool_events: list[ToolEvent],
+    ) -> TurnResult:
+        ranked = self._rank_ideas(state)
+        if not ranked:
+            tool_events.append(ToolEvent("compare_ideas", "No idea pages were available to rank."))
+            response = "There are no written pages on the board yet."
+            return self._result(normalized, corrections, response, state, tool_events, [], [], None, [], {})
+
+        ideas = [idea for idea, _score in ranked]
+        state["ideas"] = [idea.to_dict() for idea in ideas]
+        winner, score = ranked[0]
+        state["current_idea_id"] = winner.id
+        tool_events.append(ToolEvent("compare_ideas", f"Ranked {len(ranked)} idea pages by current seal score."))
+        plan, event = self.tools.make_plan(winner)
+        tool_events.append(event)
+        response = self._compare_response(ranked, plan)
+        artifact = self._artifact(winner, score)
+        return self._result(normalized, corrections, response, state, tool_events, [], [], score, plan, artifact)
+
     def _project_turn(
         self,
         call: ToolCall,
@@ -382,6 +404,28 @@ class AdvisorEngine:
             return replace(score, originality=max(score.originality, 8), verdict="UNWRITTEN")
         return score
 
+    def _rank_ideas(self, state: dict[str, Any]) -> list[tuple[Idea, ScoreCard]]:
+        ranked: list[tuple[Idea, ScoreCard]] = []
+        for item in state.get("ideas", []):
+            try:
+                idea = self._with_session_targets(Idea(**item), state)
+            except TypeError:
+                continue
+            score, _event = self.tools.score_idea(idea)
+            score = self._align_score_from_state(score, idea, state)
+            idea.score = score.to_dict()
+            ranked.append((idea, score))
+        return sorted(
+            ranked,
+            key=lambda pair: (
+                pair[1].overall,
+                pair[1].originality,
+                pair[1].ai_necessity,
+                pair[0].title.casefold(),
+            ),
+            reverse=True,
+        )
+
     def _opening_response(self, projects: list[Project]) -> str:
         names = ", ".join(project.title for project in projects[:4])
         return (
@@ -432,17 +476,20 @@ class AdvisorEngine:
             f"The build path is: {steps}"
         )
 
-    def _compare_response(self, state: dict[str, Any]) -> str:
-        ideas = state.get("ideas", [])
-        if not ideas:
-            return "There are no written pages on the board yet."
-        scored = sorted(
-            ideas,
-            key=lambda item: ((item.get("score") or {}).get("overall") or 0, item.get("title") or ""),
-            reverse=True,
+    def _compare_response(self, ranked: list[tuple[Idea, ScoreCard]], plan: list[str]) -> str:
+        winner, score = ranked[0]
+        rows = []
+        for index, (idea, item_score) in enumerate(ranked[:4], start=1):
+            rows.append(
+                f"{index}. {idea.title} — {item_score.overall}/10, {item_score.verdict}, "
+                f"originality {item_score.originality}/10"
+            )
+        next_step = plan[0] if plan else "Make the top idea concrete enough to demo in one before/after scene."
+        return (
+            "Ranked pages: "
+            + " | ".join(rows)
+            + f". Keep {winner.title}: it has the strongest current seal at {score.overall}/10. Next: {next_step}"
         )
-        names = ", ".join(item.get("title", "Untitled") for item in scored[:3])
-        return f"The board tilts toward {names}. Keep the top page only if its artifact can be understood in ten seconds."
 
     def _artifact(self, idea: Idea, score: ScoreCard) -> dict[str, Any]:
         return {

@@ -76,6 +76,12 @@ The `chapter` Gradio API endpoint and `Chapter` button export the public-facing 
 one fate page per idea, each with verdict, score, targets, and closest cited pages. It is the shareable companion to
 the private Field Notes artifact.
 
+## Idea Board Ranking
+
+The `Rank` command rescans the saved idea board, recalculates each seal against the current targets, selects the
+strongest page as the active idea, and drafts the next build step. The app then moves that page to the top of the Idea
+Board and refreshes the seal, wood map, plan, and PNG artifact around the chosen direction.
+
 ## LoRA Dataset Artifact
 
 The `lora_dataset` Gradio API endpoint exports a compact chat JSONL dataset from successful session turns. Each included

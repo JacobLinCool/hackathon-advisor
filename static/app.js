@@ -376,7 +376,7 @@ function renderIdeas(ideas) {
     ideasEl.innerHTML = `<div class="empty">No pages written.</div>`;
     return;
   }
-  for (const idea of ideas.slice(-4).reverse()) {
+  for (const idea of visibleIdeas(ideas)) {
     const score = idea.score?.overall ? Number(idea.score.overall).toFixed(1) : "0.0";
     const targets = (idea.targets || []).slice(0, 3).join(" · ");
     const item = document.createElement("div");
@@ -389,6 +389,13 @@ function renderIdeas(ideas) {
     `;
     ideasEl.append(item);
   }
+}
+
+function visibleIdeas(ideas) {
+  const currentId = session.current_idea_id;
+  const current = currentId ? ideas.find((idea) => idea.id === currentId) : null;
+  const remaining = ideas.filter((idea) => idea.id !== currentId).slice(-3).reverse();
+  return current ? [current, ...remaining] : ideas.slice(-4).reverse();
 }
 
 function renderScore(score) {

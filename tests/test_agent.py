@@ -82,6 +82,23 @@ def test_distinct_idea_turns_append_to_board() -> None:
     assert second.state["ideas"][1]["title"] == second.artifact["title"]
 
 
+def test_compare_ideas_reranks_board_and_selects_winner() -> None:
+    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    engine = AdvisorEngine(index)
+
+    first = engine.turn("A local-first archive cartographer for family photos", {})
+    second = engine.turn("write bolder and find whitespace", first.state)
+    ranked = engine.turn("compare ideas", second.state)
+
+    assert ranked.score is not None
+    assert ranked.artifact["title"] == ranked.state["ideas"][0]["title"]
+    assert ranked.state["current_idea_id"] == ranked.state["ideas"][0]["id"]
+    assert ranked.state["ideas"][0]["score"]["overall"] >= ranked.state["ideas"][1]["score"]["overall"]
+    assert ranked.plan
+    assert "Ranked pages:" in ranked.response
+    assert ranked.tool_events[0].name == "compare_ideas"
+
+
 def test_plan_preserves_unwritten_whitespace_verdict() -> None:
     index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
     engine = AdvisorEngine(index)
