@@ -108,6 +108,7 @@ async function runTurn(message) {
   ink.classList.remove("bleed", "gold");
   corrections.textContent = "";
   planEl.innerHTML = "";
+  delete session.ui_status;
   startTurnWatchdog();
 
   try {
@@ -184,6 +185,8 @@ function applyDemoSession(data) {
   session = data.session || {};
   session.profile = session.profile || {};
   session.targets = Array.isArray(session.targets) ? session.targets : [];
+  session.last_response = data.response || session.last_response || "";
+  session.ui_status = `example loaded: ${data.turn_count || 0} advisor turns`;
   currentArtifact = data.artifact || session.last_artifact || null;
   ink.textContent = data.response || "Demo rehearsal loaded.";
   ink.classList.remove("thinking");
@@ -208,7 +211,7 @@ function applyDemoSession(data) {
   exportButton.disabled = !currentArtifact;
   setButtonDisabled(exportNotesButton, !(session.trace?.length));
   setButtonDisabled(exportChapterButton, !(session.ideas?.length));
-  corrections.textContent = `example loaded: ${data.turn_count || 0} advisor turns`;
+  corrections.textContent = session.ui_status;
   saveSession();
 }
 
@@ -226,8 +229,11 @@ function renderRestoredSession(data) {
   const score = currentArtifact?.seal || idea?.score || null;
   if (score) {
     renderScore(score);
-    verdictEl.textContent = currentArtifact?.verdict || score.verdict || "UNWRITTEN";
+    const verdict = currentArtifact?.verdict || score.verdict || "UNWRITTEN";
+    verdictEl.textContent = verdict;
     overallEl.textContent = Number(currentArtifact?.overall || score.overall || 0).toFixed(1);
+    ink.classList.toggle("bleed", verdict.startsWith("ECHO"));
+    ink.classList.toggle("gold", verdict.startsWith("UNWRITTEN"));
     renderWoodMap(currentArtifact?.wood_map || null);
     if (score.echoes?.length) {
       renderCitations(score.echoes);
@@ -245,6 +251,7 @@ function renderRestoredSession(data) {
   renderPlan(session.last_plan || []);
   setButtonDisabled(exportNotesButton, !(session.trace?.length));
   setButtonDisabled(exportChapterButton, !(session.ideas?.length));
+  restoreSessionCopy();
 }
 
 function readSavedSession() {
@@ -272,7 +279,16 @@ function normalizeSession(savedSession, defaultSession) {
   if (savedSession.current_whitespace) normalized.current_whitespace = savedSession.current_whitespace;
   if (savedSession.last_tool_resolution) normalized.last_tool_resolution = savedSession.last_tool_resolution;
   if (savedSession.last_artifact) normalized.last_artifact = savedSession.last_artifact;
+  if (typeof savedSession.last_response === "string") normalized.last_response = savedSession.last_response;
+  if (typeof savedSession.ui_status === "string") normalized.ui_status = savedSession.ui_status;
   return normalized;
+}
+
+function restoreSessionCopy() {
+  const response = typeof session.last_response === "string" ? session.last_response.trim() : "";
+  if (response) ink.textContent = response;
+  const status = typeof session.ui_status === "string" ? session.ui_status.trim() : "";
+  if (status) corrections.textContent = status;
 }
 
 function normalizeTargetProfiles(profiles, options) {
@@ -380,6 +396,8 @@ function handleEvent(event) {
     session = event.state || {};
     session.profile = session.profile || {};
     session.targets = Array.isArray(session.targets) ? session.targets : [];
+    session.last_response = event.response || session.last_response || "";
+    delete session.ui_status;
     if (event.score?.echoes?.length) {
       renderCitations(event.score.echoes);
     } else if (event.projects?.length) {
@@ -473,7 +491,8 @@ function selectIdea(ideaId) {
   renderTargets(session.targets || []);
   renderIdeas(session.ideas);
   renderPlan([]);
-  corrections.textContent = `selected: ${idea.title}`;
+  session.ui_status = `selected: ${idea.title}`;
+  corrections.textContent = session.ui_status;
   saveSession();
 }
 
@@ -684,7 +703,9 @@ async function exportMarkdown({ endpoint, filename, button, busyLabel, pendingLa
   const idleLabel = button.textContent;
   button.disabled = true;
   button.textContent = busyLabel;
-  corrections.textContent = pendingLabel;
+  session.ui_status = pendingLabel;
+  corrections.textContent = session.ui_status;
+  saveSession();
   try {
     const client = await clientPromise;
     const result = await client.predict(endpoint, {
@@ -694,10 +715,13 @@ async function exportMarkdown({ endpoint, filename, button, busyLabel, pendingLa
     const text = String(data || "");
     if (!text.trim()) throw new Error("empty export");
     downloadText(filename, text, "text/markdown;charset=utf-8");
-    corrections.textContent = `${successLabel}: ${filename}`;
+    session.ui_status = `${successLabel}: ${filename}`;
+    corrections.textContent = session.ui_status;
   } catch (error) {
-    corrections.textContent = `Export failed: ${error.message}`;
+    session.ui_status = `Export failed: ${error.message}`;
+    corrections.textContent = session.ui_status;
   } finally {
+    saveSession();
     button.textContent = idleLabel;
     setCommandDisabled(false);
   }
