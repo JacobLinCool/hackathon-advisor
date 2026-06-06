@@ -26,6 +26,8 @@ let clientPromise = Client.connect(window.location.origin);
 let currentArtifact = null;
 let targetOptions = [];
 let profileFields = [];
+let turnWatchdog = null;
+let sawTurnToken = false;
 
 bootstrap();
 
@@ -83,10 +85,10 @@ async function runTurn(message) {
   input.value = "";
   submit.disabled = true;
   setCommandDisabled(true);
-  ink.textContent = "";
   ink.classList.remove("bleed", "gold");
   corrections.textContent = "";
   planEl.innerHTML = "";
+  startTurnWatchdog();
 
   try {
     const client = await clientPromise;
@@ -103,9 +105,12 @@ async function runTurn(message) {
       }
     }
   } catch (error) {
+    clearTurnWatchdog();
     ink.textContent = `The page tore before it could answer: ${error.message}`;
+    ink.classList.remove("thinking");
     ink.classList.add("bleed");
   } finally {
+    clearTurnWatchdog();
     submit.disabled = false;
     setCommandDisabled(false);
     input.focus();
@@ -190,11 +195,17 @@ function handleEvent(event) {
   }
 
   if (event.type === "token") {
+    markFirstTokenSeen();
     ink.textContent += event.text;
     return;
   }
 
   if (event.type === "done") {
+    if (!sawTurnToken) {
+      clearTurnWatchdog();
+      ink.textContent = event.response || ink.textContent;
+      ink.classList.remove("thinking");
+    }
     session = event.state || {};
     session.profile = session.profile || {};
     session.targets = Array.isArray(session.targets) ? session.targets : [];
@@ -402,6 +413,32 @@ function setCommandDisabled(disabled) {
       (isTrace && !session.trace?.length) ||
       (isNotes && !session.trace?.length);
   });
+}
+
+function startTurnWatchdog() {
+  clearTurnWatchdog();
+  sawTurnToken = false;
+  ink.textContent = "The page is choosing its words.";
+  ink.classList.add("thinking");
+  turnWatchdog = window.setTimeout(() => {
+    if (sawTurnToken) return;
+    ink.textContent = "Still riffling the inked pages.";
+  }, 2200);
+}
+
+function markFirstTokenSeen() {
+  if (sawTurnToken) return;
+  sawTurnToken = true;
+  clearTurnWatchdog();
+  ink.textContent = "";
+  ink.classList.remove("thinking");
+}
+
+function clearTurnWatchdog() {
+  if (turnWatchdog) {
+    window.clearTimeout(turnWatchdog);
+    turnWatchdog = null;
+  }
 }
 
 function syncCurrentIdeaTargets() {

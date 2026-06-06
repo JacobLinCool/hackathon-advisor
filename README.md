@@ -75,6 +75,11 @@ Every scored fate page now carries a deterministic `wood_map` artifact: backgrou
 the closest cited echoes, and a green/red "you" dot for the current idea. The live UI and PNG export render the same
 map, so the share artifact visually proves whether the page sits in an empty margin or near existing work.
 
+## Latency Watchdog
+
+The custom frontend shows optimistic ink immediately after submit. If the first streamed token is slow, a lightweight
+watchdog updates the page text so the demo never sits in a silent blank state during Space startup or model routing.
+
 ## Tool-Call Contract
 
 `/api/tool-contracts` exposes the JSON schemas intended for MiniCPM-style tool calling. `tool_contract_check` accepts a

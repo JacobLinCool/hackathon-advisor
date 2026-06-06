@@ -127,6 +127,23 @@ h2 {
   text-shadow: 0 0 18px rgba(230, 189, 63, 0.42);
 }
 
+.ink.thinking {
+  color: var(--muted-ink);
+  font-style: italic;
+  animation: ink-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes ink-pulse {
+  0%,
+  100% {
+    opacity: 0.62;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
 .prompt-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 84px;
