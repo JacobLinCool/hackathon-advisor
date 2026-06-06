@@ -147,16 +147,22 @@ class AdvisorTools:
         idea.score = score.to_dict()
         return score, ToolEvent("score_idea", f"Pressed a five-quadrant seal: {score.overall}/10.")
 
-    def make_plan(self, idea: Idea) -> tuple[list[str], ToolEvent]:
+    def make_plan(self, idea: Idea, profile: dict[str, Any] | None = None) -> tuple[list[str], ToolEvent]:
         plan = [
             "Lock a one-sentence promise and one demo input that proves originality.",
-            "Refresh the Space snapshot, then tune the bleed threshold against the closest echoes.",
+            "Compare against the nearest echoes, then sharpen the part only this idea can own.",
             "Build the smallest happy path: input, citations, score seal, and shareable artifact.",
-            "Add one prize hook only after the core loop is smooth enough to demo without narration.",
+            "Add one goal hook only after the core loop is smooth enough to demo without narration.",
             "Record the trace and write build notes from the exact decisions.",
         ]
+        profile_steps = profile_plan_steps(profile)
+        if profile_steps:
+            plan[1:1] = profile_steps
         if any("Well" in target for target in idea.targets):
-            plan.insert(4, "Prepare a tiny LoRA dataset from successful advisor turns before training.")
+            plan.insert(
+                max(0, len(plan) - 1),
+                "Prepare a tiny LoRA dataset from successful advisor turns before training.",
+            )
         return plan, ToolEvent("make_plan", f"Drafted {len(plan)} build steps.")
 
 
@@ -177,6 +183,32 @@ def idea_from_text(text: str) -> tuple[str, str]:
 
 def _is_new_idea(current: Idea, title: str, pitch: str) -> bool:
     return current.title.strip().casefold() != title.strip().casefold() or current.pitch.strip() != pitch.strip()
+
+
+def profile_plan_steps(profile: dict[str, Any] | None) -> list[str]:
+    if not isinstance(profile, dict):
+        return []
+    steps: list[str] = []
+    time = _short_profile_value(profile.get("time"))
+    skills = _short_profile_value(profile.get("skills"))
+    constraints = _short_profile_value(profile.get("constraints"))
+    preferences = _short_profile_value(profile.get("preferences"))
+    if time:
+        steps.append(f"Scope the first prototype to {time}; cut anything that cannot fit that window.")
+    if skills:
+        steps.append(f"Use your {skills} strength for the first working surface before adding new tooling.")
+    if constraints:
+        steps.append(f"Test the constraint early: {constraints}. Do this before polishing the artifact.")
+    if preferences:
+        steps.append(f"Shape the demo around {preferences} so the result feels intentional, not generic.")
+    return steps
+
+
+def _short_profile_value(value: Any, limit: int = 84) -> str:
+    text = " ".join(str(value or "").split())
+    if len(text) <= limit:
+        return text
+    return text[: limit - 3].rstrip(" ,.;:") + "..."
 
 
 def _display_title(title: str) -> str:

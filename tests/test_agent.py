@@ -83,6 +83,27 @@ def test_plan_command_uses_current_idea() -> None:
     assert planned.state["ideas"][0]["title"] == first.artifact["title"]
 
 
+def test_plan_uses_profile_context() -> None:
+    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    engine = AdvisorEngine(index)
+    state = {
+        "profile": {
+            "skills": "frontend prototyping",
+            "time": "one evening",
+            "preferences": "quiet dashboards",
+            "constraints": "CPU-only Space",
+        }
+    }
+
+    first = engine.turn("A local-first archive cartographer for family photos", state)
+    planned = engine.turn("make a build plan", first.state)
+
+    assert any("one evening" in step for step in planned.plan)
+    assert any("frontend prototyping" in step for step in planned.plan)
+    assert any("CPU-only Space" in step for step in planned.plan)
+    assert any("quiet dashboards" in step for step in planned.plan)
+
+
 def test_distinct_idea_turns_append_to_board() -> None:
     index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
     engine = AdvisorEngine(index)

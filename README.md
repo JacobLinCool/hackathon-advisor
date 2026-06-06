@@ -88,6 +88,12 @@ The `Gap` command walks through unused whitespace candidates instead of repeatin
 gap becomes a new Idea Board page, so users can compare several genuinely different directions before ranking or
 planning.
 
+## Profile-Aware Plans
+
+The `Profile` panel is part of the planning loop. Skills, time, preferences, and constraints are stored in the session
+and inserted into `Plan` and `Rank` build paths, so the app can turn "one evening", "frontend prototyping", or
+"CPU-only Space" into concrete scoping steps instead of generic advice.
+
 ## LoRA Dataset Artifact
 
 The `lora_dataset` Gradio API endpoint exports a compact chat JSONL dataset from successful session turns. Each included

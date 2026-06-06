@@ -186,6 +186,10 @@ class AdvisorEngine:
         idea.targets = targets_from_state(state)
         return idea
 
+    def _profile_context(self, state: dict[str, Any]) -> dict[str, Any]:
+        profile = state.get("profile")
+        return profile if isinstance(profile, dict) else {}
+
     def _idea_research_turn(
         self,
         call: ToolCall,
@@ -249,7 +253,7 @@ class AdvisorEngine:
         idea.score = score.to_dict()
         self._store_idea(state, idea)
         tool_events.append(event)
-        plan, event = self.tools.make_plan(idea)
+        plan, event = self.tools.make_plan(idea, self._profile_context(state))
         tool_events.append(event)
         response = self._plan_response(idea, score, plan)
         artifact = self._artifact(idea, score)
@@ -273,7 +277,7 @@ class AdvisorEngine:
         winner, score = ranked[0]
         state["current_idea_id"] = winner.id
         tool_events.append(ToolEvent("compare_ideas", f"Ranked {len(ranked)} idea pages by current seal score."))
-        plan, event = self.tools.make_plan(winner)
+        plan, event = self.tools.make_plan(winner, self._profile_context(state))
         tool_events.append(event)
         response = self._compare_response(ranked, plan)
         artifact = self._artifact(winner, score)
