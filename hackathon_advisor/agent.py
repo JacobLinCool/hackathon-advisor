@@ -3,19 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from dataclasses import replace
 from typing import Any
-import re
 
 from hackathon_advisor.aliases import Correction, normalize_text
 from hackathon_advisor.data import Project, ProjectIndex, WhitespaceItem
 from hackathon_advisor.model_runtime import ToolPlanner, create_tool_planner, runtime_status
 from hackathon_advisor.scoring import ScoreCard
+from hackathon_advisor.tool_contracts import ToolCall
 from hackathon_advisor.tools import AdvisorTools, Idea, ToolEvent, idea_from_text
-
-
-PLAN_RE = re.compile(r"\b(plan|build order|roadmap|next step|milestone)\b", re.IGNORECASE)
-COMPARE_RE = re.compile(r"\b(compare|choose|rank)\b", re.IGNORECASE)
-WHITESPACE_RE = re.compile(r"\b(whitespace|original|new|bolder|unwritten|gap)\b", re.IGNORECASE)
-SEARCH_RE = re.compile(r"\b(search|similar|already|existing|overlap|echo)\b", re.IGNORECASE)
 
 
 @dataclass
@@ -65,44 +59,23 @@ class AdvisorEngine:
         whitespace: list[WhitespaceItem] = []
         score: ScoreCard | None = None
         plan: list[str] = []
+        call = resolution.call
 
-        if not normalized.strip():
+        if call.name == "list_projects":
             projects, event = self.tools.list_projects(limit=6)
             tool_events.append(event)
             response = self._opening_response(projects)
             return self._result(normalized, corrections, response, state, tool_events, projects, [], None, [], {})
 
-        if COMPARE_RE.search(normalized) and state.get("ideas"):
+        if call.name == "compare_ideas":
             response = self._compare_response(state)
             tool_events.append(ToolEvent("compare_ideas", "Compared the current idea board."))
             return self._result(normalized, corrections, response, state, tool_events, [], [], None, [], {})
 
-        if PLAN_RE.search(normalized) and state.get("ideas"):
-            idea = self._current_idea(state)
-            if idea is not None:
-                score, event = self.tools.score_idea(idea)
-                score = self._align_score_from_state(score, idea, state)
-                idea.score = score.to_dict()
-                self._store_idea(state, idea)
-                tool_events.append(event)
-                plan, event = self.tools.make_plan(idea)
-                tool_events.append(event)
-                response = self._plan_response(idea, score, plan)
-                artifact = self._artifact(idea, score)
-                return self._result(
-                    normalized,
-                    corrections,
-                    response,
-                    state,
-                    tool_events,
-                    [],
-                    [],
-                    score,
-                    plan,
-                    artifact,
-                )
+        if call.name == "make_plan":
+            return self._plan_turn(call, normalized, corrections, state, tool_events)
 
-        if WHITESPACE_RE.search(normalized):
+        if call.name == "find_whitespace":
             whitespace, event = self.tools.find_whitespace(limit=4)
             tool_events.append(event)
             if whitespace:
@@ -134,47 +107,19 @@ class AdvisorEngine:
                 artifact,
             )
 
-        title, pitch = idea_from_text(normalized)
-        idea, event = self.tools.save_idea(state, title, pitch)
-        tool_events.append(event)
+        if call.name == "get_project":
+            return self._project_turn(call, normalized, corrections, state, tool_events)
 
-        if PLAN_RE.search(normalized):
-            score, event = self.tools.score_idea(idea)
-            self._store_idea(state, idea)
-            tool_events.append(event)
-            plan, event = self.tools.make_plan(idea)
-            tool_events.append(event)
-            response = self._plan_response(idea, score, plan)
-            artifact = self._artifact(idea, score)
-            return self._result(normalized, corrections, response, state, tool_events, [], [], score, plan, artifact)
+        if call.name == "score_idea":
+            return self._score_turn(call, normalized, corrections, state, tool_events)
 
-        hits = self.index.search(normalized, limit=5)
-        projects = [hit.project for hit in hits]
-        tool_events.append(ToolEvent("search_projects", f"Checked {len(projects)} closest project echoes."))
-        score, event = self.tools.score_idea(idea)
-        self._store_idea(state, idea)
-        tool_events.append(event)
+        if call.name == "update_profile":
+            return self._profile_turn(call, normalized, corrections, state, tool_events)
 
-        if SEARCH_RE.search(normalized) or projects:
-            response = self._overlap_response(idea, projects, score)
-        else:
-            whitespace, event = self.tools.find_whitespace(limit=3)
-            tool_events.append(event)
-            response = self._whitespace_response(idea, whitespace, score)
+        if call.name == "set_target":
+            return self._target_turn(call, normalized, corrections, state, tool_events)
 
-        artifact = self._artifact(idea, score)
-        return self._result(
-            normalized,
-            corrections,
-            response,
-            state,
-            tool_events,
-            projects,
-            whitespace,
-            score,
-            plan,
-            artifact,
-        )
+        return self._idea_research_turn(call, normalized, corrections, state, tool_events)
 
     def _result(
         self,
@@ -216,6 +161,159 @@ class AdvisorEngine:
         if state.get("ideas"):
             return Idea(**state["ideas"][-1])
         return None
+
+    def _idea_research_turn(
+        self,
+        call: ToolCall,
+        normalized: str,
+        corrections: list[Correction],
+        state: dict[str, Any],
+        tool_events: list[ToolEvent],
+    ) -> TurnResult:
+        if call.name == "search_projects":
+            pitch = str(call.arguments.get("query") or normalized)
+            title, _ = idea_from_text(pitch)
+        else:
+            title, pitch = idea_from_text(normalized)
+            title = str(call.arguments.get("title") or title)
+            pitch = str(call.arguments.get("pitch") or pitch)
+
+        idea, event = self.tools.save_idea(state, title, pitch)
+        tool_events.append(event)
+        hits = self.index.search(pitch, limit=5)
+        projects = [hit.project for hit in hits]
+        tool_events.append(ToolEvent("search_projects", f"Checked {len(projects)} closest project echoes."))
+        score, event = self.tools.score_idea(idea)
+        self._store_idea(state, idea)
+        tool_events.append(event)
+        if projects:
+            response = self._overlap_response(idea, projects, score)
+            whitespace: list[WhitespaceItem] = []
+        else:
+            whitespace, event = self.tools.find_whitespace(limit=3)
+            tool_events.append(event)
+            response = self._whitespace_response(idea, whitespace, score)
+        artifact = self._artifact(idea, score)
+        return self._result(
+            normalized,
+            corrections,
+            response,
+            state,
+            tool_events,
+            projects,
+            whitespace,
+            score,
+            [],
+            artifact,
+        )
+
+    def _plan_turn(
+        self,
+        call: ToolCall,
+        normalized: str,
+        corrections: list[Correction],
+        state: dict[str, Any],
+        tool_events: list[ToolEvent],
+    ) -> TurnResult:
+        idea = self._idea_for_optional_id(call, state)
+        if idea is None:
+            title, pitch = idea_from_text(normalized)
+            idea, event = self.tools.save_idea(state, title, pitch)
+            tool_events.append(event)
+        score, event = self.tools.score_idea(idea)
+        score = self._align_score_from_state(score, idea, state)
+        idea.score = score.to_dict()
+        self._store_idea(state, idea)
+        tool_events.append(event)
+        plan, event = self.tools.make_plan(idea)
+        tool_events.append(event)
+        response = self._plan_response(idea, score, plan)
+        artifact = self._artifact(idea, score)
+        return self._result(normalized, corrections, response, state, tool_events, [], [], score, plan, artifact)
+
+    def _project_turn(
+        self,
+        call: ToolCall,
+        normalized: str,
+        corrections: list[Correction],
+        state: dict[str, Any],
+        tool_events: list[ToolEvent],
+    ) -> TurnResult:
+        project = self.index.get(str(call.arguments.get("id") or ""))
+        if project is None:
+            response = "The requested page is not inked in the current snapshot."
+            tool_events.append(ToolEvent("get_project", "No matching project card was found."))
+            return self._result(normalized, corrections, response, state, tool_events, [], [], None, [], {})
+        tool_events.append(ToolEvent("get_project", f"Read project card '{project.title}'."))
+        response = (
+            f"Page found: {project.title}. {project.summary or project.id} "
+            f"Models: {', '.join(project.models) or 'not listed'}. This is a real Space citation, not a guess."
+        )
+        return self._result(normalized, corrections, response, state, tool_events, [project], [], None, [], {})
+
+    def _score_turn(
+        self,
+        call: ToolCall,
+        normalized: str,
+        corrections: list[Correction],
+        state: dict[str, Any],
+        tool_events: list[ToolEvent],
+    ) -> TurnResult:
+        idea = self._idea_for_optional_id(call, state)
+        if idea is None:
+            title, pitch = idea_from_text(normalized)
+            idea, event = self.tools.save_idea(state, title, pitch)
+            tool_events.append(event)
+        score, event = self.tools.score_idea(idea)
+        score = self._align_score_from_state(score, idea, state)
+        idea.score = score.to_dict()
+        self._store_idea(state, idea)
+        tool_events.append(event)
+        response = f"The wax seal reads {score.overall}/10, {score.verdict}, for {idea.title}."
+        artifact = self._artifact(idea, score)
+        return self._result(normalized, corrections, response, state, tool_events, [], [], score, [], artifact)
+
+    def _profile_turn(
+        self,
+        call: ToolCall,
+        normalized: str,
+        corrections: list[Correction],
+        state: dict[str, Any],
+        tool_events: list[ToolEvent],
+    ) -> TurnResult:
+        profile = dict(state.get("profile") or {})
+        field = str(call.arguments["field"])
+        profile[field] = str(call.arguments["value"])
+        state["profile"] = profile
+        tool_events.append(ToolEvent("update_profile", f"Remembered {field}."))
+        response = f"Mothback adds a margin note: {field} = {profile[field]}."
+        return self._result(normalized, corrections, response, state, tool_events, [], [], None, [], {})
+
+    def _target_turn(
+        self,
+        call: ToolCall,
+        normalized: str,
+        corrections: list[Correction],
+        state: dict[str, Any],
+        tool_events: list[ToolEvent],
+    ) -> TurnResult:
+        targets = [str(target) for target in call.arguments.get("side_quests", [])]
+        state["targets"] = targets
+        idea = self._current_idea(state)
+        if idea is not None:
+            idea.targets = targets
+            self._store_idea(state, idea)
+        tool_events.append(ToolEvent("set_target", f"Set {len(targets)} target quests."))
+        response = "The seal will now bias toward: " + (", ".join(targets) or "no specific targets")
+        return self._result(normalized, corrections, response, state, tool_events, [], [], None, [], {})
+
+    def _idea_for_optional_id(self, call: ToolCall, state: dict[str, Any]) -> Idea | None:
+        idea_id = str(call.arguments.get("id") or "")
+        if idea_id:
+            for item in state.get("ideas", []):
+                if item.get("id") == idea_id:
+                    return Idea(**item)
+        return self._current_idea(state)
 
     def _record_trace(
         self,

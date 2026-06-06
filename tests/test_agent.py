@@ -2,6 +2,18 @@ from pathlib import Path
 
 from hackathon_advisor.agent import AdvisorEngine
 from hackathon_advisor.data import ProjectIndex
+from hackathon_advisor.tool_contracts import ToolCall, ToolResolution
+
+
+class StaticPlanner:
+    backend = "test"
+    model_id = "static"
+
+    def __init__(self, call: ToolCall) -> None:
+        self.call = call
+
+    def plan(self, message: str, state: dict) -> ToolResolution:
+        return ToolResolution(status="valid", call=self.call, errors=())
 
 
 def test_agent_scores_and_persists_idea() -> None:
@@ -64,3 +76,42 @@ def test_plan_preserves_unwritten_whitespace_verdict() -> None:
     assert whitespace.artifact["verdict"] == "UNWRITTEN"
     assert planned.artifact["title"] == whitespace.artifact["title"]
     assert planned.artifact["verdict"] == "UNWRITTEN"
+
+
+def test_planner_get_project_drives_project_response() -> None:
+    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    engine = AdvisorEngine(index, planner=StaticPlanner(ToolCall("get_project", {"id": "lolaby"})))
+
+    result = engine.turn("read lolaby", {})
+
+    assert result.projects
+    assert result.projects[0].slug == "lolaby"
+    assert result.tool_events[0].name == "get_project"
+
+
+def test_planner_profile_and_targets_update_state() -> None:
+    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    profile_engine = AdvisorEngine(
+        index,
+        planner=StaticPlanner(ToolCall("update_profile", {"field": "skills", "value": "frontend"})),
+    )
+    profile = profile_engine.turn("remember this", {})
+    target_engine = AdvisorEngine(
+        index,
+        planner=StaticPlanner(ToolCall("set_target", {"side_quests": ["Off the Grid", "Field Notes"]})),
+    )
+    targeted = target_engine.turn("target prizes", profile.state)
+
+    assert targeted.state["profile"]["skills"] == "frontend"
+    assert targeted.state["targets"] == ["Off the Grid", "Field Notes"]
+
+
+def test_planner_score_idea_scores_current_idea() -> None:
+    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    first = AdvisorEngine(index).turn("A local-first archive cartographer for family photos", {})
+    engine = AdvisorEngine(index, planner=StaticPlanner(ToolCall("score_idea", {})))
+
+    scored = engine.turn("score it", first.state)
+
+    assert scored.score is not None
+    assert scored.artifact["title"] == first.artifact["title"]

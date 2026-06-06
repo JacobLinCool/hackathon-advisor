@@ -174,4 +174,7 @@ def _json_string(value: str) -> str:
 
 
 def _title(text: str) -> str:
-    return (text[:64].strip(" .") or "Unwritten Page").capitalize()
+    title = text[:64].strip(" .") or "Unwritten Page"
+    if any(char.isupper() or char.isdigit() for char in title):
+        return title[0].upper() + title[1:]
+    return title.capitalize()
