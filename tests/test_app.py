@@ -1,6 +1,6 @@
 import json
 
-from app import bootstrap, engine, health, index, tool_contract_check, tool_contracts, trace_artifact
+from app import bootstrap, engine, health, index, runtime, tool_contract_check, tool_contracts, trace_artifact
 
 
 def test_health_exposes_index_metadata() -> None:
@@ -9,6 +9,7 @@ def test_health_exposes_index_metadata() -> None:
     assert payload["ok"] is True
     assert payload["projects"] == len(index.projects)
     assert payload["index_algorithm"] == "tfidf-sparse-v1"
+    assert payload["runtime"]["backend"] == "rules"
     assert len(payload["snapshot_digest"]) == 64
 
 
@@ -18,6 +19,7 @@ def test_bootstrap_exposes_index_metadata() -> None:
     assert payload["index_algorithm"] == "tfidf-sparse-v1"
     assert payload["index_generated_at"]
     assert payload["snapshot_digest"]
+    assert payload["runtime"]["tool_count"] >= 8
     assert payload["top_projects"]
 
 
@@ -43,3 +45,11 @@ def test_tool_contract_check_endpoint_defaults_safely() -> None:
 
     assert payload["status"] == "defaulted"
     assert payload["call"]["name"] == "search_projects"
+
+
+def test_runtime_endpoint_reports_planner() -> None:
+    payload = runtime()
+
+    assert payload["backend"] == "rules"
+    assert payload["model_id"] == "deterministic-tool-router"
+    assert payload["loaded"] is True

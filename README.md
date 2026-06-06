@@ -69,6 +69,12 @@ a manifest row followed by one row per agent turn. `data/sample_trace.jsonl` is 
 MiniCPM XML call such as `<function name="search_projects">{"query":"lullaby audio"}</function>`, validates it against
 the schemas, and returns either the valid call or a safe default call for the UI watchdog path.
 
+## Runtime Backend
+
+The deployed Space defaults to `ADVISOR_MODEL_BACKEND=rules`, a deterministic planner that emits the same validated XML
+tool calls as the MiniCPM path. To enable the optional MiniCPM adapter in a GPU environment, install the `model` extra
+and set `ADVISOR_MODEL_BACKEND=minicpm-transformers` plus `ADVISOR_MODEL_ID=openbmb/MiniCPM5-1B`.
+
 ## Test
 
 ```bash

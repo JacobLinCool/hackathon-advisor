@@ -7,6 +7,7 @@ import re
 
 from hackathon_advisor.aliases import Correction, normalize_text
 from hackathon_advisor.data import Project, ProjectIndex, WhitespaceItem
+from hackathon_advisor.model_runtime import ToolPlanner, create_tool_planner, runtime_status
 from hackathon_advisor.scoring import ScoreCard
 from hackathon_advisor.tools import AdvisorTools, Idea, ToolEvent, idea_from_text
 
@@ -45,14 +46,20 @@ class TurnResult:
 
 
 class AdvisorEngine:
-    def __init__(self, index: ProjectIndex) -> None:
+    def __init__(self, index: ProjectIndex, planner: ToolPlanner | None = None) -> None:
         self.index = index
         self.tools = AdvisorTools(index)
+        self.planner = planner or create_tool_planner()
+
+    def runtime_status(self) -> dict[str, Any]:
+        return runtime_status(self.planner).to_dict()
 
     def turn(self, message: str, state: dict[str, Any] | None = None) -> TurnResult:
         state = dict(state or {})
         state.setdefault("ideas", [])
         normalized, corrections = normalize_text(message)
+        resolution = self.planner.plan(normalized, state)
+        state["last_tool_resolution"] = resolution.to_dict()
         tool_events: list[ToolEvent] = []
         projects: list[Project] = []
         whitespace: list[WhitespaceItem] = []
@@ -230,6 +237,7 @@ class AdvisorEngine:
                 "plan_steps": len(plan),
                 "artifact_title": artifact.get("title", ""),
                 "response": response[:360],
+                "tool_resolution": state.get("last_tool_resolution") or {},
             }
         )
         state["trace"] = trace[-12:]

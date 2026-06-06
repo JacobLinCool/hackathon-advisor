@@ -40,6 +40,7 @@ def build_trace_jsonl(session: dict[str, Any], metadata: dict[str, Any]) -> str:
                 "plan_steps": int(event.get("plan_steps") or 0),
                 "artifact_title": str(event.get("artifact_title") or ""),
                 "response": str(event.get("response") or ""),
+                "tool_resolution": _tool_resolution(event),
             }
         )
     return "\n".join(json.dumps(record, ensure_ascii=False, sort_keys=True) for record in records) + "\n"
@@ -64,3 +65,16 @@ def _tools(event: dict[str, Any]) -> list[dict[str, str]]:
         for tool in tools
         if isinstance(tool, dict)
     ]
+
+
+def _tool_resolution(event: dict[str, Any]) -> dict[str, Any]:
+    resolution = event.get("tool_resolution") or {}
+    call = resolution.get("call") if isinstance(resolution, dict) else {}
+    return {
+        "status": str(resolution.get("status") or "") if isinstance(resolution, dict) else "",
+        "call": {
+            "name": str(call.get("name") or "") if isinstance(call, dict) else "",
+            "arguments": call.get("arguments") if isinstance(call, dict) else {},
+        },
+        "errors": list(resolution.get("errors") or []) if isinstance(resolution, dict) else [],
+    }

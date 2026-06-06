@@ -19,6 +19,7 @@ def test_trace_jsonl_contains_manifest_and_turns() -> None:
     assert lines[0]["index"]["algorithm"] == "tfidf-sparse-v1"
     assert lines[1]["type"] == "agent_turn"
     assert lines[1]["tools"]
+    assert lines[1]["tool_resolution"]["call"]["name"] == "save_idea"
     assert lines[2]["plan_steps"] > 0
 
 
@@ -31,3 +32,4 @@ def test_checked_in_sample_trace_matches_schema() -> None:
     assert lines[0]["type"] == "trace_manifest"
     assert lines[0]["turn_count"] >= 3
     assert all(line["schema_version"] == 1 for line in lines)
+    assert lines[1]["tool_resolution"]["status"] == "valid"

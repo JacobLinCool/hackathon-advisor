@@ -46,6 +46,7 @@ def health() -> dict:
     return {
         "ok": True,
         "projects": len(index.projects),
+        "runtime": engine.runtime_status(),
         **trace_metadata(index),
     }
 
@@ -54,10 +55,16 @@ def health() -> dict:
 def bootstrap() -> dict:
     return {
         "project_count": len(index.projects),
+        "runtime": engine.runtime_status(),
         **trace_metadata(index),
         "top_projects": [project.to_public_dict() for project in index.top_projects(limit=8)],
         "whitespace": [item.to_dict() for item in index.find_whitespace(limit=5)],
     }
+
+
+@app.get("/api/runtime")
+def runtime() -> dict:
+    return engine.runtime_status()
 
 
 @app.get("/api/tool-contracts")
