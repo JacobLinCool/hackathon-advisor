@@ -85,7 +85,7 @@ TOOL_SPECS: dict[str, ToolSpec] = {
         name="list_projects",
         description="Read prominent Build Small project cards from the offline snapshot.",
         fields={
-            "track": ToolField("string", "Optional prize, badge, model, or topic filter."),
+            "track": ToolField("string", "Optional model, goal, or topic filter."),
             "sort": ToolField("string", "Sort key.", enum=("likes", "recent", "title")),
         },
     ),
@@ -110,9 +110,6 @@ TOOL_SPECS: dict[str, ToolSpec] = {
         fields={
             "title": ToolField("string", "Short idea title.", required=True),
             "pitch": ToolField("string", "One-sentence idea pitch.", required=True),
-            "track": ToolField("string", "Primary target track or award."),
-            "models": ToolField("array", "Model ids the idea may use.", items_type="string"),
-            "side_quests": ToolField("array", "Badge or side quest targets.", items_type="string"),
         },
     ),
     "score_idea": ToolSpec(
@@ -143,10 +140,10 @@ TOOL_SPECS: dict[str, ToolSpec] = {
             "value": ToolField("string", "Profile value to remember.", required=True),
         },
     ),
-    "set_target": ToolSpec(
-        name="set_target",
-        description="Change the badge, model, or award targets used to bias ideation.",
-        fields={"side_quests": ToolField("array", "Targets to prioritize.", required=True, items_type="string")},
+    "set_goals": ToolSpec(
+        name="set_goals",
+        description="Change the selected goals used to bias ideation and planning.",
+        fields={"goals": ToolField("array", "Goal ids to prioritize.", required=True, items_type="string")},
     ),
 }
 

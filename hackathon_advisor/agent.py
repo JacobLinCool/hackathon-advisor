@@ -128,7 +128,7 @@ class AdvisorEngine:
         if call.name == "update_profile":
             return self._profile_turn(call, normalized, corrections, state, tool_events)
 
-        if call.name == "set_target":
+        if call.name == "set_goals":
             return self._target_turn(call, normalized, corrections, state, tool_events)
 
         return self._idea_research_turn(call, normalized, corrections, state, tool_events)
@@ -355,13 +355,13 @@ class AdvisorEngine:
         state: dict[str, Any],
         tool_events: list[ToolEvent],
     ) -> TurnResult:
-        targets = normalize_targets(call.arguments.get("side_quests"), default=[])
+        targets = normalize_targets(call.arguments.get("goals"), default=[])
         state["targets"] = targets
         idea = self._current_idea(state)
         if idea is not None:
             idea.targets = targets
             self._store_idea(state, idea)
-        tool_events.append(ToolEvent("set_target", f"Set {len(targets)} target quests."))
+        tool_events.append(ToolEvent("set_goals", f"Set {len(targets)} goals."))
         labels = [target_label(target) for target in targets]
         response = "The seal will now bias toward: " + (", ".join(labels) or "no specific goals")
         return self._result(normalized, corrections, response, state, tool_events, [], [], None, [], {})

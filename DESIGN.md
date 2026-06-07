@@ -267,7 +267,7 @@ code.** Keep live context to ~800–1200 tokens of *curated* view, never raw dat
 Few tools, few params each, short descriptions (1B-friendly). Heavy logic in code.
 
 **Jargon alias layer (input normalization).** Before any tool call and before display, run ASR/user text through a
-deterministic fuzzy/alias map over our small CLOSED vocab (model names, prize names, side quests) — e.g. RapidFuzz
+deterministic fuzzy/alias map over our small CLOSED vocab (model names and goal names) — e.g. RapidFuzz
 `token_set_ratio` / double-metaphone — mapping "neutron"/"nemo tron" → Nemotron, "mini cpm" → MiniCPM5, "zero gpu" →
 ZeroGPU. Surface the correction ("heard: neutron → Nemotron") as a trust-building, slightly delightful moment.
 
@@ -287,12 +287,12 @@ into a local snapshot + EmbeddingGemma index (keeps Off the Grid at runtime).
 
 | Tool | Signature | Purpose |
 |---|---|---|
-| `save_idea` | `(title, pitch, track, models[], side_quests[])` | add/update a candidate on the idea board |
+| `save_idea` | `(title, pitch)` | add/update a candidate on the idea board |
 | `score_idea` | `(id)` | fixed (hardcoded) rubric → scores + gaps; the 1B only triggers + verbalizes |
 | `compare_ideas` | `()` | rank the board, articulate tradeoffs |
-| `make_plan` | `(id)` | build plan + side quests it picks up "for free" |
+| `make_plan` | `(id)` | build plan + goals the current direction can support |
 | `update_profile` | `(field, value)` | record skills/time/prefs → Layer B |
-| `set_target` | `(side_quests[])` | change targeted prizes → updates Layer A bias |
+| `set_goals` | `(goals[])` | change selected goals → updates Layer A bias |
 
 ---
 

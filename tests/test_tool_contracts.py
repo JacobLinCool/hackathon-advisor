@@ -21,7 +21,13 @@ def test_tool_schemas_are_model_ready() -> None:
         "save_idea",
         "score_idea",
         "make_plan",
+        "set_goals",
     }
+    schema_text = str(schemas)
+    assert "set_target" not in schema_text
+    assert "side_quests" not in schema_text
+    assert "prize" not in schema_text.lower()
+    assert "badge" not in schema_text.lower()
 
 
 def test_parse_and_validate_minicpm_xml_tool_call() -> None:

@@ -180,9 +180,9 @@ def test_planner_profile_and_targets_update_state() -> None:
     profile = profile_engine.turn("remember this", {})
     target_engine = AdvisorEngine(
         index,
-        planner=StaticPlanner(ToolCall("set_target", {"side_quests": ["Off the Grid", "Field Notes"]})),
+        planner=StaticPlanner(ToolCall("set_goals", {"goals": ["Off the Grid", "Field Notes"]})),
     )
-    targeted = target_engine.turn("target prizes", profile.state)
+    targeted = target_engine.turn("set goals", profile.state)
 
     assert targeted.state["profile"]["skills"] == "frontend"
     assert targeted.state["targets"] == ["Off the Grid", "Field Notes"]
