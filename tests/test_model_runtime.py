@@ -172,3 +172,7 @@ def test_zerogpu_duration_validates_positive_values(monkeypatch: pytest.MonkeyPa
     monkeypatch.setenv("ADVISOR_ZERO_GPU_DURATION", "0")
     with pytest.raises(RuntimeError, match="positive"):
         zero_gpu_duration_seconds()
+
+    monkeypatch.setenv("ADVISOR_ZERO_GPU_DURATION", "121")
+    with pytest.raises(RuntimeError, match="at most 120"):
+        zero_gpu_duration_seconds()

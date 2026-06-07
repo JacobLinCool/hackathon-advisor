@@ -10,7 +10,8 @@ R = TypeVar("R")
 
 
 TRUE_VALUES = {"1", "true", "yes", "on"}
-DEFAULT_GPU_DURATION_SECONDS = 180
+DEFAULT_GPU_DURATION_SECONDS = 60
+MAX_GPU_DURATION_SECONDS = 120
 
 
 def zero_gpu_enabled() -> bool:
@@ -24,6 +25,8 @@ def zero_gpu_duration_seconds() -> int:
     duration = int(raw)
     if duration <= 0:
         raise RuntimeError("ADVISOR_ZERO_GPU_DURATION must be a positive integer.")
+    if duration > MAX_GPU_DURATION_SECONDS:
+        raise RuntimeError(f"ADVISOR_ZERO_GPU_DURATION must be at most {MAX_GPU_DURATION_SECONDS} seconds.")
     return duration
 
 

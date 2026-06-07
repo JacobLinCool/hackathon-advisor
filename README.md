@@ -170,6 +170,7 @@ The deployed Space is configured for ZeroGPU inference with:
 
 ```bash
 ADVISOR_ZERO_GPU=1
+ADVISOR_ZERO_GPU_DURATION=60
 ADVISOR_MODEL_BACKEND=minicpm-transformers
 ADVISOR_MODEL_ID=openbmb/MiniCPM5-1B
 ADVISOR_ADAPTER_ID=build-small-hackathon/hackathon-advisor-minicpm5-lora
