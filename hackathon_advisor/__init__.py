@@ -1,4 +1,4 @@
-"""Build Small Hackathon Advisor."""
+"""Originality advisor for small-model project ideas."""
 
 __all__ = ["__version__"]
 

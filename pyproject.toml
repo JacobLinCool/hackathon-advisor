@@ -1,7 +1,7 @@
 [project]
 name = "hackathon-advisor"
 version = "0.1.0"
-description = "Text-first originality advisor for the Build Small Hackathon."
+description = "Text-first originality advisor for small-model project ideas."
 readme = "README.md"
 requires-python = ">=3.11,<3.13"
 license = { text = "MIT" }

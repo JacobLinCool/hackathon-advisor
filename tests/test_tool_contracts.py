@@ -28,6 +28,8 @@ def test_tool_schemas_are_model_ready() -> None:
     assert "side_quests" not in schema_text
     assert "prize" not in schema_text.lower()
     assert "badge" not in schema_text.lower()
+    assert "Build Small" not in schema_text
+    assert "hackathon" not in schema_text.lower()
 
 
 def test_parse_and_validate_minicpm_xml_tool_call() -> None:

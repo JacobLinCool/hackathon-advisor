@@ -83,7 +83,7 @@ class ToolContractError(ValueError):
 TOOL_SPECS: dict[str, ToolSpec] = {
     "list_projects": ToolSpec(
         name="list_projects",
-        description="Read prominent Build Small project cards from the offline snapshot.",
+        description="Read prominent project cards from the offline snapshot.",
         fields={
             "track": ToolField("string", "Optional model, goal, or topic filter."),
             "sort": ToolField("string", "Sort key.", enum=("likes", "recent", "title")),
@@ -97,7 +97,7 @@ TOOL_SPECS: dict[str, ToolSpec] = {
     "get_project": ToolSpec(
         name="get_project",
         description="Read one project card by full Space id or slug.",
-        fields={"id": ToolField("string", "Project id such as build-small-hackathon/lolaby.", required=True)},
+        fields={"id": ToolField("string", "Project id or slug, such as org-name/space-name.", required=True)},
     ),
     "find_whitespace": ToolSpec(
         name="find_whitespace",
@@ -114,7 +114,7 @@ TOOL_SPECS: dict[str, ToolSpec] = {
     ),
     "score_idea": ToolSpec(
         name="score_idea",
-        description="Score the current idea against the fixed hackathon rubric.",
+        description="Score the current idea against the fixed originality and build-fit rubric.",
         fields={"id": ToolField("string", "Idea id; omit to score the current idea.")},
     ),
     "compare_ideas": ToolSpec(

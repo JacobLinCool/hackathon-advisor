@@ -9,7 +9,7 @@ python_version: "3.11"
 app_file: app.py
 pinned: true
 license: mit
-short_description: Originality advisor for Build Small.
+short_description: Originality advisor for small-model project ideas.
 tags:
   - gradio
   - build-small-hackathon
