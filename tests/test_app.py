@@ -73,7 +73,9 @@ def test_field_notes_endpoint_exports_markdown() -> None:
     assert "Skills: frontend" in payload
     assert "Goals: Build notes" in payload
     assert "Targets: Field Notes" not in payload
-    assert "## Turn Trace" in payload
+    assert "## Session Decisions" in payload
+    assert "## Turn Trace" not in payload
+    assert "Planner call" not in payload
     assert "Write build notes from the exact decisions" in payload
 
 

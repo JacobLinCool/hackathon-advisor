@@ -10,6 +10,7 @@ def test_main_interface_copy_is_builder_facing() -> None:
     assert "Closest project echoes" in html
     assert "Press Plan to draft build steps for the selected idea." in app_js
     assert "Loading an example idea board." in app_js
+    assert "Example idea board loaded with a plan and share page." in app_js
     assert "/api/artifact.png" in app_js
     assert "renderArtifactCanvas" not in app_js
     assert "canvas.toDataURL" not in app_js
@@ -25,6 +26,7 @@ def test_main_interface_copy_is_builder_facing() -> None:
         "Still riffling the inked pages.",
         "YOU VS THE WOOD",
         "current Wood",
+        "advisor turns",
     ]
     for phrase in stale_jargon:
         assert phrase not in combined

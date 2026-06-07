@@ -385,7 +385,7 @@ function applyDemoSession(data) {
   session.profile = session.profile || {};
   session.goals = Array.isArray(session.goals) ? session.goals : [];
   session.last_response = data.response || session.last_response || "";
-  session.ui_status = `Example loaded: ${data.turn_count || 0} advisor turns`;
+  session.ui_status = "Example idea board loaded with a plan and share page.";
   currentArtifact = data.artifact || session.last_artifact || null;
   ink.textContent = data.response || "Example session loaded.";
   ink.classList.remove("thinking");

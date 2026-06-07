@@ -53,12 +53,12 @@ def build_field_notes_markdown(session: dict[str, Any], metadata: dict[str, Any]
     else:
         lines.append("No build plan has been generated yet.")
 
-    lines.extend(["", "## Turn Trace", ""])
+    lines.extend(["", "## Session Decisions", ""])
     if trace:
         for index, event in enumerate(trace, start=1):
-            lines.extend(_trace_section(index, event))
+            lines.extend(_decision_section(index, event))
     else:
-        lines.append("No tool trace was recorded.")
+        lines.append("No session decisions were recorded.")
 
     wood_map = last_artifact.get("wood_map") if isinstance(last_artifact.get("wood_map"), dict) else {}
     if wood_map:
@@ -122,14 +122,14 @@ def _idea_section(index: int, idea: dict[str, Any]) -> list[str]:
     return lines
 
 
-def _trace_section(index: int, event: dict[str, Any]) -> list[str]:
+def _decision_section(index: int, event: dict[str, Any]) -> list[str]:
     tools = _list_of_dicts(event.get("tools"))
-    tool_names = " -> ".join(_clean(tool.get("name")) for tool in tools if tool.get("name")) or "reply"
+    action_names = " -> ".join(_clean(tool.get("name")) for tool in tools if tool.get("name")) or "reply"
     lines = [
-        f"### Turn {index}",
+        f"### Decision {index}",
         "",
         f"- Input: {_clean(event.get('input'))}",
-        f"- Tools: {tool_names}",
+        f"- Advisor actions: {action_names}",
     ]
     verdict = _clean(event.get("verdict"))
     overall = event.get("overall")
@@ -141,7 +141,7 @@ def _trace_section(index: int, event: dict[str, Any]) -> list[str]:
     resolution = event.get("tool_resolution") if isinstance(event.get("tool_resolution"), dict) else {}
     call = resolution.get("call") if isinstance(resolution.get("call"), dict) else {}
     if call:
-        lines.append(f"- Planner call: `{_clean(call.get('name'))}`")
+        lines.append(f"- Recorded action: `{_clean(call.get('name'))}`")
     lines.append("")
     return lines
 

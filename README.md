@@ -66,7 +66,7 @@ is intentionally kept out of the main user workflow.
 ## Field Notes Artifact
 
 The `field_notes` Gradio API endpoint and `Notes` button export a Markdown build note from the exact session state:
-builder profile, selected goals, idea board, cited Spaces, latest build plan, planner calls, and the share caption. This
+builder profile, selected goals, idea board, cited Spaces, latest build plan, advisor actions, and the share caption. This
 keeps the note tied to auditable app evidence instead of a separate hand-written summary.
 
 ## Chapter Artifact
