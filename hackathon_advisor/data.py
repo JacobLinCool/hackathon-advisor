@@ -319,6 +319,18 @@ class ProjectIndex:
         items.sort(key=lambda item: item.score, reverse=True)
         return items[:limit]
 
+    def starter_directions(self, limit: int = 5) -> list[WhitespaceItem]:
+        return [
+            WhitespaceItem(
+                label=seed.label,
+                pitch=seed.pitch,
+                evidence="Press this direction to test it against the current project map.",
+                score=0.0,
+                nearby_projects=(),
+            )
+            for seed in WHITESPACE_SEEDS[:limit]
+        ]
+
     def _embed_query(self, query: str) -> Sequence[float]:
         if self._query_embedder is None:
             from hackathon_advisor.llama_embedding import create_llama_cpp_embedder

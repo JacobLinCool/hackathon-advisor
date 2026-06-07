@@ -1097,7 +1097,7 @@ function renderCitations(echoes) {
 function renderWhitespace(items) {
   whitespaceEl.innerHTML = "";
   if (!items.length) {
-    whitespaceEl.innerHTML = `<div class="empty">No under-explored directions are loaded yet.</div>`;
+    whitespaceEl.innerHTML = `<div class="empty">No starting directions are loaded yet.</div>`;
     return;
   }
   for (const item of items.slice(0, 4)) {

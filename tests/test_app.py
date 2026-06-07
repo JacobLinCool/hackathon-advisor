@@ -68,7 +68,12 @@ def test_health_exposes_index_metadata() -> None:
     assert len(payload["snapshot_digest"]) == 64
 
 
-def test_bootstrap_exposes_index_metadata() -> None:
+def test_bootstrap_exposes_index_metadata(monkeypatch) -> None:
+    def fail_query_embedder(_: str) -> tuple[float, ...]:
+        raise AssertionError("bootstrap should not load the runtime query embedder")
+
+    monkeypatch.setattr(index, "_query_embedder", fail_query_embedder)
+
     payload = bootstrap()
 
     assert payload["index_algorithm"] == "llama-cpp-embedding-v1"
@@ -77,6 +82,7 @@ def test_bootstrap_exposes_index_metadata() -> None:
     assert payload["runtime"]["tool_count"] >= 8
     assert payload["voice"]["backend"] == "nemo-asr"
     assert payload["top_projects"]
+    assert payload["whitespace"]
     assert payload["default_goals"] == payload["goal_options"][:3]
     assert [goal["id"] for goal in payload["goal_profiles"]] == payload["goal_options"]
     assert payload["goal_profiles"][0]["label"] == "Local-first"

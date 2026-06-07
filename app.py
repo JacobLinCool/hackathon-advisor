@@ -134,7 +134,7 @@ def bootstrap() -> dict:
         "voice": voice_transcriber.status().to_dict(),
         **trace_metadata(index),
         "top_projects": [project.to_public_dict() for project in index.top_projects(limit=8)],
-        "whitespace": [item.to_dict() for item in index.find_whitespace(limit=5)],
+        "whitespace": [item.to_dict() for item in index.starter_directions(limit=5)],
         "goal_options": GOALS,
         "goal_profiles": goal_profiles(),
         "default_goals": GOALS[:3],
