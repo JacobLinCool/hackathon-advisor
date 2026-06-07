@@ -342,7 +342,7 @@ function resetSession() {
   renderWoodMap(null);
   renderIdeas([]);
   renderPlan([]);
-  renderProjects(bootstrapData.top_projects || []);
+  renderProjects([], "Score an idea to see nearby echoes.");
   renderWhitespace(bootstrapData.whitespace || []);
   restoreExportButtonLabels();
   exportButton.disabled = true;
@@ -433,14 +433,14 @@ function renderRestoredSession(data) {
     if (score.echoes?.length) {
       renderCitations(score.echoes);
     } else {
-      renderProjects(data.top_projects || []);
+      renderProjects([]);
     }
     exportButton.disabled = !currentArtifact;
   } else {
     renderScore(null);
     setVerdictDisplay("READY", 0, null);
     renderWoodMap(null);
-    renderProjects(data.top_projects || []);
+    renderProjects([], "Score an idea to see nearby echoes.");
     exportButton.disabled = true;
   }
   renderIdeas(session.ideas || []);
@@ -768,10 +768,10 @@ function renderWoodMap(map) {
   woodMapEl.append(field, legend, caption);
 }
 
-function renderProjects(projects) {
+function renderProjects(projects, emptyMessage = "No red ink yet.") {
   projectsEl.innerHTML = "";
   if (!projects.length) {
-    projectsEl.innerHTML = `<div class="empty">No red ink yet.</div>`;
+    projectsEl.innerHTML = `<div class="empty">${escapeHtml(emptyMessage)}</div>`;
     return;
   }
   for (const project of projects.slice(0, 5)) {
