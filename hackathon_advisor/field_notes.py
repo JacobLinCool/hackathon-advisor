@@ -3,12 +3,14 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+from hackathon_advisor.tools import target_label
+
 
 def build_field_notes_markdown(session: dict[str, Any], metadata: dict[str, Any]) -> str:
     ideas = _list_of_dicts(session.get("ideas"))
     trace = _list_of_dicts(session.get("trace"))
     profile = session.get("profile") if isinstance(session.get("profile"), dict) else {}
-    targets = [str(target) for target in session.get("targets") or []]
+    goals = _goal_labels(session.get("targets"))
     last_plan = [str(step) for step in session.get("last_plan") or []]
     last_artifact = session.get("last_artifact") if isinstance(session.get("last_artifact"), dict) else {}
 
@@ -35,7 +37,7 @@ def build_field_notes_markdown(session: dict[str, Any], metadata: dict[str, Any]
                 lines.append(f"- {field.title()}: {value}")
     else:
         lines.append("- No profile notes recorded.")
-    lines.append(f"- Targets: {', '.join(targets) if targets else 'No specific targets'}")
+    lines.append(f"- Goals: {', '.join(goals) if goals else 'No specific goals'}")
 
     lines.extend(["", "## Idea Board", ""])
     if ideas:
@@ -49,7 +51,7 @@ def build_field_notes_markdown(session: dict[str, Any], metadata: dict[str, Any]
         for index, step in enumerate(last_plan, start=1):
             lines.append(f"{index}. {_clean(step)}")
     else:
-        lines.append("No build plan was pressed yet.")
+        lines.append("No build plan has been generated yet.")
 
     lines.extend(["", "## Turn Trace", ""])
     if trace:
@@ -89,13 +91,13 @@ def build_field_notes_markdown(session: dict[str, Any], metadata: dict[str, Any]
 def _idea_section(index: int, idea: dict[str, Any]) -> list[str]:
     title = _clean(idea.get("title") or f"Idea {index}")
     pitch = _clean(idea.get("pitch"))
-    targets = [str(target) for target in idea.get("targets") or []]
+    goals = _goal_labels(idea.get("targets"))
     score = idea.get("score") if isinstance(idea.get("score"), dict) else {}
     lines = [
         f"### {index}. {title}",
         "",
         f"- Pitch: {pitch or 'No pitch recorded.'}",
-        f"- Targets: {', '.join(targets) if targets else 'No specific targets'}",
+        f"- Goals: {', '.join(goals) if goals else 'No specific goals'}",
     ]
     if score:
         lines.append(f"- Seal: {_clean(score.get('overall'))}/10 - {_clean(score.get('verdict'))}")
@@ -148,6 +150,12 @@ def _list_of_dicts(value: Any) -> list[dict[str, Any]]:
     if not isinstance(value, list):
         return []
     return [item for item in value if isinstance(item, dict)]
+
+
+def _goal_labels(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [target_label(str(target)) for target in value]
 
 
 def _clean(value: Any) -> str:

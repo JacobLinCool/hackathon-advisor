@@ -69,7 +69,8 @@ def test_field_notes_endpoint_exports_markdown() -> None:
 
     assert payload.startswith("# Hackathon Advisor Field Notes")
     assert "Skills: frontend" in payload
-    assert "Targets: Field Notes" in payload
+    assert "Goals: Build notes" in payload
+    assert "Targets: Field Notes" not in payload
     assert "## Turn Trace" in payload
     assert "Record the trace and write build notes" in payload
 
@@ -83,7 +84,9 @@ def test_chapter_endpoint_exports_markdown() -> None:
     assert payload.startswith("# The Unwritten Almanac Chapter")
     assert "## Page 1:" in payload
     assert "## Page 2:" in payload
-    assert "Closest inked pages:" in payload
+    assert "Goals:" in payload
+    assert "Targets:" not in payload
+    assert "Closest cited pages:" in payload
 
 
 def test_lora_dataset_endpoint_exports_sft_jsonl() -> None:

@@ -66,18 +66,18 @@ is intentionally kept out of the main user workflow.
 ## Field Notes Artifact
 
 The `field_notes` Gradio API endpoint and `Notes` button export a Markdown build note from the exact session state:
-builder profile, target badges, idea board, cited Spaces, latest build plan, planner calls, and the share caption. This
-keeps the Field Notes badge path tied to auditable app evidence instead of a separate hand-written summary.
+builder profile, selected goals, idea board, cited Spaces, latest build plan, planner calls, and the share caption. This
+keeps the note tied to auditable app evidence instead of a separate hand-written summary.
 
 ## Chapter Artifact
 
 The `chapter` Gradio API endpoint and `Chapter` button export the public-facing idea board as an Almanac chapter:
-one fate page per idea, each with verdict, score, targets, and closest cited pages. It is the shareable companion to
-the private Field Notes artifact.
+one idea page per saved direction, each with verdict, score, selected goals, and closest cited pages. It is the
+shareable companion to the working notes artifact.
 
 ## Idea Board Ranking
 
-The `Rank` command rescans the saved idea board, recalculates each seal against the current targets, selects the
+The `Rank` command rescans the saved idea board, recalculates each seal against the selected goals, selects the
 strongest page as the active idea, and drafts the next build step. The app then moves that page to the top of the Idea
 Board and refreshes the seal, wood map, plan, and PNG artifact around the chosen direction.
 Users can also click any Idea Board page to make it current before pressing `Plan`.
@@ -121,7 +121,7 @@ as the app instead of a separate hand-curated checklist.
 ## Demo Rehearsal
 
 `/api/demo-session` and the `Example` button load a deterministic two-turn sample: a complete project idea, profile,
-target badges, score seal, build plan, trace, and wood map. It is built by running the same advisor engine as a normal
+selected goals, score seal, build plan, trace, and wood map. It is built by running the same advisor engine as a normal
 user session, so the visible app stays focused on the builder's idea while API exports remain available for submission
 evidence.
 
@@ -151,7 +151,7 @@ watchdog updates the page text so the demo never sits in a silent blank state du
 
 ## Session Persistence
 
-The frontend stores the current advisor session in browser `localStorage`: profile notes, selected targets, idea board,
+The frontend stores the current advisor session in browser `localStorage`: profile notes, selected goals, idea board,
 trace, latest build plan, and last share artifact. Refreshing the Space restores the same cockpit state; the `Reset`
 button clears the saved session and returns to the current snapshot defaults.
 

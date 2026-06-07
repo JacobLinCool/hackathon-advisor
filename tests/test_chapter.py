@@ -23,8 +23,9 @@ def test_chapter_markdown_contains_idea_pages_and_citations() -> None:
     assert markdown.startswith("# The Unwritten Almanac Chapter")
     assert "## Page 1:" in markdown
     assert "## Page 2:" in markdown
-    assert "Targets:" in markdown
-    assert "Closest inked pages:" in markdown
+    assert "Goals:" in markdown
+    assert "Targets:" not in markdown
+    assert "Closest cited pages:" in markdown
     assert "Page 30:" in markdown
 
 
@@ -37,4 +38,4 @@ def test_empty_chapter_markdown_is_explicit() -> None:
         },
     )
 
-    assert "No fate pages have been written yet." in markdown
+    assert "No idea pages have been written yet." in markdown

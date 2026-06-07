@@ -26,7 +26,8 @@ def test_field_notes_markdown_contains_session_decisions() -> None:
 
     assert "# Hackathon Advisor Field Notes" in markdown
     assert "frontend prototyping" in markdown
-    assert "Targets: Field Notes" in markdown
+    assert "Goals: Build notes" in markdown
+    assert "Targets: Field Notes" not in markdown
     assert "A local-first archive cartographer for family photos" in markdown
     assert "## Build Plan" in markdown
     assert "Record the trace and write build notes" in markdown
