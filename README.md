@@ -174,6 +174,7 @@ ADVISOR_ZERO_GPU_DURATION=60
 ADVISOR_MODEL_BACKEND=minicpm-transformers
 ADVISOR_MODEL_ID=openbmb/MiniCPM5-1B
 ADVISOR_ADAPTER_ID=build-small-hackathon/hackathon-advisor-minicpm5-lora
+ADVISOR_ADAPTER_REVISION=25de69bcde397e1bcdd852923b56a42f10222650
 ```
 
 `agent_turn` wraps the engine call with `spaces.GPU` when `ADVISOR_ZERO_GPU=1`, so model loading and generation run on

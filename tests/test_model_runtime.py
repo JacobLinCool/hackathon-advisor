@@ -125,12 +125,14 @@ def test_create_tool_planner_defaults_to_rules(monkeypatch: pytest.MonkeyPatch) 
     assert isinstance(planner, RuleBasedPlanner)
     assert runtime_status(planner).to_dict()["loaded"] is True
     assert runtime_status(planner).to_dict()["adapter_id"] == ""
+    assert runtime_status(planner).to_dict()["adapter_revision"] == ""
 
 
 def test_create_tool_planner_accepts_adapter_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ADVISOR_MODEL_BACKEND", "minicpm-transformers")
     monkeypatch.setenv("ADVISOR_MODEL_ID", "openbmb/MiniCPM5-1B")
     monkeypatch.setenv("ADVISOR_ADAPTER_ID", DEFAULT_ADAPTER_ID)
+    monkeypatch.setenv("ADVISOR_ADAPTER_REVISION", "abc123")
 
     planner = create_tool_planner()
     status = runtime_status(planner).to_dict()
@@ -139,6 +141,7 @@ def test_create_tool_planner_accepts_adapter_env(monkeypatch: pytest.MonkeyPatch
     assert status["backend"] == "minicpm-transformers"
     assert status["model_id"] == "openbmb/MiniCPM5-1B"
     assert status["adapter_id"] == DEFAULT_ADAPTER_ID
+    assert status["adapter_revision"] == "abc123"
     assert status["loaded"] is False
 
 
@@ -155,6 +158,7 @@ def test_minicpm_status_is_lazy() -> None:
 
     assert status["backend"] == "minicpm-transformers"
     assert status["adapter_id"] == DEFAULT_ADAPTER_ID
+    assert status["adapter_revision"] == ""
     assert status["loaded"] is False
 
 

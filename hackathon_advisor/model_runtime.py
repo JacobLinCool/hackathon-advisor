@@ -19,6 +19,7 @@ class ToolPlanner(Protocol):
     backend: str
     model_id: str
     adapter_id: str
+    adapter_revision: str
 
     def plan(self, message: str, state: dict[str, Any]) -> ToolResolution:
         ...
@@ -29,6 +30,7 @@ class RuntimeStatus:
     backend: str
     model_id: str
     adapter_id: str
+    adapter_revision: str
     loaded: bool
     tool_count: int
 
@@ -37,6 +39,7 @@ class RuntimeStatus:
             "backend": self.backend,
             "model_id": self.model_id,
             "adapter_id": self.adapter_id,
+            "adapter_revision": self.adapter_revision,
             "loaded": self.loaded,
             "tool_count": self.tool_count,
         }
@@ -46,6 +49,7 @@ class RuleBasedPlanner:
     backend = "rules"
     model_id = "deterministic-tool-router"
     adapter_id = ""
+    adapter_revision = ""
 
     def plan(self, message: str, state: dict[str, Any]) -> ToolResolution:
         text = " ".join(message.strip().split())
@@ -78,9 +82,15 @@ class RuleBasedPlanner:
 class MiniCPMTransformersPlanner:
     backend = "minicpm-transformers"
 
-    def __init__(self, model_id: str = DEFAULT_MODEL_ID, adapter_id: str = "") -> None:
+    def __init__(
+        self,
+        model_id: str = DEFAULT_MODEL_ID,
+        adapter_id: str = "",
+        adapter_revision: str = "",
+    ) -> None:
         self.model_id = model_id.strip() or DEFAULT_MODEL_ID
         self.adapter_id = adapter_id.strip()
+        self.adapter_revision = adapter_revision.strip()
         self._tokenizer = None
         self._model = None
         self._inference_mode = None
@@ -106,11 +116,16 @@ class MiniCPMTransformersPlanner:
             ) from error
         base_model_id = self.model_id
         tokenizer_id = self.adapter_id or base_model_id
+        adapter_kwargs = {"revision": self.adapter_revision} if self.adapter_revision else {}
         if self.adapter_id:
-            adapter_config = PeftConfig.from_pretrained(self.adapter_id)
+            adapter_config = PeftConfig.from_pretrained(self.adapter_id, **adapter_kwargs)
             base_model_id = str(adapter_config.base_model_name_or_path or base_model_id)
 
-        self._tokenizer = AutoTokenizer.from_pretrained(tokenizer_id, trust_remote_code=True)
+        self._tokenizer = AutoTokenizer.from_pretrained(
+            tokenizer_id,
+            trust_remote_code=True,
+            **(adapter_kwargs if self.adapter_id else {}),
+        )
         model = AutoModelForCausalLM.from_pretrained(
             base_model_id,
             torch_dtype="auto",
@@ -118,7 +133,7 @@ class MiniCPMTransformersPlanner:
             trust_remote_code=True,
         )
         if self.adapter_id:
-            model = PeftModel.from_pretrained(model, self.adapter_id)
+            model = PeftModel.from_pretrained(model, self.adapter_id, **adapter_kwargs)
         model.eval()
         self._model = model
         if hasattr(torch, "inference_mode"):
@@ -159,6 +174,7 @@ def create_tool_planner() -> ToolPlanner:
         return MiniCPMTransformersPlanner(
             os.environ.get("ADVISOR_MODEL_ID", DEFAULT_MODEL_ID),
             os.environ.get("ADVISOR_ADAPTER_ID", ""),
+            os.environ.get("ADVISOR_ADAPTER_REVISION", ""),
         )
     raise RuntimeError(f"Unsupported ADVISOR_MODEL_BACKEND={backend!r}")
 
@@ -168,6 +184,7 @@ def runtime_status(planner: ToolPlanner) -> RuntimeStatus:
         backend=planner.backend,
         model_id=planner.model_id,
         adapter_id=planner.adapter_id,
+        adapter_revision=planner.adapter_revision,
         loaded=not isinstance(planner, MiniCPMTransformersPlanner) or planner._model is not None,
         tool_count=len(tool_schemas()),
     )
