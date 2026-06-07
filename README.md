@@ -194,6 +194,9 @@ ADVISOR_ASR_MODEL_ID=nvidia/nemotron-speech-streaming-en-0.6b
 `agent_turn` wraps the engine call with `spaces.GPU` when `ADVISOR_ZERO_GPU=1`, so model loading and generation run on
 the ZeroGPU allocation. The retrieval query embedder downloads the GGUF model through `huggingface_hub` unless
 `ADVISOR_EMBEDDING_MODEL_PATH` points to a local file. `/api/transcribe` uses the same ZeroGPU wrapper for Nemotron ASR.
+On macOS local runs with `ADVISOR_MODEL_BACKEND=minicpm-transformers`, the app automatically runs llama.cpp query
+embedding in a worker process so the MiniCPM PyTorch runtime and llama.cpp do not load conflicting OpenMP runtimes in
+the same Python process.
 Local tests and CPU-only development still default to `ADVISOR_MODEL_BACKEND=rules`.
 
 ## Test

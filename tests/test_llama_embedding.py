@@ -3,7 +3,12 @@ import sys
 from types import ModuleType
 
 from hackathon_advisor.data import DEFAULT_EMBEDDING_MODEL_FILE, DEFAULT_EMBEDDING_MODEL_REPO
-from hackathon_advisor.llama_embedding import DEFAULT_N_CTX, LlamaCppEmbedder, create_llama_cpp_embedder
+from hackathon_advisor.llama_embedding import (
+    DEFAULT_N_CTX,
+    LlamaCppEmbedder,
+    SubprocessLlamaCppEmbedder,
+    create_llama_cpp_embedder,
+)
 
 
 def test_llama_embedder_uses_q8_defaults_and_configured_context(
@@ -60,3 +65,33 @@ def test_create_llama_embedder_accepts_explicit_batch(monkeypatch) -> None:
     embedder = create_llama_cpp_embedder({"dimensions": 768})
 
     assert embedder.n_batch == 256
+
+
+def test_create_llama_embedder_can_isolate_native_runtime(monkeypatch) -> None:
+    monkeypatch.setenv("ADVISOR_EMBEDDING_SUBPROCESS", "1")
+
+    embedder = create_llama_cpp_embedder({"dimensions": 768})
+
+    assert isinstance(embedder, SubprocessLlamaCppEmbedder)
+    embedder.close()
+
+
+def test_create_llama_embedder_isolates_macos_minicpm_runtime(monkeypatch) -> None:
+    monkeypatch.delenv("ADVISOR_EMBEDDING_SUBPROCESS", raising=False)
+    monkeypatch.setenv("ADVISOR_MODEL_BACKEND", "minicpm-transformers")
+    monkeypatch.setattr("hackathon_advisor.llama_embedding.platform.system", lambda: "Darwin")
+
+    embedder = create_llama_cpp_embedder({"dimensions": 768})
+
+    assert isinstance(embedder, SubprocessLlamaCppEmbedder)
+    embedder.close()
+
+
+def test_create_llama_embedder_keeps_in_process_when_isolation_disabled(monkeypatch) -> None:
+    monkeypatch.setenv("ADVISOR_EMBEDDING_SUBPROCESS", "0")
+    monkeypatch.setenv("ADVISOR_MODEL_BACKEND", "minicpm-transformers")
+    monkeypatch.setattr("hackathon_advisor.llama_embedding.platform.system", lambda: "Darwin")
+
+    embedder = create_llama_cpp_embedder({"dimensions": 768})
+
+    assert isinstance(embedder, LlamaCppEmbedder)
