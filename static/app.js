@@ -51,6 +51,7 @@ bootstrap().catch(handleBootstrapError);
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (sessionControlsLocked || submit.disabled || input.disabled) return;
   const message = input.value.trim();
   if (!message) return;
   await runTurn(message);
@@ -134,6 +135,7 @@ whitespaceEl.addEventListener("click", async (event) => {
 });
 
 async function runTurn(message) {
+  if (sessionControlsLocked) return false;
   bumpSessionRevision();
   setActiveTab("page");
   input.value = "";
