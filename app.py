@@ -74,7 +74,6 @@ def bootstrap() -> dict:
         "goal_profiles": goal_profiles(),
         "default_goals": GOALS[:3],
         "profile_fields": PROFILE_FIELDS,
-        "prize_ledger": prize_ledger(runtime_status),
     }
 
 

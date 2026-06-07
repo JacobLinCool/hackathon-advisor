@@ -45,7 +45,7 @@ def test_bootstrap_exposes_index_metadata() -> None:
     assert payload["goal_profiles"][0]["label"] == "Local-first"
     assert "description" in payload["goal_profiles"][0]
     assert "skills" in payload["profile_fields"]
-    assert payload["prize_ledger"]["tiny_titan_eligible"] is True
+    assert "prize_ledger" not in payload
 
 
 def test_trace_artifact_endpoint_exports_jsonl() -> None:

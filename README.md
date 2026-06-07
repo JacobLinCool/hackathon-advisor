@@ -136,7 +136,7 @@ depending on browser `localStorage`.
 
 `/api/prize-ledger` exposes submission evidence: the documented model stack, total parameter budget, Tiny Titan
 eligibility, runtime backend, and badge readiness. It is kept as an API artifact rather than a primary in-app panel so
-the user-facing app stays centered on idea evaluation.
+the user-facing app stays centered on idea evaluation. The main `/api/bootstrap` payload does not include the ledger.
 
 ## Wood Map
 
