@@ -419,6 +419,8 @@ class AdvisorEngine:
         state["trace"] = trace[-12:]
         if plan:
             state["last_plan"] = list(plan)
+        else:
+            state.pop("last_plan", None)
         if artifact:
             state["last_artifact"] = artifact
 

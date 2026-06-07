@@ -88,6 +88,20 @@ def test_plan_command_uses_current_idea() -> None:
     assert planned.state["ideas"][0]["title"] == first.artifact["title"]
 
 
+def test_non_plan_turns_clear_stale_build_plan() -> None:
+    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    engine = AdvisorEngine(index)
+
+    first = engine.turn("A local-first archive cartographer for family photos", {})
+    planned = engine.turn("make a build plan", first.state)
+    project = engine.turn("read project lolaby", planned.state)
+    second = engine.turn("A hands-on science coach for kitchen experiments", planned.state)
+
+    assert planned.state["last_plan"]
+    assert "last_plan" not in project.state
+    assert "last_plan" not in second.state
+
+
 def test_plan_and_rank_do_not_create_placeholder_ideas() -> None:
     index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
     engine = AdvisorEngine(index)

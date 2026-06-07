@@ -427,7 +427,8 @@ function renderRestoredSession(data) {
     renderProjectReferenceState();
     renderProjects(session.last_projects || [], "No project page matched this request.");
     renderIdeas(session.ideas || []);
-    renderPlan(session.last_plan || []);
+    delete session.last_plan;
+    renderPlan([]);
     setCommandDisabled(false);
     restoreSessionCopy();
     return;
@@ -713,6 +714,7 @@ function selectIdea(ideaId) {
   if (!ideaId || !Array.isArray(session.ideas)) return;
   const idea = session.ideas.find((item) => item.id === ideaId);
   if (!idea) return;
+  const changedIdea = idea.id !== session.current_idea_id;
   bumpSessionRevision();
   session.current_idea_id = idea.id;
   if (Array.isArray(idea.goals) && idea.goals.length) {
@@ -722,7 +724,8 @@ function selectIdea(ideaId) {
   renderSelectedIdeaArtifact(idea);
   renderGoals(session.goals || []);
   renderIdeas(session.ideas);
-  renderPlan([]);
+  if (changedIdea) delete session.last_plan;
+  renderPlan(changedIdea ? [] : session.last_plan || []);
   session.ui_status = `selected: ${idea.title}`;
   corrections.textContent = session.ui_status;
   saveSession();
