@@ -419,6 +419,17 @@ function renderProvenance(data) {
 }
 
 function renderRestoredSession(data) {
+  const restoredProjectReference = isProjectReferenceTool(session.last_tool_resolution?.call?.name || "");
+  if (restoredProjectReference) {
+    currentArtifact = null;
+    renderProjectReferenceState();
+    renderProjects(session.last_projects || [], "No project page matched this request.");
+    renderIdeas(session.ideas || []);
+    renderPlan(session.last_plan || []);
+    setCommandDisabled(false);
+    restoreSessionCopy();
+    return;
+  }
   const idea = currentIdea();
   const storedArtifact = session.last_artifact || null;
   currentArtifact = !idea || storedArtifact?.title === idea.title ? storedArtifact : null;
@@ -472,6 +483,7 @@ function normalizeSession(savedSession, defaultSession) {
   if (savedSession.current_whitespace) normalized.current_whitespace = savedSession.current_whitespace;
   if (savedSession.last_tool_resolution) normalized.last_tool_resolution = savedSession.last_tool_resolution;
   if (savedSession.last_artifact) normalized.last_artifact = savedSession.last_artifact;
+  if (Array.isArray(savedSession.last_projects)) normalized.last_projects = savedSession.last_projects;
   if (typeof savedSession.last_response === "string") normalized.last_response = savedSession.last_response;
   if (typeof savedSession.ui_status === "string") normalized.ui_status = savedSession.ui_status;
   return normalized;
@@ -599,8 +611,12 @@ function handleEvent(event) {
     session.last_response = event.response || session.last_response || "";
     delete session.ui_status;
     const toolName = session.last_tool_resolution?.call?.name || "";
-    const projectReferenceOnly =
-      !event.score && !event.artifact?.title && ["list_projects", "get_project"].includes(toolName);
+    const projectReferenceOnly = !event.score && !event.artifact?.title && isProjectReferenceTool(toolName);
+    if (projectReferenceOnly) {
+      session.last_projects = Array.isArray(event.projects) ? event.projects : [];
+    } else {
+      delete session.last_projects;
+    }
     if (event.score?.echoes?.length) {
       renderCitations(event.score.echoes);
     } else if (event.projects?.length) {
@@ -641,6 +657,10 @@ function renderProjectReferenceState() {
   sealCopyEl.textContent = "Project pages are shown below. Score an idea to press a new seal.";
   ink.classList.remove("bleed", "gold");
   renderWoodMap(null);
+}
+
+function isProjectReferenceTool(toolName) {
+  return ["list_projects", "get_project"].includes(toolName);
 }
 
 function renderIdeas(ideas) {
