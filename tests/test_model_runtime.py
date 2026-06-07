@@ -97,13 +97,19 @@ def test_rule_planner_keeps_project_words_inside_ideas() -> None:
 def test_rule_planner_does_not_match_commands_inside_idea_words() -> None:
     planner = RuleBasedPlanner()
 
-    resolution = planner.plan(
+    planting = planner.plan(
         "A neighborhood seed swap archive that reminds gardeners when to plant shared seeds",
         {},
     )
+    cooking_plan = planner.plan(
+        "A countertop helper that turns pantry leftovers into a weekly cooking plan",
+        {},
+    )
 
-    assert resolution.status == "valid"
-    assert resolution.call.name == "save_idea"
+    assert planting.status == "valid"
+    assert planting.call.name == "save_idea"
+    assert cooking_plan.status == "valid"
+    assert cooking_plan.call.name == "save_idea"
 
 
 def test_rule_planner_splits_explicit_idea_pitch() -> None:

@@ -75,13 +75,53 @@ class RuleBasedPlanner:
             output = '<function name="list_projects">{"sort":"likes"}</function>'
         elif project_id:
             output = f'<function name="get_project">{{"id":{_json_string(project_id)}}}</function>'
-        elif _has_command_term(lower, ("compare", "choose", "rank")):
+        elif _matches_command(lower, ("compare", "compare ideas", "choose", "rank", "rank ideas")):
             output = '<function name="compare_ideas">{}</function>'
-        elif _has_command_term(lower, ("plan", "roadmap", "next step", "milestone")):
+        elif _matches_command(
+            lower,
+            (
+                "plan",
+                "make a plan",
+                "make a build plan",
+                "draft a plan",
+                "draft a build plan",
+                "build plan",
+                "roadmap",
+                "next step",
+                "milestone",
+            ),
+        ):
             output = '<function name="make_plan">{}</function>'
-        elif _has_command_term(lower, ("whitespace", "original", "new", "bolder", "unwritten", "gap")):
+        elif _matches_command(
+            lower,
+            (
+                "gap",
+                "find gap",
+                "find a gap",
+                "find whitespace",
+                "write bolder",
+                "bolder",
+                "unwritten",
+                "make it more original",
+                "new direction",
+            ),
+        ):
             output = '<function name="find_whitespace">{}</function>'
-        elif _has_command_term(lower, ("search", "similar", "already", "existing", "overlap", "echo")):
+        elif _matches_command(
+            lower,
+            (
+                "search",
+                "search for",
+                "find similar",
+                "similar",
+                "is this already",
+                "already built",
+                "check overlap",
+                "overlap",
+                "show echoes",
+                "echo",
+            ),
+        ):
             output = f'<function name="search_projects">{{"query":{_json_string(text)}}}</function>'
         else:
             title, pitch = idea_from_text(text)
@@ -412,11 +452,8 @@ def _wants_project_list(lower_text: str) -> bool:
     return lower_text in exact_phrases or any(lower_text.startswith(prefix) for prefix in command_prefixes)
 
 
-def _has_command_term(lower_text: str, terms: tuple[str, ...]) -> bool:
-    return any(
-        re.search(rf"(?<![a-z0-9]){re.escape(term)}(?![a-z0-9])", lower_text)
-        for term in terms
-    )
+def _matches_command(lower_text: str, phrases: tuple[str, ...]) -> bool:
+    return lower_text in phrases or any(lower_text.startswith(f"{phrase} ") for phrase in phrases)
 
 
 def _project_reference_id(text: str) -> str:

@@ -132,91 +132,76 @@
               </div>
 
               <div class="toolbar command-row" aria-label="Advisor commands">
-                <button id="submit" class="btn btn-ink" type="submit" title="Score this idea">
+                <button id="submit" class="btn btn-ink" type="submit" title="Score this idea against the map">
                   <svg class="icon"><use href="#icon-quill"></use></svg>
-                  Ink
+                  Score idea
                 </button>
-                <button
-                  type="button"
-                  class="btn"
-                  data-command="write bolder and find whitespace"
-                  title="Find an under-explored direction"
-                >
-                  <svg class="icon"><use href="#icon-gap"></use></svg>
-                  Gap
-                </button>
-                <button
-                  type="button"
-                  class="btn"
-                  data-command="make a build plan"
-                  title="Draft a build plan for the current idea"
-                >
-                  <svg class="icon"><use href="#icon-plan"></use></svg>
-                  Plan
-                </button>
-                <button
-                  type="button"
-                  class="btn"
-                  data-command="compare ideas"
-                  title="Compare saved ideas"
-                >
-                  <svg class="icon"><use href="#icon-rank"></use></svg>
-                  Compare
-                </button>
+
+                <div class="menu" data-menu="actions">
+                  <button
+                    type="button"
+                    id="actions-trigger"
+                    class="btn menu-trigger"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    title="More advisor actions"
+                  >
+                    Actions
+                    <span class="caret" aria-hidden="true">▾</span>
+                  </button>
+                  <div class="menu-list" id="actions-menu" role="menu" hidden>
+                    <button type="button" class="menu-item" role="menuitem" data-command="write bolder and find whitespace">
+                      <svg class="icon"><use href="#icon-gap"></use></svg>
+                      <span class="mi-text"><strong>Find a gap</strong><small>An under-explored direction to try</small></span>
+                    </button>
+                    <button type="button" class="menu-item" role="menuitem" data-command="make a build plan">
+                      <svg class="icon"><use href="#icon-plan"></use></svg>
+                      <span class="mi-text"><strong>Make a plan</strong><small>Draft build steps for the current idea</small></span>
+                    </button>
+                    <button type="button" class="menu-item" role="menuitem" data-command="compare ideas">
+                      <svg class="icon"><use href="#icon-rank"></use></svg>
+                      <span class="mi-text"><strong>Compare ideas</strong><small>Rank the ideas on your board</small></span>
+                    </button>
+                  </div>
+                </div>
+
                 <span class="spacer"></span>
-                <button
-                  type="button"
-                  id="load-demo"
-                  class="btn btn-ghost"
-                  title="Load a sample session"
-                  aria-label="Load example idea board"
-                >
-                  <svg class="icon"><use href="#icon-example"></use></svg>
-                  Example
-                </button>
-                <button
-                  type="button"
-                  id="export-notes"
-                  class="btn btn-ghost"
-                  title="Export build notes"
-                  aria-label="Export build notes"
-                  disabled
-                >
-                  <svg class="icon"><use href="#icon-download"></use></svg>
-                  Notes
-                </button>
-                <button
-                  type="button"
-                  id="export-chapter"
-                  class="btn btn-ghost"
-                  title="Export the idea-board chapter"
-                  aria-label="Export idea-board chapter"
-                  disabled
-                >
-                  <svg class="icon"><use href="#icon-download"></use></svg>
-                  Chapter
-                </button>
-                <button
-                  type="button"
-                  id="export-artifact"
-                  class="btn btn-ghost"
-                  title="Export the current page"
-                  aria-label="Export current page as PNG"
-                  disabled
-                >
-                  <svg class="icon"><use href="#icon-download"></use></svg>
-                  PNG
-                </button>
-                <button
-                  type="button"
-                  id="reset-session"
-                  class="btn btn-ghost btn-icon"
-                  title="Reset the session"
-                  aria-label="Reset session"
-                >
-                  <svg class="icon"><use href="#icon-reset"></use></svg>
-                  <span class="sr-only">Reset</span>
-                </button>
+
+                <div class="menu" data-menu="more">
+                  <button
+                    type="button"
+                    id="more-trigger"
+                    class="btn btn-ghost menu-trigger btn-icon"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    title="Export and session options"
+                    aria-label="More options"
+                  >
+                    <span class="caret-dots" aria-hidden="true">⋯</span>
+                  </button>
+                  <div class="menu-list menu-list-right" id="more-menu" role="menu" hidden>
+                    <button type="button" id="load-demo" class="menu-item" role="menuitem" aria-label="Load example idea board">
+                      <svg class="icon"><use href="#icon-example"></use></svg>
+                      Example board
+                    </button>
+                    <button type="button" id="export-notes" class="menu-item" role="menuitem" aria-label="Export build notes" disabled>
+                      <svg class="icon"><use href="#icon-download"></use></svg>
+                      Build notes
+                    </button>
+                    <button type="button" id="export-chapter" class="menu-item" role="menuitem" aria-label="Export idea-board chapter" disabled>
+                      <svg class="icon"><use href="#icon-download"></use></svg>
+                      Chapter
+                    </button>
+                    <button type="button" id="export-artifact" class="menu-item" role="menuitem" aria-label="Export current page as PNG" disabled>
+                      <svg class="icon"><use href="#icon-download"></use></svg>
+                      Page PNG
+                    </button>
+                    <button type="button" id="reset-session" class="menu-item menu-item-danger" role="menuitem" aria-label="Reset session">
+                      <svg class="icon"><use href="#icon-reset"></use></svg>
+                      Reset session
+                    </button>
+                  </div>
+                </div>
               </div>
             </form>
 

@@ -89,6 +89,8 @@ document.querySelectorAll("[data-command]").forEach((button) => {
   });
 });
 
+setupMenus();
+
 demoButton.addEventListener("click", async () => {
   await loadDemoSession();
 });
@@ -1202,6 +1204,37 @@ function clearTurnWatchdog() {
     window.clearTimeout(turnWatchdog);
     turnWatchdog = null;
   }
+}
+
+function setupMenus() {
+  document.querySelectorAll(".menu").forEach((menu) => {
+    const trigger = menu.querySelector(".menu-trigger");
+    const list = menu.querySelector(".menu-list");
+    if (!trigger || !list) return;
+    trigger.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const willOpen = list.hidden;
+      closeAllMenus();
+      if (willOpen) {
+        list.hidden = false;
+        trigger.setAttribute("aria-expanded", "true");
+      }
+    });
+    list.addEventListener("click", () => closeAllMenus()); // selecting an item closes the menu
+  });
+  document.addEventListener("click", () => closeAllMenus());
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeAllMenus();
+  });
+}
+
+function closeAllMenus() {
+  document.querySelectorAll(".menu-list").forEach((list) => {
+    list.hidden = true;
+  });
+  document.querySelectorAll(".menu-trigger").forEach((trigger) => {
+    trigger.setAttribute("aria-expanded", "false");
+  });
 }
 
 // Coarse overall completion per stage, so the bar always advances even when token-level
