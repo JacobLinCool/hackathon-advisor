@@ -1036,86 +1036,45 @@ async function exportMarkdown({ endpoint, filename, button, busyLabel, pendingLa
   }
 }
 
-function exportArtifact(artifact) {
+async function exportArtifact(artifact) {
   const idleLabel = actionButtonLabel(exportButton);
+  const revision = sessionRevision;
   exportButton.disabled = true;
   setActionButtonLabel(exportButton, "PNG...");
   session.ui_status = "Drawing PNG.";
   corrections.textContent = session.ui_status;
   saveSession();
   try {
-    const filename = `${slugify(artifact.title || "unwritten-page")}.png`;
-    const canvas = renderArtifactCanvas(artifact);
-    const dataUrl = canvas.toDataURL("image/png");
-    if (!dataUrl.startsWith("data:image/png")) throw new Error("PNG rendering failed");
-    const link = document.createElement("a");
-    link.download = filename;
-    link.href = dataUrl;
-    link.click();
+    const response = await fetch("/api/artifact.png", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(artifact),
+    });
+    if (!response.ok) throw new Error(`PNG rendering failed with ${response.status}`);
+    const blob = await response.blob();
+    if (!blob.size || !blob.type.includes("png")) throw new Error("PNG rendering failed");
+    if (!isCurrentSessionRevision(revision)) return;
+    const filename = filenameFromContentDisposition(response.headers.get("content-disposition")) || "unwritten-page.png";
+    downloadBlob(filename, blob);
     session.ui_status = `PNG saved: ${filename}`;
     corrections.textContent = session.ui_status;
   } catch (error) {
+    if (!isCurrentSessionRevision(revision)) return;
     session.ui_status = `Export failed: ${error.message}`;
     corrections.textContent = session.ui_status;
   } finally {
-    saveSession();
+    if (isCurrentSessionRevision(revision)) saveSession();
     setActionButtonLabel(exportButton, idleLabel || PNG_EXPORT_LABEL);
     setCommandDisabled(false);
   }
 }
 
-function renderArtifactCanvas(artifact) {
-  const canvas = document.createElement("canvas");
-  canvas.width = 1200;
-  canvas.height = 675;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("canvas is unavailable");
-  drawParchment(ctx, canvas.width, canvas.height);
-  const seal = artifact.seal || {};
-  ctx.fillStyle = "#25160e";
-  ctx.font = "700 58px Georgia, serif";
-  wrapText(ctx, artifact.title, 78, 112, 760, 66);
-  ctx.font = "28px Georgia, serif";
-  ctx.fillStyle = "#6b4e35";
-  wrapText(ctx, artifact.caption || "", 82, 252, 720, 36);
-  drawCitationList(ctx, seal.echoes || [], 742, 330, 330);
-
-  ctx.save();
-  ctx.translate(930, 226);
-  ctx.rotate(-0.08);
-  ctx.fillStyle = artifact.verdict?.startsWith("UNWRITTEN") ? "#b68a12" : "#8d2d26";
-  ctx.beginPath();
-  ctx.arc(0, 0, 120, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#fff0b5";
-  ctx.textAlign = "center";
-  ctx.font = "800 27px Inter, sans-serif";
-  wrapText(ctx, artifact.verdict || "UNWRITTEN", -92, -28, 184, 32, "center");
-  ctx.font = "700 58px Georgia, serif";
-  ctx.fillText(Number(artifact.overall || seal.overall || 0).toFixed(1), 0, 48);
-  ctx.restore();
-
-  const rows = [
-    ["Originality", seal.originality || 0],
-    ["Delight", seal.delight || 0],
-    ["AI Need", seal.ai_necessity || 0],
-    ["Feasible", seal.feasibility || 0],
-    ["Goal Fit", seal.goal_fit || 0],
-  ];
-  rows.forEach(([label, value], index) => {
-    const y = 418 + index * 34;
-    ctx.fillStyle = "#6b4e35";
-    ctx.font = "700 20px Inter, sans-serif";
-    ctx.fillText(label, 82, y);
-    ctx.fillStyle = "rgba(80, 47, 22, 0.22)";
-    ctx.fillRect(240, y - 17, 320, 16);
-    ctx.fillStyle = artifact.verdict?.startsWith("UNWRITTEN") ? "#2f7a49" : "#8d2d26";
-    ctx.fillRect(240, y - 17, 32 * Number(value), 16);
-    ctx.fillStyle = "#25160e";
-    ctx.fillText(String(value), 582, y);
-  });
-  drawWoodMap(ctx, artifact.wood_map, 742, 396, 330, 184, artifact.verdict);
-  return canvas;
+function downloadBlob(filename, blob) {
+  const link = document.createElement("a");
+  link.download = filename;
+  link.href = URL.createObjectURL(blob);
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 0);
 }
 
 function downloadText(filename, text, type = "application/jsonl;charset=utf-8") {
@@ -1127,108 +1086,9 @@ function downloadText(filename, text, type = "application/jsonl;charset=utf-8") 
   setTimeout(() => URL.revokeObjectURL(link.href), 0);
 }
 
-function drawParchment(ctx, width, height) {
-  const gradient = ctx.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, "#ead7a7");
-  gradient.addColorStop(0.55, "#d4b476");
-  gradient.addColorStop(1, "#b98a4c");
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
-  ctx.fillStyle = "rgba(59, 33, 15, 0.16)";
-  for (let i = 0; i < 360; i += 1) {
-    const x = (i * 73) % width;
-    const y = (i * 37) % height;
-    ctx.fillRect(x, y, 2 + (i % 7), 1);
-  }
-  ctx.strokeStyle = "rgba(72, 39, 18, 0.42)";
-  ctx.lineWidth = 16;
-  ctx.strokeRect(28, 28, width - 56, height - 56);
-}
-
-function drawWoodMap(ctx, map, x, y, width, height, verdict) {
-  if (!map?.dots?.length) return;
-  ctx.save();
-  ctx.fillStyle = "rgba(255, 241, 196, 0.38)";
-  ctx.strokeStyle = "rgba(80, 47, 22, 0.34)";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.roundRect(x, y, width, height, 8);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = "#6b4e35";
-  ctx.font = "800 18px Inter, sans-serif";
-  ctx.fillText("IDEA MAP", x, y - 14);
-
-  for (const dot of map.dots) {
-    const px = x + (width * boundedPercent(dot.x)) / 100;
-    const py = y + (height * boundedPercent(dot.y)) / 100;
-    const radius = Math.max(3, Math.min(10, Number(dot.radius || 4)));
-    if (dot.kind === "idea") {
-      ctx.fillStyle = verdict?.startsWith("UNWRITTEN") ? "#2f7a49" : "#8d2d26";
-      ctx.strokeStyle = "#fff0b5";
-      ctx.lineWidth = 3;
-    } else if (dot.kind === "echo") {
-      ctx.fillStyle = "#8d2d26";
-      ctx.strokeStyle = "rgba(255, 240, 181, 0.72)";
-      ctx.lineWidth = 1.5;
-    } else {
-      ctx.fillStyle = "rgba(80, 47, 22, 0.34)";
-      ctx.strokeStyle = "transparent";
-      ctx.lineWidth = 0;
-    }
-    ctx.beginPath();
-    ctx.arc(px, py, radius, 0, Math.PI * 2);
-    ctx.fill();
-    if (ctx.lineWidth) ctx.stroke();
-  }
-
-  ctx.fillStyle = "#6b4e35";
-  ctx.font = "700 15px Inter, sans-serif";
-  wrapText(ctx, map.caption || "", x, y + height + 24, width, 20);
-  ctx.restore();
-}
-
-function drawCitationList(ctx, echoes, x, y, maxWidth) {
-  if (!echoes.length) return;
-  ctx.save();
-  ctx.fillStyle = "#6b4e35";
-  ctx.font = "800 18px Inter, sans-serif";
-  ctx.fillText("CLOSEST PAGES", x, y);
-  ctx.font = "700 15px Inter, sans-serif";
-  echoes.slice(0, 3).forEach((echo, index) => {
-    const project = echo.project || {};
-    const label = `Page ${echo.page_number || "?"}: ${project.title || project.id || "Untitled"}`;
-    wrapText(ctx, label, x, y + 24 + index * 26, maxWidth, 18);
-  });
-  ctx.restore();
-}
-
-function wrapText(ctx, text, x, y, maxWidth, lineHeight, align = "left") {
-  const words = String(text).split(/\s+/);
-  let line = "";
-  const originalAlign = ctx.textAlign;
-  ctx.textAlign = align;
-  for (const word of words) {
-    const next = line ? `${line} ${word}` : word;
-    if (ctx.measureText(next).width > maxWidth && line) {
-      ctx.fillText(line, align === "center" ? x + maxWidth / 2 : x, y);
-      line = word;
-      y += lineHeight;
-    } else {
-      line = next;
-    }
-  }
-  if (line) ctx.fillText(line, align === "center" ? x + maxWidth / 2 : x, y);
-  ctx.textAlign = originalAlign;
-}
-
-function slugify(value) {
-  return String(value)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 60);
+function filenameFromContentDisposition(value) {
+  const match = String(value || "").match(/filename="([^"]+)"/i);
+  return match ? match[1] : "";
 }
 
 function escapeHtml(value) {

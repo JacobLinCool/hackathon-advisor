@@ -10,6 +10,9 @@ def test_main_interface_copy_is_builder_facing() -> None:
     assert "Closest project echoes" in html
     assert "Press Plan to draft build steps for the selected idea." in app_js
     assert "Loading an example idea board." in app_js
+    assert "/api/artifact.png" in app_js
+    assert "renderArtifactCanvas" not in app_js
+    assert "canvas.toDataURL" not in app_js
 
     stale_jargon = [
         "No wax path pressed.",
@@ -40,3 +43,10 @@ def test_visible_static_shell_does_not_promote_submission_evidence() -> None:
     ]
     for term in promotional_terms:
         assert term not in html
+
+
+def test_server_png_copy_uses_interface_language() -> None:
+    source = Path("hackathon_advisor/png_export.py").read_text(encoding="utf-8")
+
+    assert "IDEA MAP" in source
+    assert "YOU VS THE WOOD" not in source

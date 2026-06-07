@@ -32,6 +32,7 @@ def test_submission_packet_contains_demo_and_prize_evidence() -> None:
     assert "Hackathon Advisor" in markdown
     assert "Well-Tuned | training-kit-ready" in markdown
     assert "MiniCPM5 LoRA SFT JSONL | ready | lora_dataset" in markdown
+    assert "Fate page PNG | ready | /api/artifact.png" in markdown
     assert "Notes, Chapter, and PNG are available in the app" in markdown
     assert "`/api/prize-ledger` separates ready and planned badge states" in markdown
     assert "A local-first archive cartographer for family photos" in markdown

@@ -3,6 +3,7 @@ from io import BytesIO
 from zipfile import ZipFile
 
 from app import (
+    artifact_png,
     bootstrap,
     chapter_artifact,
     demo_bundle,
@@ -154,6 +155,18 @@ def test_demo_bundle_endpoint_returns_zip_attachment() -> None:
     assert "lora-training-kit.zip" in names
     assert "archive-cartographer.png" in names
     assert manifest["turn_count"] == 2
+
+
+def test_artifact_png_endpoint_returns_png_attachment() -> None:
+    state = engine.turn("A local-first archive cartographer for family photos", {}).state
+    response = artifact_png(state["last_artifact"])
+
+    assert response.media_type == "image/png"
+    assert 'filename="a-local-first-archive-cartographer-for-family-photos.png"' in response.headers[
+        "content-disposition"
+    ]
+    assert response.body.startswith(b"\x89PNG\r\n\x1a\n")
+    assert len(response.body) > 10_000
 
 
 def test_lora_training_kit_endpoint_returns_zip_attachment() -> None:

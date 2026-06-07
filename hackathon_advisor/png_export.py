@@ -148,7 +148,7 @@ def _draw_wood_map(
         outline=(80, 47, 22),
         width=2,
     )
-    draw.text((x, y - 26), "YOU VS THE WOOD", font=label_font, fill=INK_SOFT)
+    draw.text((x, y - 26), "IDEA MAP", font=label_font, fill=INK_SOFT)
 
     for dot in dots:
         if not isinstance(dot, dict):

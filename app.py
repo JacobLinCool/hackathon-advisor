@@ -3,8 +3,9 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Iterator
 
+from fastapi import Body
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from gradio import Server
 
@@ -16,6 +17,7 @@ from hackathon_advisor.demo_rehearsal import build_demo_rehearsal
 from hackathon_advisor.field_notes import build_field_notes_markdown
 from hackathon_advisor.lora_dataset import build_lora_dataset_jsonl
 from hackathon_advisor.lora_training_kit import TRAINING_KIT_FILENAME, build_lora_training_kit_zip
+from hackathon_advisor.png_export import artifact_png_filename, render_artifact_png
 from hackathon_advisor.prize_ledger import prize_ledger
 from hackathon_advisor.submission_packet import build_submission_packet_markdown
 from hackathon_advisor.tool_contracts import resolve_tool_call, tool_schemas
@@ -113,6 +115,17 @@ def demo_bundle() -> Response:
         content=content,
         media_type="application/zip",
         headers={"Content-Disposition": f'attachment; filename="{BUNDLE_FILENAME}"'},
+    )
+
+
+@app.post("/api/artifact.png")
+def artifact_png(artifact: dict[str, Any] | None = Body(default=None)) -> Response:
+    artifact = artifact or {}
+    filename = artifact_png_filename(artifact)
+    return Response(
+        content=render_artifact_png(artifact),
+        media_type="image/png",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 

@@ -102,7 +102,7 @@ def _artifact_checklist(trace: list[dict[str, Any]], ideas: list[dict[str, Any]]
         ("Almanac chapter markdown", has_ideas, "chapter"),
         ("MiniCPM5 LoRA SFT JSONL", has_trace, "lora_dataset"),
         ("Submission packet markdown", True, "submission_packet"),
-        ("Fate page PNG", has_artifact, "client-side canvas export"),
+        ("Fate page PNG", has_artifact, "/api/artifact.png"),
     ]
     lines = ["## Artifact Checklist", "", "| Artifact | Status | Source |", "| --- | --- | --- |"]
     for name, ready, source in rows:

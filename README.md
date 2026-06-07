@@ -143,6 +143,8 @@ the user-facing app stays centered on idea evaluation. The main `/api/bootstrap`
 Every scored fate page now carries a deterministic `wood_map` artifact: background dots for inked Spaces, red dots for
 the closest cited echoes, and a green/red "you" dot for the current idea. The live UI and PNG export render the same
 map, so the share artifact visually proves whether the page sits in an empty margin or near existing work.
+The `PNG` button posts the current artifact to `/api/artifact.png`, which uses the same Pillow renderer as
+`/api/demo-bundle.zip`, so browser downloads and bundled evidence cannot drift into different layouts.
 
 ## Latency Watchdog
 
