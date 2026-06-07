@@ -28,8 +28,14 @@ def test_checked_in_sample_trace_matches_schema() -> None:
         json.loads(line)
         for line in Path("data/sample_trace.jsonl").read_text(encoding="utf-8").splitlines()
     ]
+    sample_text = "\n".join(json.dumps(line) for line in lines)
 
     assert lines[0]["type"] == "trace_manifest"
     assert lines[0]["turn_count"] >= 3
     assert all(line["schema_version"] == 1 for line in lines)
     assert lines[1]["tool_resolution"]["status"] == "valid"
+    assert "Mothback" not in sample_text
+    assert "Add one prize" not in sample_text
+    assert "set_target" not in sample_text
+    assert "side_quests" not in sample_text
+    assert "Record the trace and write build notes from the exact decisions." in lines[-1]["response"]

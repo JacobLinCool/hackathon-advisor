@@ -393,7 +393,7 @@ class AdvisorEngine:
                 "overall": score.overall if score else None,
                 "plan_steps": len(plan),
                 "artifact_title": artifact.get("title", ""),
-                "response": response[:360],
+                "response": response,
                 "tool_resolution": state.get("last_tool_resolution") or {},
             }
         )
