@@ -99,7 +99,7 @@ and inserted into `Plan` and `Rank` build paths, so the app can turn "one evenin
 ## LoRA Dataset Artifact
 
 The `lora_dataset` Gradio API endpoint exports a compact chat JSONL dataset from successful session turns. Each included
-turn yields a tool-call example and an advisor-response example for `openbmb/MiniCPM5-1B`, with the selected targets,
+turn yields a tool-call example and an advisor-response example for `openbmb/MiniCPM5-1B`, with the selected goals,
 parsed XML tool call, tool observations, and score context preserved. This prepares the Well-Tuned path without claiming
 that the adapter has already been trained or published.
 

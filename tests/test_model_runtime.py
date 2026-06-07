@@ -6,6 +6,7 @@ from hackathon_advisor.model_runtime import (
     create_tool_planner,
     render_context,
     runtime_status,
+    system_prompt,
 )
 
 
@@ -75,6 +76,14 @@ def test_render_context_includes_state() -> None:
     assert "Archive Cartographer" in context
     assert "ECHO x2" in context
     assert '<function name="tool_name">' in context
+
+
+def test_system_prompt_keeps_runtime_role_user_facing() -> None:
+    prompt = system_prompt()
+
+    assert "The Unwritten Almanac" in prompt
+    assert "Mothback" not in prompt
+    assert "Build Small" not in prompt
 
 
 def test_create_tool_planner_defaults_to_rules(monkeypatch: pytest.MonkeyPatch) -> None:

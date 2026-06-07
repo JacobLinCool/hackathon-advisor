@@ -30,6 +30,11 @@ def test_lora_dataset_exports_tool_call_and_response_examples() -> None:
     assert examples[1]["messages"][1]["content"].startswith("A local-first archive")
     assert "Tool observations:" in examples[1]["messages"][1]["content"]
     assert examples[1]["messages"][2]["content"]
+    system_messages = "\n".join(example["messages"][0]["content"] for example in examples)
+    assert "Mothback" not in system_messages
+    assert "Build Small" not in system_messages
+    assert "prize targets" not in system_messages
+    assert "selected goals" in system_messages
 
 
 def test_empty_lora_dataset_only_exports_manifest() -> None:
