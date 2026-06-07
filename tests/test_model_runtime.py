@@ -8,6 +8,7 @@ from hackathon_advisor.model_runtime import (
     render_context,
     runtime_status,
     system_prompt,
+    _normalize_xml_tool_output,
     _strip_unused_generation_inputs,
 )
 from hackathon_advisor.zerogpu import gpu_task, zero_gpu_duration_seconds, zero_gpu_enabled
@@ -191,3 +192,9 @@ def test_generation_inputs_drop_token_type_ids() -> None:
     _strip_unused_generation_inputs(inputs)
 
     assert inputs == {"input_ids": [1], "attention_mask": [1]}
+
+
+def test_model_xml_fragment_is_normalized() -> None:
+    output = 'name="save_idea">{"title":"A","pitch":"B"}'
+
+    assert _normalize_xml_tool_output(output) == '<function name="save_idea">{"title":"A","pitch":"B"}</function>'

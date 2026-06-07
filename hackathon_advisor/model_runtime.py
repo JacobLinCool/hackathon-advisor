@@ -165,7 +165,8 @@ class MiniCPMTransformersPlanner:
                 do_sample=False,
             )
         new_tokens = generated[:, inputs["input_ids"].shape[-1] :]
-        return self._tokenizer.decode(new_tokens[0], skip_special_tokens=True).strip()
+        decoded = self._tokenizer.decode(new_tokens[0], skip_special_tokens=True).strip()
+        return _normalize_xml_tool_output(decoded)
 
 
 def create_tool_planner() -> ToolPlanner:
@@ -227,6 +228,15 @@ def system_prompt() -> str:
 
 def _strip_unused_generation_inputs(inputs: dict[str, Any]) -> None:
     inputs.pop("token_type_ids", None)
+
+
+def _normalize_xml_tool_output(output: str) -> str:
+    stripped = output.strip()
+    if stripped.startswith('name="'):
+        stripped = f"<function {stripped}"
+    if stripped.startswith("<function ") and not stripped.endswith("</function>"):
+        stripped = f"{stripped}</function>"
+    return stripped
 
 
 def _json_string(value: str) -> str:
