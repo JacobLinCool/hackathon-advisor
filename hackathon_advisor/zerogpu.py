@@ -41,3 +41,17 @@ def gpu_task(function: Callable[P, R]) -> Callable[P, R]:
             "Install runtime requirements before enabling ZeroGPU."
         ) from error
     return spaces.GPU(duration=zero_gpu_duration_seconds())(function)
+
+
+QUOTA_ERROR_HINTS = ("quota", "gpu task aborted", "no gpu", "exceeded", "gpu is not available")
+
+
+def is_gpu_quota_error(error: BaseException) -> bool:
+    """Heuristically detect a ZeroGPU allocation/quota failure so the caller can fall back to
+    a CPU run. ZeroGPU raises before the wrapped function body executes, so this is checked
+    against the exception that surfaces from the first pull of the GPU generator."""
+    name = type(error).__name__.lower()
+    if "quota" in name or "gpu" in name:
+        return True
+    message = str(error).lower()
+    return any(hint in message for hint in QUOTA_ERROR_HINTS)

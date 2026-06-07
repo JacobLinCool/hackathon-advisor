@@ -8,11 +8,24 @@ from hackathon_advisor.model_runtime import (
     render_context,
     runtime_status,
     system_prompt,
+    _best_local_device,
     _disable_sampling_generation_defaults,
     _normalize_xml_tool_output,
+    _resolve_torch_device,
     _strip_unused_generation_inputs,
 )
 from hackathon_advisor.zerogpu import gpu_task, zero_gpu_duration_seconds, zero_gpu_enabled
+
+
+class FakeBackends:
+    def __init__(self, mps: bool) -> None:
+        self.mps = type("MPS", (), {"is_available": staticmethod(lambda: mps)})()
+
+
+class FakeTorch:
+    def __init__(self, cuda: bool = False, mps: bool = False) -> None:
+        self.cuda = type("CUDA", (), {"is_available": staticmethod(lambda: cuda)})()
+        self.backends = FakeBackends(mps)
 
 
 def test_rule_planner_emits_valid_search_call() -> None:
@@ -76,6 +89,18 @@ def test_rule_planner_keeps_project_words_inside_ideas() -> None:
     planner = RuleBasedPlanner()
 
     resolution = planner.plan("A dashboard that helps teams show projects to mentors", {})
+
+    assert resolution.status == "valid"
+    assert resolution.call.name == "save_idea"
+
+
+def test_rule_planner_does_not_match_commands_inside_idea_words() -> None:
+    planner = RuleBasedPlanner()
+
+    resolution = planner.plan(
+        "A neighborhood seed swap archive that reminds gardeners when to plant shared seeds",
+        {},
+    )
 
     assert resolution.status == "valid"
     assert resolution.call.name == "save_idea"
@@ -215,3 +240,39 @@ def test_model_xml_fragment_is_normalized() -> None:
     output = 'name="save_idea">{"title":"A","pitch":"B"}'
 
     assert _normalize_xml_tool_output(output) == '<function name="save_idea">{"title":"A","pitch":"B"}</function>'
+
+
+def test_resolve_device_keeps_auto_and_explicit_cpu() -> None:
+    assert _resolve_torch_device("auto", FakeTorch()) == "auto"
+    assert _resolve_torch_device("cpu", FakeTorch(cuda=True, mps=True)) == "cpu"
+
+
+def test_resolve_device_prefers_cuda_then_mps_then_cpu(monkeypatch) -> None:
+    monkeypatch.delenv("ADVISOR_ZERO_GPU", raising=False)
+
+    assert _best_local_device(FakeTorch(cuda=True, mps=True)) == "cuda"
+    assert _best_local_device(FakeTorch(cuda=False, mps=True)) == "mps"
+    assert _best_local_device(FakeTorch(cuda=False, mps=False)) == "cpu"
+    # "local" resolves through the same ladder
+    assert _resolve_torch_device("local", FakeTorch(cuda=False, mps=True)) == "mps"
+
+
+def test_resolve_device_unavailable_request_degrades_gracefully(monkeypatch) -> None:
+    monkeypatch.delenv("ADVISOR_ZERO_GPU", raising=False)
+
+    # asking for cuda on an MPS-only box lands on mps, not a crash
+    assert _resolve_torch_device("cuda", FakeTorch(cuda=False, mps=True)) == "mps"
+
+
+def test_resolve_device_skips_cuda_under_zero_gpu(monkeypatch) -> None:
+    # In a ZeroGPU main process there is no local CUDA, and probing it is avoided.
+    monkeypatch.setenv("ADVISOR_ZERO_GPU", "1")
+
+    assert _best_local_device(FakeTorch(cuda=True, mps=False)) == "cpu"
+
+
+def test_runtime_status_reports_configured_device() -> None:
+    planner = MiniCPMTransformersPlanner("openbmb/MiniCPM5-1B", device="local")
+
+    assert runtime_status(planner).to_dict()["device"] == "local"
+    assert runtime_status(RuleBasedPlanner()).to_dict()["device"] == ""

@@ -291,3 +291,49 @@ def test_planner_score_idea_scores_current_idea() -> None:
 
     assert scored.score is not None
     assert scored.artifact["title"] == first.artifact["title"]
+
+
+def test_turn_stream_emits_ordered_progress_events() -> None:
+    index = load_test_index()
+    engine = AdvisorEngine(index)
+
+    events = list(engine.turn_stream("A local-first archive cartographer for family photos", {}))
+    types = [event["type"] for event in events]
+
+    assert types[0] == "start"
+    assert types[-1] == "done"
+    assert "token" in types
+    # the planning stage is announced before any tool runs, and tools stream as they execute
+    assert types.index("stage") < types.index("tool_event")
+    tool_events = [event for event in events if event["type"] == "tool_event"]
+    assert [event["name"] for event in tool_events] == ["save_idea", "search_projects", "score_idea"]
+    assert events[-1]["state"]["ideas"]
+
+
+def test_turn_stream_done_matches_blocking_turn() -> None:
+    # idea ids are randomly generated, so compare the deterministic surface of the turn.
+    index = load_test_index()
+    streamed = list(AdvisorEngine(index).turn_stream("write bolder and find whitespace", {}))
+    done = next(event for event in streamed if event["type"] == "done")
+    blocking = AdvisorEngine(index).turn("write bolder and find whitespace", {})
+
+    assert done["response"] == blocking.response
+    assert done["score"] == (blocking.score.to_dict() if blocking.score else None)
+    assert done["plan"] == blocking.plan
+    assert [item["label"] for item in done["whitespace"]] == [
+        item.label for item in blocking.whitespace
+    ]
+    assert [idea["title"] for idea in done["state"]["ideas"]] == [
+        idea["title"] for idea in blocking.state["ideas"]
+    ]
+
+
+def test_turn_accepts_injected_resolution() -> None:
+    index = load_test_index()
+    engine = AdvisorEngine(index, planner=StaticPlanner(ToolCall("score_idea", {})))
+    injected = ToolResolution(status="valid", call=ToolCall("list_projects", {"sort": "likes"}), errors=())
+
+    result = engine.turn("score it", {}, resolution=injected)
+
+    # the injected list_projects call wins over the planner's score_idea call
+    assert result.state["last_tool_resolution"]["call"]["name"] == "list_projects"

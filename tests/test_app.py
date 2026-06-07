@@ -109,6 +109,38 @@ def test_agent_turn_stream_endpoint_exports_ndjson_events() -> None:
     assert lines[-1]["state"]["ideas"]
 
 
+def test_agent_turn_stream_streams_stage_and_tool_events() -> None:
+    response = agent_turn_stream(
+        {
+            "message": "A local-first archive cartographer for family photos",
+            "session_json": "{}",
+        }
+    )
+    payload = asyncio.run(_read_streaming_response(response))
+    lines = [json.loads(line) for line in payload.splitlines()]
+    types = [line["type"] for line in lines]
+
+    assert "stage" in types
+    assert any(line["type"] == "tool_event" and line.get("name") for line in lines)
+    assert types.index("stage") < types.index("token")
+
+
+def test_agent_turn_stream_runs_on_cpu_compute() -> None:
+    response = agent_turn_stream(
+        {
+            "message": "A local-first archive cartographer for family photos",
+            "session_json": "{}",
+            "compute": "cpu",
+        }
+    )
+    payload = asyncio.run(_read_streaming_response(response))
+    lines = [json.loads(line) for line in payload.splitlines()]
+
+    assert lines[0]["type"] == "start"
+    assert lines[-1]["type"] == "done"
+    assert lines[-1]["state"]["ideas"]
+
+
 def test_transcribe_audio_endpoint_saves_audio(monkeypatch) -> None:
     captured = {}
 

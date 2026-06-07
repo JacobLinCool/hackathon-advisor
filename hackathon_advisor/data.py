@@ -344,6 +344,15 @@ class ProjectIndex:
             tuple(float(value) for value in document["vector"])
             for document in index_payload["documents"]
         ]
+        self._vector_by_id = {
+            project.id: vector for project, vector in zip(self.projects, self._vectors)
+        }
+
+    def vector_for(self, project_id: str) -> tuple[float, ...] | None:
+        return self._vector_by_id.get(project_id)
+
+    def embed_query(self, text: str) -> tuple[float, ...]:
+        return tuple(normalize_vector(self._embed_query(text)))
 
     @classmethod
     def from_file(cls, path: Path, query_embedder: EmbeddingFunction | None = None) -> "ProjectIndex":

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass
 from dataclasses import replace
 from typing import Any
@@ -8,7 +9,7 @@ from hackathon_advisor.aliases import Correction, normalize_text
 from hackathon_advisor.data import Project, ProjectIndex, WhitespaceItem
 from hackathon_advisor.model_runtime import ToolPlanner, create_tool_planner, runtime_status
 from hackathon_advisor.scoring import ScoreCard
-from hackathon_advisor.tool_contracts import ToolCall
+from hackathon_advisor.tool_contracts import ToolCall, ToolResolution
 from hackathon_advisor.tools import (
     GOALS,
     AdvisorTools,
@@ -58,13 +59,20 @@ class AdvisorEngine:
     def runtime_status(self) -> dict[str, Any]:
         return runtime_status(self.planner).to_dict()
 
-    def turn(self, message: str, state: dict[str, Any] | None = None) -> TurnResult:
+    def turn(
+        self,
+        message: str,
+        state: dict[str, Any] | None = None,
+        *,
+        resolution: ToolResolution | None = None,
+    ) -> TurnResult:
         state = dict(state or {})
         state.setdefault("ideas", [])
         state.setdefault("profile", {})
         state.setdefault("goals", GOALS[:3])
         normalized, corrections = normalize_text(message)
-        resolution = self.planner.plan(normalized, state)
+        if resolution is None:
+            resolution = self.planner.plan(normalized, state)
         state["last_tool_resolution"] = resolution.to_dict()
         tool_events: list[ToolEvent] = []
         projects: list[Project] = []
@@ -133,6 +141,52 @@ class AdvisorEngine:
             return self._goal_turn(call, normalized, corrections, state, tool_events)
 
         return self._idea_research_turn(call, normalized, corrections, state, tool_events)
+
+    def turn_stream(self, message: str, state: dict[str, Any] | None = None) -> Iterator[dict[str, Any]]:
+        """Run a turn while yielding plain-dict progress events, so a caller can stream the
+        real work (tool-call decoding, tool execution, response) instead of replaying a
+        finished string. Every yielded value is JSON-serializable so it can cross a ZeroGPU
+        process boundary."""
+        state = dict(state or {})
+        normalized, corrections = normalize_text(message)
+        yield {
+            "type": "start",
+            "corrections": [correction.to_dict() for correction in corrections],
+            "normalized_text": normalized,
+        }
+        yield {"type": "stage", "stage": "planning", "label": "Choosing the next move"}
+
+        resolution: ToolResolution | None = None
+        for event in self.planner.plan_iter(normalized, state):
+            if event.get("type") == "resolved":
+                resolution = event["resolution"]
+            else:
+                yield event
+        tool_name = resolution.call.name if resolution is not None else ""
+        yield {
+            "type": "stage",
+            "stage": "running_tool",
+            "tool": tool_name,
+            "label": f"Calling {tool_name}" if tool_name else "Running tools",
+        }
+
+        result = self.turn(normalized, state, resolution=resolution)
+        for event in result.tool_events:
+            yield {"type": "tool_event", **event.to_dict()}
+
+        yield {"type": "stage", "stage": "writing", "label": "Writing the page"}
+        for chunk in result.stream_chunks():
+            yield {"type": "token", "text": chunk}
+        yield {
+            "type": "done",
+            "state": result.state,
+            "response": result.response,
+            "projects": [project.to_public_dict() for project in result.projects],
+            "whitespace": [item.to_dict() for item in result.whitespace],
+            "score": result.score.to_dict() if result.score else None,
+            "plan": result.plan,
+            "artifact": result.artifact,
+        }
 
     def _result(
         self,

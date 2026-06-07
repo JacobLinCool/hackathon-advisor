@@ -222,6 +222,19 @@
 
             <div id="corrections" class="marginalia" aria-live="polite"></div>
 
+            <div id="turn-progress" class="turn-progress" hidden aria-live="polite">
+              <div class="turn-stage">
+                <span id="turn-stage-icon" class="ts-icon">🪶</span>
+                <span id="turn-stage-text" class="ts-text">Thinking</span>
+                <span id="turn-tokens" class="ts-tokens"></span>
+                <span id="turn-eta" class="ts-eta"></span>
+              </div>
+              <div class="turn-bar" role="progressbar" aria-label="Turn progress">
+                <div id="turn-bar-fill" class="turn-bar-fill"></div>
+              </div>
+              <div id="tool-chips" class="tool-chips"></div>
+            </div>
+
             <article class="fate">
               <span id="verdict-stamp" class="verdict-stamp verdict-ready">
                 <span class="seal-dot"></span>

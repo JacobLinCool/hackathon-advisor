@@ -29,8 +29,16 @@ const resetButton = document.querySelector("#reset-session");
 const recordVoiceButton = document.querySelector("#record-voice");
 const uploadVoiceButton = document.querySelector("#upload-voice");
 const voiceFileInput = document.querySelector("#voice-file");
+const turnProgressEl = document.querySelector("#turn-progress");
+const turnStageIconEl = document.querySelector("#turn-stage-icon");
+const turnStageTextEl = document.querySelector("#turn-stage-text");
+const turnTokensEl = document.querySelector("#turn-tokens");
+const turnEtaEl = document.querySelector("#turn-eta");
+const turnBarFillEl = document.querySelector("#turn-bar-fill");
+const toolChipsEl = document.querySelector("#tool-chips");
 
 const SESSION_STORAGE_KEY = "hackathon-advisor-session-v2";
+const STAGE_ICONS = { planning: "🪶", running_tool: "🔧", writing: "✍️" };
 const FIELD_NOTES_FILENAME = "hackathon-advisor-field-notes.md";
 const CHAPTER_FILENAME = "hackathon-advisor-chapter.md";
 const PNG_EXPORT_LABEL = "PNG";
@@ -51,6 +59,8 @@ let voiceRecorder = null;
 let voiceStream = null;
 let voiceChunks = [];
 let voiceRecordingState = "idle";
+let decodeStartedAt = 0;
+let turnProgressTimer = null;
 
 setVoiceRecordingState("idle");
 bootstrap().catch(handleBootstrapError);
@@ -168,6 +178,7 @@ async function runTurn(message) {
   corrections.textContent = "";
   planEl.innerHTML = "";
   delete session.ui_status;
+  resetTurnProgress();
   startTurnWatchdog();
 
   let completed = false;
@@ -194,6 +205,7 @@ async function runTurn(message) {
     ink.classList.add("bleed");
   } finally {
     clearTurnWatchdog();
+    hideTurnProgress();
     submit.disabled = false;
     setSessionControlsDisabled(false);
     setCommandDisabled(false);
@@ -810,6 +822,26 @@ function handleEvent(event) {
     return;
   }
 
+  if (event.type === "stage") {
+    setTurnStage(event.stage, event.label);
+    return;
+  }
+
+  if (event.type === "model_progress") {
+    renderModelProgress(event.tokens, event.max_tokens);
+    return;
+  }
+
+  if (event.type === "tool_event") {
+    addToolChip(event);
+    return;
+  }
+
+  if (event.type === "fallback") {
+    renderComputeFallback(event);
+    return;
+  }
+
   if (event.type === "token") {
     markFirstTokenSeen();
     ink.textContent += event.text;
@@ -817,6 +849,9 @@ function handleEvent(event) {
   }
 
   if (event.type === "done") {
+    setTurnBar(100);
+    if (turnEtaEl) turnEtaEl.textContent = "";
+    hideTurnProgress();
     if (!sawTurnToken) {
       clearTurnWatchdog();
       ink.textContent = event.response || ink.textContent;
@@ -1023,8 +1058,9 @@ function renderWoodMap(map) {
   field.className = "wood";
   for (const dot of map.dots) {
     const marker = document.createElement(dot.url ? "a" : "span");
-    const verdictClass = dot.kind === "idea" && String(dot.verdict || "").startsWith("ECHO") ? "bleed" : "";
-    marker.className = `wood-dot ${dot.kind || "inked"} ${verdictClass}`.trim();
+    // Namespace the kind class (wood-idea/wood-echo/wood-inked) so it never collides with the
+    // global .idea/.echo card styles. The "you" dot stays green regardless of verdict.
+    marker.className = `wood-dot wood-${dot.kind || "inked"}`;
     marker.style.left = `${boundedPercent(dot.x)}%`;
     marker.style.top = `${boundedPercent(dot.y)}%`;
     const radius = Math.max(3, Math.min(10, Number(dot.radius || 4)));
@@ -1166,6 +1202,99 @@ function clearTurnWatchdog() {
     window.clearTimeout(turnWatchdog);
     turnWatchdog = null;
   }
+}
+
+// Coarse overall completion per stage, so the bar always advances even when token-level
+// progress is unknown (e.g. the rules backend, or the fast tool/writing stages).
+const STAGE_PROGRESS = { planning: 8, running_tool: 85, writing: 95 };
+
+function resetTurnProgress() {
+  if (!turnProgressEl) return;
+  // Stay hidden on submit. Only reveal once the turn is genuinely executing — either real
+  // token decoding starts, or it has been running long enough to be worth a progress bar.
+  // A fast turn finishes before the timer fires, so the bar never flashes.
+  turnProgressEl.hidden = true;
+  decodeStartedAt = 0;
+  if (toolChipsEl) toolChipsEl.innerHTML = "";
+  if (turnTokensEl) turnTokensEl.textContent = "";
+  if (turnEtaEl) turnEtaEl.textContent = "";
+  setTurnBar(4);
+  setTurnStageContent("planning", "Thinking");
+  clearTurnProgressTimer();
+  turnProgressTimer = window.setTimeout(revealTurnProgress, 450);
+}
+
+function revealTurnProgress() {
+  if (turnProgressEl) turnProgressEl.hidden = false;
+}
+
+function clearTurnProgressTimer() {
+  if (turnProgressTimer) {
+    window.clearTimeout(turnProgressTimer);
+    turnProgressTimer = null;
+  }
+}
+
+function hideTurnProgress() {
+  clearTurnProgressTimer();
+  if (turnProgressEl) turnProgressEl.hidden = true;
+}
+
+function setTurnBar(percent) {
+  if (!turnBarFillEl) return;
+  const clamped = Math.max(0, Math.min(100, percent));
+  turnBarFillEl.style.width = `${clamped}%`;
+}
+
+function setTurnStageContent(stage, label) {
+  if (turnStageIconEl) turnStageIconEl.textContent = STAGE_ICONS[stage] || "🪶";
+  if (turnStageTextEl) turnStageTextEl.textContent = label || "Thinking";
+  if (stage in STAGE_PROGRESS) setTurnBar(STAGE_PROGRESS[stage]);
+  if (stage && stage !== "planning" && turnEtaEl) turnEtaEl.textContent = "";
+}
+
+function setTurnStage(stage, label) {
+  clearTurnWatchdog();
+  setTurnStageContent(stage, label);
+}
+
+function renderModelProgress(tokens, maxTokens) {
+  clearTurnWatchdog();
+  revealTurnProgress(); // real token decoding is unambiguous execution — show it now
+  const count = Number(tokens) || 0;
+  if (turnTokensEl) turnTokensEl.textContent = count ? `· decoded ${count} tokens` : "";
+  if (!count) return;
+  if (!decodeStartedAt) decodeStartedAt = performance.now();
+
+  const cap = Number(maxTokens) || 0;
+  // Map token decode into the 8%–80% band of the overall bar.
+  if (cap > 0) setTurnBar(8 + Math.min(1, count / cap) * 72);
+
+  // Estimate remaining time from the live decode rate toward the token cap (an upper bound).
+  const elapsed = (performance.now() - decodeStartedAt) / 1000;
+  if (turnEtaEl && cap > 0 && elapsed > 0.3) {
+    const rate = count / elapsed;
+    const remaining = Math.max(0, cap - count) / Math.max(rate, 0.1);
+    turnEtaEl.textContent = remaining >= 1 ? `~${Math.ceil(remaining)}s left` : "almost done";
+  }
+}
+
+function addToolChip(event) {
+  if (!toolChipsEl) return;
+  const name = event.name || event.tool || "tool";
+  const chip = document.createElement("span");
+  chip.className = "tool-chip";
+  if (event.summary) chip.title = event.summary;
+  chip.innerHTML = `<span class="tc-name"></span><span class="tc-check">✓</span>`;
+  chip.querySelector(".tc-name").textContent = name;
+  toolChipsEl.append(chip);
+}
+
+function renderComputeFallback(event) {
+  // Acceleration is automatic; a fallback is informational only (no control to flip).
+  const reason = event.reason || "Running on CPU (slower).";
+  if (turnStageTextEl) turnStageTextEl.textContent = reason;
+  if (corrections) corrections.textContent = reason;
 }
 
 function syncCurrentIdeaGoals() {
