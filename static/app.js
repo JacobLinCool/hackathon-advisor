@@ -97,6 +97,7 @@ goalsEl.addEventListener("change", (event) => {
   );
   session.goals = goalOptions.filter((option) => checked.has(option));
   syncCurrentIdeaGoals();
+  invalidateCurrentSeal("Goals updated. Press Ink or Plan to refresh the seal.");
   saveSession();
   renderGoals(session.goals);
   renderIdeas(session.ideas || []);
@@ -113,6 +114,7 @@ profileEl.addEventListener("input", (event) => {
     delete profile[target.dataset.profileField];
   }
   session.profile = profile;
+  invalidateCurrentPlan("Profile updated. Press Plan to refresh the build path.");
   saveSession();
 });
 
@@ -878,6 +880,34 @@ function syncCurrentIdeaGoals() {
   if (!currentId || !Array.isArray(session.ideas)) return;
   const idea = session.ideas.find((item) => item.id === currentId);
   if (idea) idea.goals = [...(session.goals || [])];
+}
+
+function invalidateCurrentSeal(message) {
+  const idea = currentIdea();
+  if (idea?.score) idea.score = null;
+  clearCurrentArtifactFor(idea);
+  invalidateCurrentPlan("");
+  renderScore(null);
+  setVerdictDisplay("READY", 0, null);
+  renderWoodMap(null);
+  exportButton.disabled = true;
+  if (message) setSessionStatus(message);
+}
+
+function invalidateCurrentPlan(message) {
+  if (Array.isArray(session.last_plan)) delete session.last_plan;
+  renderPlan([]);
+  if (message) setSessionStatus(message);
+}
+
+function clearCurrentArtifactFor(idea) {
+  if (!idea || currentArtifact?.title === idea.title) currentArtifact = null;
+  if (!idea || session.last_artifact?.title === idea.title) delete session.last_artifact;
+}
+
+function setSessionStatus(message) {
+  session.ui_status = message;
+  corrections.textContent = message;
 }
 
 async function exportNotes() {
