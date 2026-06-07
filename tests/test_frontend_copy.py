@@ -14,6 +14,11 @@ def test_main_interface_copy_is_builder_facing() -> None:
     assert "/api/artifact.png" in app_js
     assert "renderArtifactCanvas" not in app_js
     assert "canvas.toDataURL" not in app_js
+    assert 'aria-label="Export build notes"' in html
+    assert 'aria-label="Export idea-board chapter"' in html
+    assert 'aria-label="Export current page as PNG"' in html
+    assert "ideaCardAriaLabel" in app_js
+    assert "Select idea:" in app_js
 
     stale_jargon = [
         "No wax path pressed.",

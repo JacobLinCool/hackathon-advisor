@@ -685,6 +685,7 @@ function renderIdeas(ideas) {
     item.disabled = sessionControlsLocked;
     item.dataset.ideaId = idea.id || "";
     item.setAttribute("aria-pressed", selected ? "true" : "false");
+    item.setAttribute("aria-label", ideaCardAriaLabel(idea, score, verdict));
     item.innerHTML = `
       <div class="ihead">
         <strong>${escapeHtml(idea.title)}</strong>
@@ -703,6 +704,14 @@ function visibleIdeas(ideas) {
   const current = currentId ? ideas.find((idea) => idea.id === currentId) : null;
   const remaining = ideas.filter((idea) => idea.id !== currentId).slice(-3).reverse();
   return current ? [current, ...remaining] : ideas.slice(-4).reverse();
+}
+
+function ideaCardAriaLabel(idea, score, verdict) {
+  const title = String(idea?.title || "Untitled idea").trim() || "Untitled idea";
+  const parts = [`Select idea: ${title}`];
+  if (score) parts.push(`score ${score}`);
+  if (verdict) parts.push(String(verdict));
+  return parts.join(", ");
 }
 
 function currentIdea() {
