@@ -99,6 +99,8 @@ class MiniCPMTransformersPlanner:
         self._ensure_loaded()
         prompt = render_context(message, state)
         output = self._generate_tool_call(prompt)
+        if os.environ.get("ADVISOR_LOG_MODEL_OUTPUT", "").strip() == "1":
+            print(f"MiniCPM raw tool output: {output!r}", flush=True)
         return resolve_tool_call(output, fallback_query=message)
 
     def _ensure_loaded(self) -> None:
