@@ -81,6 +81,7 @@ def build_payload(
         "build_source": build_source,
         "builder": builder,
         "llama_cpp_python_version": importlib.metadata.version("llama-cpp-python"),
+        "n_ctx": n_ctx,
     }
     if modal_app:
         metadata["modal_app"] = modal_app

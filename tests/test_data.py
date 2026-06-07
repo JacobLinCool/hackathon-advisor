@@ -3,7 +3,12 @@ from pathlib import Path
 from tests.helpers import load_test_index
 import json
 
-from hackathon_advisor.data import Project, ProjectIndex, public_project_summary, public_project_title
+from hackathon_advisor.data import (
+    Project,
+    ProjectIndex,
+    public_project_summary,
+    public_project_title,
+)
 
 
 def test_project_index_searches_snapshot() -> None:
@@ -52,6 +57,32 @@ def test_public_project_cards_hide_generic_submission_copy() -> None:
 
     assert public["title"] == "Untitled project"
     assert public["summary"] == ""
+
+
+def test_searchable_text_includes_main_app_file_signals() -> None:
+    project = Project(
+        id="build-small-hackathon/idea-canvas",
+        title="Idea Canvas",
+        summary="",
+        tags=("gradio",),
+        models=(),
+        datasets=(),
+        likes=0,
+        sdk="gradio",
+        license="",
+        created_at="",
+        last_modified="",
+        host="",
+        url="https://example.test",
+        app_file="app.py",
+        app_file_embedding_text="score_idea\ngr.Textbox\nProject idea",
+    )
+
+    searchable = project.searchable_text
+
+    assert "main app file: app.py" in searchable
+    assert "score_idea" in searchable
+    assert "Project idea" in searchable
 
 
 def test_project_index_rejects_mismatched_snapshot(tmp_path: Path) -> None:

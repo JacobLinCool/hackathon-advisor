@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -7,11 +8,13 @@ from hashlib import sha256
 import json
 import math
 from pathlib import Path
+from pathlib import PurePosixPath
 import re
 from typing import Any
 
 
 TOKEN_RE = re.compile(r"[a-z0-9][a-z0-9.+_-]*", re.IGNORECASE)
+HTML_TAG_RE = re.compile(r"<[^>]+>")
 GENERIC_PUBLIC_TITLE_RE = re.compile(
     r"^(?:my\s+)?build\s+small\s+hackathon$",
     re.IGNORECASE,
@@ -23,11 +26,12 @@ GENERIC_PUBLIC_SUMMARY_RE = re.compile(
     re.IGNORECASE,
 )
 
-INDEX_SCHEMA_VERSION = 2
+INDEX_SCHEMA_VERSION = 3
 INDEX_ALGORITHM = "llama-cpp-embedding-v1"
 DEFAULT_EMBEDDING_MODEL_REPO = "ggml-org/embeddinggemma-300m-qat-q8_0-GGUF"
 DEFAULT_EMBEDDING_MODEL_FILE = "embeddinggemma-300m-qat-Q8_0.gguf"
 DEFAULT_EMBEDDING_RUNTIME = "llama.cpp via llama-cpp-python"
+APP_FILE_EMBEDDING_CHAR_LIMIT = 8000
 
 
 EmbeddingFunction = Callable[[str], Sequence[float]]
@@ -48,6 +52,8 @@ class Project:
     last_modified: str
     host: str
     url: str
+    app_file: str = ""
+    app_file_embedding_text: str = ""
 
     @classmethod
     def from_dict(cls, data: dict) -> "Project":
@@ -65,6 +71,8 @@ class Project:
             last_modified=str(data.get("last_modified") or ""),
             host=str(data.get("host") or ""),
             url=str(data.get("url") or f"https://huggingface.co/spaces/{data['id']}"),
+            app_file=str(data.get("app_file") or ""),
+            app_file_embedding_text=str(data.get("app_file_embedding_text") or ""),
         )
 
     @property
@@ -73,15 +81,21 @@ class Project:
 
     @property
     def searchable_text(self) -> str:
-        return " ".join(
-            [
-                self.title,
-                self.slug.replace("-", " ").replace("_", " "),
-                self.summary,
-                " ".join(self.tags),
-                " ".join(self.models),
-                " ".join(self.datasets),
+        return "\n".join(
+            part
+            for part in [
+                f"title: {self.title}",
+                f"slug: {self.slug.replace('-', ' ').replace('_', ' ')}",
+                f"summary: {self.summary}",
+                f"tags: {' '.join(self.tags)}",
+                f"models: {' '.join(self.models)}",
+                f"datasets: {' '.join(self.datasets)}",
+                f"main app file: {self.app_file}" if self.app_file else "",
+                f"main app file content:\n{self.app_file_embedding_text}"
+                if self.app_file_embedding_text
+                else "",
             ]
+            if part.strip()
         )
 
     def to_public_dict(self) -> dict:
@@ -99,6 +113,7 @@ class Project:
             "last_modified": self.last_modified,
             "host": self.host,
             "url": self.url,
+            "app_file": self.app_file,
         }
 
     def to_snapshot_dict(self) -> dict:
@@ -116,6 +131,8 @@ class Project:
             "last_modified": self.last_modified,
             "host": self.host,
             "url": self.url,
+            "app_file": self.app_file,
+            "app_file_embedding_text": self.app_file_embedding_text,
         }
 
 
@@ -161,6 +178,99 @@ def public_project_summary(summary: str) -> str:
     if GENERIC_PUBLIC_SUMMARY_RE.search(cleaned):
         return ""
     return cleaned
+
+
+def extract_app_file_embedding_text(app_file: str, text: str) -> str:
+    cleaned_file = str(app_file).strip()
+    cleaned_text = str(text or "")
+    if not cleaned_file or not cleaned_text.strip():
+        return ""
+
+    suffix = PurePosixPath(cleaned_file).suffix.lower()
+    if suffix == ".py":
+        body = python_app_signals(cleaned_text)
+    else:
+        body = cleaned_text
+    return bounded_embedding_text(body, APP_FILE_EMBEDDING_CHAR_LIMIT)
+
+
+def python_app_signals(source: str) -> str:
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return source
+
+    signals: list[str] = []
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            signals.append(node.name)
+            for arg in node.args.args:
+                signals.append(arg.arg)
+        elif isinstance(node, ast.ClassDef):
+            signals.append(node.name)
+        elif isinstance(node, ast.Call):
+            name = call_name(node.func)
+            if name:
+                signals.append(name)
+            signals.extend(keyword.arg for keyword in node.keywords if keyword.arg)
+        elif isinstance(node, ast.Constant) and isinstance(node.value, str):
+            signals.append(node.value)
+
+    return ordered_normalized_text(signals)
+
+
+def call_name(node: ast.AST) -> str:
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        parent = call_name(node.value)
+        return f"{parent}.{node.attr}" if parent else node.attr
+    return ""
+
+
+def ordered_normalized_text(values: Sequence[str]) -> str:
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for value in values:
+        cleaned = clean_embedding_signal(value)
+        if not cleaned:
+            continue
+        if cleaned in seen:
+            continue
+        seen.add(cleaned)
+        ordered.append(cleaned)
+    return "\n".join(ordered)
+
+
+def clean_embedding_signal(value: str) -> str:
+    cleaned = HTML_TAG_RE.sub(" ", str(value))
+    cleaned = " ".join(cleaned.split())
+    if looks_like_style_blob(cleaned):
+        return ""
+    return cleaned
+
+
+def looks_like_style_blob(text: str) -> bool:
+    if len(text) < 80:
+        return False
+    style_markers = (
+        text.count("{")
+        + text.count("}")
+        + text.count(";")
+        + text.count("!important")
+        + text.count("rgba(")
+        + text.count("linear-gradient")
+    )
+    return style_markers >= 8 and style_markers / len(text) > 0.015
+
+
+def bounded_embedding_text(text: str, limit: int) -> str:
+    cleaned = " ".join(str(text).split())
+    if len(cleaned) <= limit:
+        return cleaned
+    marker = " ... "
+    edge = max(1, (limit - len(marker)) // 2)
+    return f"{cleaned[:edge].rstrip()}{marker}{cleaned[-edge:].lstrip()}"
 
 
 @dataclass(frozen=True)
@@ -433,7 +543,9 @@ def validate_index_payload(
     indexed_ids = [document.get("project_id") for document in documents]
     if indexed_ids != project_ids:
         raise ValueError("project index project order does not match projects snapshot")
-    for document in documents:
+    for project, document in zip(projects, documents, strict=True):
+        if document.get("text_digest") != sha256(project.searchable_text.encode("utf-8")).hexdigest():
+            raise ValueError("project index text digest does not match searchable project text")
         vector = document.get("vector")
         if not isinstance(vector, list) or len(vector) != dimensions:
             raise ValueError("project index vector dimensions do not match embedding metadata")

@@ -58,9 +58,11 @@ python scripts/generate_sample_trace.py --projects data/projects.json --index da
 ```
 
 The app uses `data/projects.json` and `data/project_index.json` at runtime. The index validates the snapshot timestamp,
-source, project order, digest, embedding dimensions, and normalized vector shape before the app starts. The canonical
-index is built on Modal with `ggml-org/embeddinggemma-300m-qat-q8_0-GGUF` through llama.cpp; runtime search embeds the
-user query with the same GGUF model and performs local cosine search over the checked-in vectors.
+source, project order, searchable text digest, embedding dimensions, and normalized vector shape before the app starts.
+The crawler snapshots every public Space in the org and, when README frontmatter declares `app_file`, includes that main
+app file as the highest-signal project evidence for embedding. The canonical index is built on Modal with
+`ggml-org/embeddinggemma-300m-qat-q8_0-GGUF` through llama.cpp; runtime search embeds the user query with the same GGUF
+model and performs local cosine search over the checked-in vectors.
 
 ## Trace Artifact
 
