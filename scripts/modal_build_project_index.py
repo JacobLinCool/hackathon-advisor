@@ -54,8 +54,8 @@ def build_project_index_remote(
 def main(
     projects: str = "data/projects.json",
     out: str = "data/project_index.json",
-    model_repo: str = "ggml-org/embeddinggemma-300M-qat-q4_0-GGUF",
-    model_file: str = "embeddinggemma-300M-qat-Q4_0.gguf",
+    model_repo: str = "ggml-org/embeddinggemma-300m-qat-q8_0-GGUF",
+    model_file: str = "embeddinggemma-300m-qat-Q8_0.gguf",
 ) -> None:
     project_snapshot = json.loads(Path(projects).read_text(encoding="utf-8"))
     payload = build_project_index_remote.remote(project_snapshot, model_repo, model_file)
@@ -73,8 +73,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Build the llama.cpp embedding index on Modal.")
     parser.add_argument("--projects", default="data/projects.json")
     parser.add_argument("--out", default="data/project_index.json")
-    parser.add_argument("--model-repo", default="ggml-org/embeddinggemma-300M-qat-q4_0-GGUF")
-    parser.add_argument("--model-file", default="embeddinggemma-300M-qat-Q4_0.gguf")
+    parser.add_argument("--model-repo", default="ggml-org/embeddinggemma-300m-qat-q8_0-GGUF")
+    parser.add_argument("--model-file", default="embeddinggemma-300m-qat-Q8_0.gguf")
     args = parser.parse_args()
     with app.run():
         payload = build_project_index_remote.remote(

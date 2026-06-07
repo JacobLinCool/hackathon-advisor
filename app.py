@@ -21,12 +21,15 @@ from hackathon_advisor.lora_dataset import build_lora_dataset_jsonl
 from hackathon_advisor.lora_training_kit import TRAINING_KIT_FILENAME, build_lora_training_kit_zip
 from hackathon_advisor.png_export import artifact_png_filename, render_artifact_png
 from hackathon_advisor.prize_ledger import prize_ledger
+from hackathon_advisor.runtime_hooks import install_asyncio_cleanup_hook
 from hackathon_advisor.submission_packet import build_submission_packet_markdown
 from hackathon_advisor.tool_contracts import resolve_tool_call, tool_schemas
 from hackathon_advisor.tools import GOALS, goal_profiles
 from hackathon_advisor.trace_export import build_trace_jsonl, trace_metadata
 from hackathon_advisor.zerogpu import gpu_task
 
+
+install_asyncio_cleanup_hook()
 
 ROOT = Path(__file__).parent
 STATIC_DIR = ROOT / "static"

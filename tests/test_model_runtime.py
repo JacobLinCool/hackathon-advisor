@@ -8,6 +8,7 @@ from hackathon_advisor.model_runtime import (
     render_context,
     runtime_status,
     system_prompt,
+    _disable_sampling_generation_defaults,
     _normalize_xml_tool_output,
     _strip_unused_generation_inputs,
 )
@@ -192,6 +193,22 @@ def test_generation_inputs_drop_token_type_ids() -> None:
     _strip_unused_generation_inputs(inputs)
 
     assert inputs == {"input_ids": [1], "attention_mask": [1]}
+
+
+def test_generation_config_drops_sampling_defaults() -> None:
+    class GenerationConfig:
+        do_sample = True
+        temperature = 0.7
+        top_p = 0.95
+
+    class Model:
+        generation_config = GenerationConfig()
+
+    _disable_sampling_generation_defaults(Model())
+
+    assert Model.generation_config.do_sample is False
+    assert Model.generation_config.temperature is None
+    assert Model.generation_config.top_p is None
 
 
 def test_model_xml_fragment_is_normalized() -> None:

@@ -128,13 +128,14 @@ class MiniCPMTransformersPlanner:
         )
         model = AutoModelForCausalLM.from_pretrained(
             base_model_id,
-            torch_dtype="auto",
+            dtype="auto",
             device_map="auto",
             trust_remote_code=True,
         )
         if self.adapter_id:
             model = PeftModel.from_pretrained(model, self.adapter_id, **adapter_kwargs)
         model.eval()
+        _disable_sampling_generation_defaults(model)
         self._model = model
         if hasattr(torch, "inference_mode"):
             self._inference_mode = torch.inference_mode
@@ -226,6 +227,15 @@ def system_prompt() -> str:
 
 def _strip_unused_generation_inputs(inputs: dict[str, Any]) -> None:
     inputs.pop("token_type_ids", None)
+
+
+def _disable_sampling_generation_defaults(model: Any) -> None:
+    generation_config = getattr(model, "generation_config", None)
+    if generation_config is None:
+        return
+    generation_config.do_sample = False
+    generation_config.temperature = None
+    generation_config.top_p = None
 
 
 def _normalize_xml_tool_output(output: str) -> str:

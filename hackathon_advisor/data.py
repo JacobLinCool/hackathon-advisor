@@ -25,8 +25,8 @@ GENERIC_PUBLIC_SUMMARY_RE = re.compile(
 
 INDEX_SCHEMA_VERSION = 2
 INDEX_ALGORITHM = "llama-cpp-embedding-v1"
-DEFAULT_EMBEDDING_MODEL_REPO = "ggml-org/embeddinggemma-300M-qat-q4_0-GGUF"
-DEFAULT_EMBEDDING_MODEL_FILE = "embeddinggemma-300M-qat-Q4_0.gguf"
+DEFAULT_EMBEDDING_MODEL_REPO = "ggml-org/embeddinggemma-300m-qat-q8_0-GGUF"
+DEFAULT_EMBEDDING_MODEL_FILE = "embeddinggemma-300m-qat-Q8_0.gguf"
 DEFAULT_EMBEDDING_RUNTIME = "llama.cpp via llama-cpp-python"
 
 

@@ -14,7 +14,7 @@ MODEL_STACK = [
     },
     {
         "role": "Embedding retriever",
-        "model": "ggml-org/embeddinggemma-300M-qat-q4_0-GGUF",
+        "model": "ggml-org/embeddinggemma-300m-qat-q8_0-GGUF",
         "params_b": 0.30,
         "status": "deployed",
         "runtime": "Modal-built llama.cpp GGUF index + runtime llama.cpp query embeddings",

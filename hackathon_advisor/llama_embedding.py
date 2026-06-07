@@ -12,7 +12,7 @@ from hackathon_advisor.data import (
 
 
 TRUE_VALUES = {"1", "true", "yes", "on"}
-DEFAULT_N_CTX = 512
+DEFAULT_N_CTX = 2048
 
 
 class LlamaCppEmbedder:
@@ -23,6 +23,7 @@ class LlamaCppEmbedder:
         model_file: str = DEFAULT_EMBEDDING_MODEL_FILE,
         model_path: str = "",
         n_ctx: int = DEFAULT_N_CTX,
+        n_batch: int | None = None,
         n_threads: int | None = None,
         n_gpu_layers: int = 0,
         verbose: bool = False,
@@ -31,6 +32,7 @@ class LlamaCppEmbedder:
         self.model_file = model_file.strip() or DEFAULT_EMBEDDING_MODEL_FILE
         self.model_path = model_path.strip()
         self.n_ctx = n_ctx
+        self.n_batch = n_batch or n_ctx
         self.n_threads = n_threads
         self.n_gpu_layers = n_gpu_layers
         self.verbose = verbose
@@ -63,6 +65,8 @@ class LlamaCppEmbedder:
             embedding=True,
             pooling_type=LLAMA_POOLING_TYPE_MEAN,
             n_ctx=self.n_ctx,
+            n_batch=self.n_batch,
+            n_ubatch=self.n_batch,
             n_threads=self.n_threads,
             n_gpu_layers=self.n_gpu_layers,
             verbose=self.verbose,
@@ -82,6 +86,7 @@ def create_llama_cpp_embedder(metadata: dict[str, Any]) -> LlamaCppEmbedder:
         ),
         model_path=os.environ.get("ADVISOR_EMBEDDING_MODEL_PATH", ""),
         n_ctx=_int_env("ADVISOR_EMBEDDING_N_CTX", DEFAULT_N_CTX),
+        n_batch=_optional_int_env("ADVISOR_EMBEDDING_BATCH"),
         n_threads=_optional_int_env("ADVISOR_EMBEDDING_THREADS"),
         n_gpu_layers=_int_env("ADVISOR_EMBEDDING_GPU_LAYERS", 0),
         verbose=os.environ.get("ADVISOR_EMBEDDING_VERBOSE", "").strip().lower() in TRUE_VALUES,

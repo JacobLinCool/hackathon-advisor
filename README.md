@@ -59,7 +59,7 @@ python scripts/generate_sample_trace.py --projects data/projects.json --index da
 
 The app uses `data/projects.json` and `data/project_index.json` at runtime. The index validates the snapshot timestamp,
 source, project order, digest, embedding dimensions, and normalized vector shape before the app starts. The canonical
-index is built on Modal with `ggml-org/embeddinggemma-300M-qat-q4_0-GGUF` through llama.cpp; runtime search embeds the
+index is built on Modal with `ggml-org/embeddinggemma-300m-qat-q8_0-GGUF` through llama.cpp; runtime search embeds the
 user query with the same GGUF model and performs local cosine search over the checked-in vectors.
 
 ## Trace Artifact
@@ -186,8 +186,8 @@ ADVISOR_MODEL_BACKEND=minicpm-transformers
 ADVISOR_MODEL_ID=openbmb/MiniCPM5-1B
 ADVISOR_ADAPTER_ID=build-small-hackathon/hackathon-advisor-minicpm5-lora
 ADVISOR_ADAPTER_REVISION=25de69bcde397e1bcdd852923b56a42f10222650
-ADVISOR_EMBEDDING_MODEL_REPO=ggml-org/embeddinggemma-300M-qat-q4_0-GGUF
-ADVISOR_EMBEDDING_MODEL_FILE=embeddinggemma-300M-qat-Q4_0.gguf
+ADVISOR_EMBEDDING_MODEL_REPO=ggml-org/embeddinggemma-300m-qat-q8_0-GGUF
+ADVISOR_EMBEDDING_MODEL_FILE=embeddinggemma-300m-qat-Q8_0.gguf
 ADVISOR_ASR_MODEL_ID=nvidia/nemotron-speech-streaming-en-0.6b
 ```
 

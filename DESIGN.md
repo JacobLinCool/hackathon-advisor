@@ -126,7 +126,7 @@ investigate → ideate → score loop — the experience collapses without the m
 |---|---|---|---|---|---|
 | STT (batch voice input) | **`nvidia/nemotron-speech-streaming-en-0.6b`** | 0.6B | NeMo, GPU+CUDA | NVIDIA Open Model (commercial OK) | 🟩 NVIDIA Nemotron Quest |
 | LLM brain | **`openbmb/MiniCPM5-1B`** ("OpenCPM5") | 1.08B | **transformers** (self-parse XML) / llama.cpp | **Apache-2.0** | 🏮 OpenBMB |
-| Embedder | **`ggml-org/embeddinggemma-300M-qat-q4_0-GGUF`** | ~300M | llama.cpp / llama-cpp-python | Gemma | 🔌 Off the Grid · 🦙 Llama Champion · 🟢 Modal |
+| Embedder | **`ggml-org/embeddinggemma-300m-qat-q8_0-GGUF`** | ~300M | llama.cpp / llama-cpp-python | Gemma | 🔌 Off the Grid · 🦙 Llama Champion · 🟢 Modal |
 | Fine-tune | LoRA on MiniCPM5 → published to Hub | — | PEFT / HF Jobs | — | 🎯 Well-Tuned |
 
 **Total ≈ 1.98B params → ≤4B → 🐜 Tiny Titan eligible.** All open-weight, all runnable locally → 🔌 Off the Grid.
@@ -191,9 +191,9 @@ With **text-first + batch ASR**, the old "streaming ASR vs ZeroGPU" Config A/B t
   tool-calling is a pending PR — verify before relying on it for the badge runtime.)
 - **1B discipline:** small tool schemas, few params each, clear descriptions, low temp, single-hop tool calls.
 
-### 5.4 EmbeddingGemma GGUF — `ggml-org/embeddinggemma-300M-qat-q4_0-GGUF`
+### 5.4 EmbeddingGemma GGUF — `ggml-org/embeddinggemma-300m-qat-q8_0-GGUF`
 
-- Active retrieval model: `embeddinggemma-300M-qat-Q4_0.gguf`, 768-dimensional normalized embeddings.
+- Active retrieval model: `embeddinggemma-300m-qat-Q8_0.gguf`, 768-dimensional normalized embeddings.
 - Build-time path: Modal remote function runs `llama-cpp-python` with mean pooling and writes `data/project_index.json`.
 - Runtime path: Space embeds each user query through the same GGUF model via llama.cpp, then performs local cosine search
   over checked-in project vectors.
@@ -208,10 +208,10 @@ llama.cpp on Modal, and runtime query embeddings use the same llama.cpp path.
 | Model | llama.cpp? | Runtime | Notes |
 |---|---|---|---|
 | `openbmb/MiniCPM5-1B` | ✅ planned only | llama.cpp / Ollama | Not used for deployed tool-calling; Transformers + LoRA is the deployed brain. |
-| `ggml-org/embeddinggemma-300M-qat-q4_0-GGUF` | ✅ active | llama.cpp / llama-cpp-python | Builds project vectors on Modal and embeds runtime queries in the Space. |
+| `ggml-org/embeddinggemma-300m-qat-q8_0-GGUF` | ✅ active | llama.cpp / llama-cpp-python | Builds project vectors on Modal and embeds runtime queries in the Space. |
 | ASR (Nemotron) | ❌ | NeMo | FastConformer-RNNT |
 
-If retrieval quality becomes the bottleneck, compare Q4_0 against Q8_0, but do not keep two runtime retrieval paths.
+The checked-in index and runtime query embedder must stay on the same GGUF file.
 
 ---
 
@@ -310,7 +310,7 @@ canonical command is:
 ```
 
 The remote function installs `llama-cpp-python`, downloads
-`ggml-org/embeddinggemma-300M-qat-q4_0-GGUF/embeddinggemma-300M-qat-Q4_0.gguf`, embeds every project card through
+`ggml-org/embeddinggemma-300m-qat-q8_0-GGUF/embeddinggemma-300m-qat-Q8_0.gguf`, embeds every project card through
 llama.cpp, and returns a schema-v2 JSON index. The local entrypoint writes that payload into the repo for Space runtime.
 
 Latest successful run: `hackathon-advisor-llama-index` on Modal, producing a 100-document, 768-dimensional normalized

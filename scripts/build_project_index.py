@@ -16,7 +16,7 @@ from hackathon_advisor.data import (
     Project,
     build_index_payload,
 )
-from hackathon_advisor.llama_embedding import LlamaCppEmbedder
+from hackathon_advisor.llama_embedding import DEFAULT_N_CTX, LlamaCppEmbedder
 
 
 def main() -> None:
@@ -28,7 +28,7 @@ def main() -> None:
     parser.add_argument("--model-repo", default=DEFAULT_EMBEDDING_MODEL_REPO)
     parser.add_argument("--model-file", default=DEFAULT_EMBEDDING_MODEL_FILE)
     parser.add_argument("--model-path", default="")
-    parser.add_argument("--n-ctx", type=int, default=512)
+    parser.add_argument("--n-ctx", type=int, default=DEFAULT_N_CTX)
     parser.add_argument("--n-threads", type=int, default=0)
     args = parser.parse_args()
 
@@ -58,7 +58,7 @@ def build_payload(
     model_repo: str,
     model_file: str,
     model_path: str = "",
-    n_ctx: int = 512,
+    n_ctx: int = DEFAULT_N_CTX,
     n_threads: int | None = None,
     build_source: str,
     builder: str,
