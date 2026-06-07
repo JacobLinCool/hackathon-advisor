@@ -179,6 +179,23 @@ def test_planner_get_project_drives_project_response() -> None:
     assert result.tool_events[0].name == "get_project"
 
 
+def test_rule_project_reference_does_not_create_or_score_idea() -> None:
+    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    engine = AdvisorEngine(index)
+    first = engine.turn("A local-first archive cartographer for family photos", {})
+
+    result = engine.turn("read project lolaby", first.state)
+
+    assert result.projects
+    assert result.projects[0].slug == "lolaby"
+    assert result.score is None
+    assert result.artifact == {}
+    assert len(result.state["ideas"]) == 1
+    assert result.state["ideas"][0]["title"] == first.artifact["title"]
+    assert result.state["last_artifact"]["title"] == first.artifact["title"]
+    assert result.state["last_tool_resolution"]["call"]["name"] == "get_project"
+
+
 def test_planner_profile_and_goals_update_state() -> None:
     index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
     planned = AdvisorEngine(index).turn("A local-first archive cartographer for family photos", {})

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import os
+import re
 from typing import Any, Protocol
 
 from hackathon_advisor.tools import idea_from_text
@@ -43,8 +44,13 @@ class RuleBasedPlanner:
     def plan(self, message: str, state: dict[str, Any]) -> ToolResolution:
         text = " ".join(message.strip().split())
         lower = text.lower()
+        project_id = _project_reference_id(text)
         if not text:
             output = '<function name="list_projects">{"sort":"likes"}</function>'
+        elif _wants_project_list(lower):
+            output = '<function name="list_projects">{"sort":"likes"}</function>'
+        elif project_id:
+            output = f'<function name="get_project">{{"id":{_json_string(project_id)}}}</function>'
         elif any(term in lower for term in ("compare", "choose", "rank")):
             output = '<function name="compare_ideas">{}</function>'
         elif any(term in lower for term in ("plan", "roadmap", "next step", "milestone")):
@@ -177,6 +183,48 @@ def _json_string(value: str) -> str:
     import json
 
     return json.dumps(value, ensure_ascii=False)
+
+
+def _wants_project_list(lower_text: str) -> bool:
+    exact_phrases = (
+        "projects",
+        "spaces",
+        "current map",
+        "project map",
+    )
+    command_prefixes = (
+        "list projects",
+        "list spaces",
+        "show projects",
+        "show spaces",
+        "show current map",
+        "show project map",
+        "open current map",
+        "browse projects",
+        "browse spaces",
+    )
+    return lower_text in exact_phrases or any(lower_text.startswith(prefix) for prefix in command_prefixes)
+
+
+def _project_reference_id(text: str) -> str:
+    prefixes = (
+        "read project ",
+        "open project ",
+        "show project ",
+        "read space ",
+        "open space ",
+        "show space ",
+    )
+    lower = text.lower()
+    raw = ""
+    for prefix in prefixes:
+        if lower.startswith(prefix):
+            raw = text[len(prefix) :].strip()
+            break
+    if not raw:
+        return ""
+    raw = re.sub(r"^https?://huggingface\.co/spaces/", "", raw, flags=re.IGNORECASE)
+    return raw.split()[0].strip(".,;:!?\"'")
 
 
 def _title(text: str) -> str:

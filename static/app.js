@@ -598,10 +598,15 @@ function handleEvent(event) {
     session.goals = Array.isArray(session.goals) ? session.goals : [];
     session.last_response = event.response || session.last_response || "";
     delete session.ui_status;
+    const toolName = session.last_tool_resolution?.call?.name || "";
+    const projectReferenceOnly =
+      !event.score && !event.artifact?.title && ["list_projects", "get_project"].includes(toolName);
     if (event.score?.echoes?.length) {
       renderCitations(event.score.echoes);
     } else if (event.projects?.length) {
       renderProjects(event.projects);
+    } else if (projectReferenceOnly) {
+      renderProjects([], "No project page matched this request.");
     }
     if (event.whitespace?.length) renderWhitespace(event.whitespace);
     renderGoals(session.goals);
@@ -613,6 +618,8 @@ function handleEvent(event) {
       renderScore(event.score);
       ink.classList.toggle("bleed", event.score.verdict.startsWith("ECHO"));
       ink.classList.toggle("gold", event.score.verdict.startsWith("UNWRITTEN"));
+    } else if (projectReferenceOnly) {
+      renderProjectReferenceState();
     } else if (!event.projects?.length) {
       const idea = currentIdea();
       renderSelectedIdeaSeal(idea);
@@ -625,6 +632,15 @@ function handleEvent(event) {
     setCommandDisabled(false);
     saveSession();
   }
+}
+
+function renderProjectReferenceState() {
+  currentArtifact = null;
+  renderScore(null);
+  setVerdictDisplay("READY", 0, null);
+  sealCopyEl.textContent = "Project pages are shown below. Score an idea to press a new seal.";
+  ink.classList.remove("bleed", "gold");
+  renderWoodMap(null);
 }
 
 function renderIdeas(ideas) {

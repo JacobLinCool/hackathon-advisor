@@ -50,6 +50,32 @@ def test_rule_planner_defaults_blank_to_list_projects() -> None:
     assert resolution.call.name == "list_projects"
 
 
+def test_rule_planner_routes_project_reference_commands() -> None:
+    planner = RuleBasedPlanner()
+
+    listed = planner.plan("show current map", {})
+    project = planner.plan("read project lolaby", {})
+    project_url = planner.plan("open space https://huggingface.co/spaces/build-small-hackathon/lolaby", {})
+
+    assert listed.status == "valid"
+    assert listed.call.name == "list_projects"
+    assert project.status == "valid"
+    assert project.call.name == "get_project"
+    assert project.call.arguments["id"] == "lolaby"
+    assert project_url.status == "valid"
+    assert project_url.call.name == "get_project"
+    assert project_url.call.arguments["id"] == "build-small-hackathon/lolaby"
+
+
+def test_rule_planner_keeps_project_words_inside_ideas() -> None:
+    planner = RuleBasedPlanner()
+
+    resolution = planner.plan("A dashboard that helps teams show projects to mentors", {})
+
+    assert resolution.status == "valid"
+    assert resolution.call.name == "save_idea"
+
+
 def test_rule_planner_splits_explicit_idea_pitch() -> None:
     planner = RuleBasedPlanner()
 
