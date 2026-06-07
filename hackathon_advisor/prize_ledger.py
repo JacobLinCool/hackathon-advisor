@@ -20,11 +20,11 @@ MODEL_STACK = [
         "runtime": "Modal-built llama.cpp GGUF index + runtime llama.cpp query embeddings",
     },
     {
-        "role": "Voice bonus",
+        "role": "Voice input",
         "model": "nvidia/nemotron-speech-streaming-en-0.6b",
         "params_b": 0.60,
-        "status": "deferred bonus",
-        "runtime": "batch ASR",
+        "status": "deployed",
+        "runtime": "ZeroGPU + NVIDIA NeMo ASR",
     },
 ]
 
@@ -87,12 +87,17 @@ TRAINING_ARTIFACTS = [
 ]
 
 
-def prize_ledger(runtime: dict[str, Any], index_metadata: dict[str, Any] | None = None) -> dict[str, Any]:
+def prize_ledger(
+    runtime: dict[str, Any],
+    index_metadata: dict[str, Any] | None = None,
+    voice_metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     total_params = round(sum(float(item["params_b"]) for item in MODEL_STACK), 2)
     largest = max(MODEL_STACK, key=lambda item: float(item["params_b"]))
     return {
         "runtime": runtime,
         "retrieval_index": index_metadata or {},
+        "voice": voice_metadata or {},
         "model_stack": MODEL_STACK,
         "total_params_b": total_params,
         "largest_model": {

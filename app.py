@@ -3,14 +3,16 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+import tempfile
 from typing import Any, Iterator
 
-from fastapi import Body
+from fastapi import Body, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response, StreamingResponse
 from gradio import Server
 
 from hackathon_advisor.agent import AdvisorEngine
 from hackathon_advisor.artifact_bundle import BUNDLE_FILENAME, build_demo_bundle_zip
+from hackathon_advisor.asr_runtime import create_asr_transcriber
 from hackathon_advisor.chapter import build_chapter_markdown
 from hackathon_advisor.data import ProjectIndex
 from hackathon_advisor.demo_rehearsal import build_demo_rehearsal
@@ -31,9 +33,11 @@ STATIC_DIR = ROOT / "static"
 DATA_PATH = ROOT / "data" / "projects.json"
 INDEX_PATH = ROOT / "data" / "project_index.json"
 PROFILE_FIELDS = ["skills", "time", "preferences", "constraints"]
+MAX_AUDIO_UPLOAD_BYTES = 25 * 1024 * 1024
 
 index = ProjectIndex.from_files(DATA_PATH, INDEX_PATH)
 engine = AdvisorEngine(index)
+voice_transcriber = create_asr_transcriber()
 app = Server()
 
 
@@ -44,6 +48,11 @@ def _json_event(payload: dict) -> str:
 @gpu_task
 def _engine_turn(message: str, session: dict[str, Any]):
     return engine.turn(message, session)
+
+
+@gpu_task
+def _transcribe_voice(audio_path: str) -> dict[str, Any]:
+    return voice_transcriber.transcribe(Path(audio_path)).to_dict()
 
 
 def _session_from_json(session_json: str = "{}") -> dict[str, Any]:
@@ -107,6 +116,7 @@ def health() -> dict:
         "ok": True,
         "projects": len(index.projects),
         "runtime": engine.runtime_status(),
+        "voice": voice_transcriber.status().to_dict(),
         **trace_metadata(index),
     }
 
@@ -117,6 +127,7 @@ def bootstrap() -> dict:
     return {
         "project_count": len(index.projects),
         "runtime": runtime_status,
+        "voice": voice_transcriber.status().to_dict(),
         **trace_metadata(index),
         "top_projects": [project.to_public_dict() for project in index.top_projects(limit=8)],
         "whitespace": [item.to_dict() for item in index.find_whitespace(limit=5)],
@@ -134,7 +145,7 @@ def runtime() -> dict:
 
 @app.get("/api/prize-ledger")
 def prize_ledger_endpoint() -> dict:
-    return prize_ledger(engine.runtime_status(), trace_metadata(index))
+    return prize_ledger(engine.runtime_status(), trace_metadata(index), voice_transcriber.status().to_dict())
 
 
 @app.get("/api/tool-contracts")
@@ -153,7 +164,7 @@ def demo_session() -> dict:
 @app.get("/api/demo-bundle.zip")
 def demo_bundle() -> Response:
     runtime_status = engine.runtime_status()
-    ledger = prize_ledger(runtime_status, trace_metadata(index))
+    ledger = prize_ledger(runtime_status, trace_metadata(index), voice_transcriber.status().to_dict())
     metadata = {
         **trace_metadata(index),
         "project_count": len(index.projects),
@@ -190,6 +201,34 @@ def agent_turn_stream(payload: dict[str, Any] | None = Body(default=None)) -> St
     return StreamingResponse(stream(), media_type="application/x-ndjson")
 
 
+@app.post("/api/transcribe")
+async def transcribe_audio(audio: UploadFile = File(...)) -> dict[str, Any]:
+    content_type = str(audio.content_type or "")
+    if content_type and not content_type.startswith("audio/"):
+        raise HTTPException(status_code=415, detail="Voice input must be an audio file.")
+    with tempfile.TemporaryDirectory(prefix="advisor-upload-") as directory:
+        filename = Path(str(audio.filename or "voice-note")).name
+        suffix = Path(filename).suffix or ".audio"
+        source = Path(directory) / f"voice{suffix}"
+        await _save_audio_upload(audio, source)
+        return _transcribe_voice(str(source))
+
+
+async def _save_audio_upload(upload: UploadFile, target: Path) -> None:
+    total = 0
+    with target.open("wb") as handle:
+        while True:
+            chunk = await upload.read(1024 * 1024)
+            if not chunk:
+                break
+            total += len(chunk)
+            if total > MAX_AUDIO_UPLOAD_BYTES:
+                raise HTTPException(status_code=413, detail="Voice note is too large.")
+            handle.write(chunk)
+    if total == 0:
+        raise HTTPException(status_code=400, detail="Voice note is empty.")
+
+
 @app.post("/api/field-notes")
 def field_notes_api(payload: dict[str, Any] | None = Body(default=None)) -> Response:
     session = _session_from_payload(payload)
@@ -219,7 +258,7 @@ def chapter_api(payload: dict[str, Any] | None = Body(default=None)) -> Response
 @app.get("/api/lora-training-kit.zip")
 def lora_training_kit() -> Response:
     runtime_status = engine.runtime_status()
-    ledger = prize_ledger(runtime_status, trace_metadata(index))
+    ledger = prize_ledger(runtime_status, trace_metadata(index), voice_transcriber.status().to_dict())
     metadata = {
         **trace_metadata(index),
         "project_count": len(index.projects),
@@ -291,7 +330,7 @@ def submission_packet_artifact(session_json: str = "{}") -> str:
             **trace_metadata(index),
             "project_count": len(index.projects),
         },
-        prize_ledger(runtime_status, trace_metadata(index)),
+        prize_ledger(runtime_status, trace_metadata(index), voice_transcriber.status().to_dict()),
     )
 
 

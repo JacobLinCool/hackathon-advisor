@@ -302,6 +302,10 @@ textarea:disabled {
   flex: 1 1 20px;
 }
 
+.voice-row {
+  margin-top: 10px;
+}
+
 .btn {
   display: inline-flex;
   min-height: 36px;
@@ -347,6 +351,17 @@ textarea:disabled {
 .btn-ink:hover:not(:disabled) {
   background: #38260f;
   border-color: #38260f;
+}
+
+.btn-voice {
+  color: #f6ecd2;
+  background: var(--leaf);
+  border-color: var(--leaf);
+}
+
+.btn-voice:hover:not(:disabled) {
+  background: #265935;
+  border-color: #265935;
 }
 
 .btn-ghost {

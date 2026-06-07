@@ -13,6 +13,8 @@ def test_main_interface_copy_is_builder_facing() -> None:
     assert "Example idea board loaded with a plan and share page." in app_js
     assert "/api/artifact.png" in app_js
     assert "/api/agent-turn" in app_js
+    assert "/api/transcribe" in app_js
+    assert "MediaRecorder" in app_js
     assert "readNdjson" in app_js
     assert "@gradio/client" not in app_js
     assert "renderArtifactCanvas" not in app_js
@@ -20,6 +22,8 @@ def test_main_interface_copy_is_builder_facing() -> None:
     assert 'aria-label="Export build notes"' in html
     assert 'aria-label="Export idea-board chapter"' in html
     assert 'aria-label="Export current page as PNG"' in html
+    assert 'aria-label="Voice input"' in html
+    assert "Voice note" in html
     assert "ideaCardAriaLabel" in app_js
     assert "Select idea:" in app_js
 

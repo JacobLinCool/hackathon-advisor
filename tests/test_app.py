@@ -21,6 +21,7 @@ from app import (
     prize_ledger_endpoint,
     runtime,
     submission_packet_artifact,
+    transcribe_audio,
     tool_contract_check,
     tool_contracts,
     trace_artifact,
@@ -34,6 +35,28 @@ async def _read_streaming_response(response) -> str:
     return "".join(chunks)
 
 
+class DummyUpload:
+    def __init__(
+        self,
+        content: bytes,
+        filename: str = "voice.wav",
+        content_type: str = "audio/wav",
+    ) -> None:
+        self._content = content
+        self._offset = 0
+        self.filename = filename
+        self.content_type = content_type
+
+    async def read(self, size: int = -1) -> bytes:
+        if self._offset >= len(self._content):
+            return b""
+        if size is None or size < 0:
+            size = len(self._content) - self._offset
+        start = self._offset
+        self._offset = min(len(self._content), self._offset + size)
+        return self._content[start : self._offset]
+
+
 def test_health_exposes_index_metadata() -> None:
     payload = health()
 
@@ -41,6 +64,7 @@ def test_health_exposes_index_metadata() -> None:
     assert payload["projects"] == len(index.projects)
     assert payload["index_algorithm"] == "llama-cpp-embedding-v1"
     assert payload["runtime"]["backend"] == "rules"
+    assert payload["voice"]["model_id"] == "nvidia/nemotron-speech-streaming-en-0.6b"
     assert len(payload["snapshot_digest"]) == 64
 
 
@@ -51,6 +75,7 @@ def test_bootstrap_exposes_index_metadata() -> None:
     assert payload["index_generated_at"]
     assert payload["snapshot_digest"]
     assert payload["runtime"]["tool_count"] >= 8
+    assert payload["voice"]["backend"] == "nemo-asr"
     assert payload["top_projects"]
     assert payload["default_goals"] == payload["goal_options"][:3]
     assert [goal["id"] for goal in payload["goal_profiles"]] == payload["goal_options"]
@@ -76,6 +101,48 @@ def test_agent_turn_stream_endpoint_exports_ndjson_events() -> None:
     assert any(line["type"] == "token" for line in lines)
     assert lines[-1]["type"] == "done"
     assert lines[-1]["state"]["ideas"]
+
+
+def test_transcribe_audio_endpoint_saves_audio(monkeypatch) -> None:
+    captured = {}
+
+    def fake_transcribe(path: str) -> dict:
+        captured["path"] = path
+        return {
+            "transcript": "A local-first memory archive.",
+            "model_id": "nvidia/nemotron-speech-streaming-en-0.6b",
+            "backend": "nemo-asr",
+            "sample_rate": 16000,
+        }
+
+    monkeypatch.setattr("app._transcribe_voice", fake_transcribe)
+
+    payload = asyncio.run(transcribe_audio(DummyUpload(b"RIFF....WAVE")))
+
+    assert payload["transcript"] == "A local-first memory archive."
+    assert captured["path"].endswith(".wav")
+
+
+def test_transcribe_audio_endpoint_rejects_non_audio() -> None:
+    upload = DummyUpload(b"hello", filename="note.txt", content_type="text/plain")
+
+    try:
+        asyncio.run(transcribe_audio(upload))
+    except Exception as error:
+        assert getattr(error, "status_code", None) == 415
+    else:
+        raise AssertionError("non-audio upload should fail")
+
+
+def test_transcribe_audio_endpoint_rejects_empty_audio() -> None:
+    upload = DummyUpload(b"", filename="empty.wav", content_type="audio/wav")
+
+    try:
+        asyncio.run(transcribe_audio(upload))
+    except Exception as error:
+        assert getattr(error, "status_code", None) == 400
+    else:
+        raise AssertionError("empty audio upload should fail")
 
 
 def test_markdown_api_endpoints_return_plain_markdown() -> None:
@@ -246,8 +313,10 @@ def test_prize_ledger_endpoint_reports_submission_evidence() -> None:
 
     assert payload["runtime"]["backend"] == "rules"
     assert payload["tiny_titan_eligible"] is True
+    assert payload["voice"]["model_id"] == "nvidia/nemotron-speech-streaming-en-0.6b"
     assert any(badge["name"] == "Sharing is Caring" for badge in payload["badges"])
     assert {badge["name"]: badge["status"] for badge in payload["badges"]}["Llama Champion"] == "ready"
+    assert {item["role"]: item["status"] for item in payload["model_stack"]}["Voice input"] == "deployed"
     assert payload["retrieval_index"]["index_algorithm"] == "llama-cpp-embedding-v1"
     assert payload["retrieval_index"]["embedding_runtime"] == "llama.cpp via llama-cpp-python"
     assert payload["training_artifacts"][0]["endpoint"] == "lora_dataset"

@@ -36,6 +36,13 @@
       <symbol id="icon-check" viewBox="0 0 24 24">
         <path d="M5 12l4 4 10-11" />
       </symbol>
+      <symbol id="icon-mic" viewBox="0 0 24 24">
+        <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z" />
+        <path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6" />
+      </symbol>
+      <symbol id="icon-upload" viewBox="0 0 24 24">
+        <path d="M12 17V4M7 9l5-5 5 5M5 20h14" />
+      </symbol>
     </svg>
 
     <div class="desk-glow"></div>
@@ -111,6 +118,18 @@
                 placeholder="A local-first agent that helps..."
               ></textarea>
               <div class="underline"></div>
+
+              <div class="toolbar voice-row" aria-label="Voice input">
+                <button id="record-voice" class="btn btn-voice" type="button" title="Record an idea">
+                  <svg class="icon"><use href="#icon-mic"></use></svg>
+                  Speak
+                </button>
+                <button id="upload-voice" class="btn btn-ghost" type="button" title="Transcribe a voice note">
+                  <svg class="icon"><use href="#icon-upload"></use></svg>
+                  Voice note
+                </button>
+                <input id="voice-file" type="file" accept="audio/*" hidden />
+              </div>
 
               <div class="toolbar command-row" aria-label="Advisor commands">
                 <button id="submit" class="btn btn-ink" type="submit" title="Score this idea">

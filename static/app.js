@@ -26,6 +26,9 @@ const exportButton = document.querySelector("#export-artifact");
 const exportNotesButton = document.querySelector("#export-notes");
 const exportChapterButton = document.querySelector("#export-chapter");
 const resetButton = document.querySelector("#reset-session");
+const recordVoiceButton = document.querySelector("#record-voice");
+const uploadVoiceButton = document.querySelector("#upload-voice");
+const voiceFileInput = document.querySelector("#voice-file");
 
 const SESSION_STORAGE_KEY = "hackathon-advisor-session-v2";
 const FIELD_NOTES_FILENAME = "hackathon-advisor-field-notes.md";
@@ -43,6 +46,10 @@ let sawTurnToken = false;
 let bootstrapData = null;
 let sessionRevision = 0;
 let sessionControlsLocked = false;
+let voiceBusy = false;
+let voiceRecorder = null;
+let voiceStream = null;
+let voiceChunks = [];
 
 bootstrap().catch(handleBootstrapError);
 
@@ -85,6 +92,22 @@ exportChapterButton.addEventListener("click", () => exportChapter());
 
 resetButton.addEventListener("click", () => {
   resetSession();
+});
+
+recordVoiceButton.addEventListener("click", async () => {
+  await toggleVoiceRecording();
+});
+
+uploadVoiceButton.addEventListener("click", () => {
+  if (uploadVoiceButton.disabled || voiceBusy || sessionControlsLocked) return;
+  voiceFileInput.click();
+});
+
+voiceFileInput.addEventListener("change", async () => {
+  const file = voiceFileInput.files?.[0] || null;
+  voiceFileInput.value = "";
+  if (!file) return;
+  await transcribeVoiceBlob(file, file.name || "voice-note.audio");
 });
 
 goalsEl.addEventListener("change", (event) => {
@@ -208,6 +231,121 @@ async function runCommand(command) {
     if (!savedDraft) return;
   }
   await runTurn(command);
+}
+
+async function toggleVoiceRecording() {
+  if (voiceRecorder?.state === "recording") {
+    voiceRecorder.stop();
+    return;
+  }
+  await startVoiceRecording();
+}
+
+async function startVoiceRecording() {
+  if (sessionControlsLocked || voiceBusy) return;
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+    setSessionStatus("Voice recording is not available in this browser. Upload a voice note instead.");
+    return;
+  }
+  try {
+    voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    voiceChunks = [];
+    const mimeType = recordingMimeType();
+    voiceRecorder = new MediaRecorder(voiceStream, mimeType ? { mimeType } : undefined);
+    voiceRecorder.addEventListener("dataavailable", (event) => {
+      if (event.data?.size) voiceChunks.push(event.data);
+    });
+    voiceRecorder.addEventListener("stop", () => {
+      const recorderMimeType = voiceRecorder?.mimeType || mimeType || "audio/webm";
+      stopVoiceStream();
+      const extension = recorderMimeType.includes("mp4")
+        ? "m4a"
+        : recorderMimeType.includes("ogg")
+          ? "ogg"
+          : "webm";
+      const blob = new Blob(voiceChunks, { type: recorderMimeType });
+      voiceRecorder = null;
+      voiceChunks = [];
+      setActionButtonLabel(recordVoiceButton, "Speak");
+      setVoiceControlsDisabled(false);
+      transcribeVoiceBlob(blob, `recorded-idea.${extension}`);
+    });
+    voiceRecorder.start();
+    setActionButtonLabel(recordVoiceButton, "Stop");
+    setVoiceControlsDisabled(false);
+    setSessionStatus("Listening. Press Stop when your idea is ready.");
+  } catch (error) {
+    stopVoiceStream();
+    voiceRecorder = null;
+    setActionButtonLabel(recordVoiceButton, "Speak");
+    setVoiceControlsDisabled(false);
+    setSessionStatus(`Voice recording could not start: ${error.message}`);
+  }
+}
+
+function recordingMimeType() {
+  const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus", "audio/mp4"];
+  return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || "";
+}
+
+function stopVoiceStream() {
+  if (!voiceStream) return;
+  voiceStream.getTracks().forEach((track) => track.stop());
+  voiceStream = null;
+}
+
+async function transcribeVoiceBlob(blob, filename) {
+  if (sessionControlsLocked || voiceBusy) return false;
+  if (!blob?.size) {
+    setSessionStatus("Voice note is empty.");
+    return false;
+  }
+  const revision = bumpSessionRevision();
+  voiceBusy = true;
+  submit.disabled = true;
+  input.disabled = true;
+  setCommandDisabled(true);
+  setSessionControlsDisabled(true);
+  setVoiceControlsDisabled(true);
+  setActionButtonLabel(recordVoiceButton, "Hearing...");
+  setSessionStatus("Transcribing voice note.");
+  try {
+    const formData = new FormData();
+    formData.append("audio", blob, filename || "voice-note.audio");
+    const response = await fetch("/api/transcribe", {
+      method: "POST",
+      body: formData,
+    });
+    if (!response.ok) throw new Error(`voice note failed with ${response.status}`);
+    const data = await response.json();
+    const transcript = String(data.transcript || "").trim();
+    if (!transcript) throw new Error("empty transcript");
+    if (!isCurrentSessionRevision(revision)) return false;
+    input.value = mergeDraftWithTranscript(input.value, transcript);
+    session.ui_status = "Voice note transcribed. Edit the draft or press Ink.";
+    corrections.textContent = session.ui_status;
+    saveSession();
+    return true;
+  } catch (error) {
+    if (isCurrentSessionRevision(revision)) setSessionStatus(`Voice note could not be transcribed: ${error.message}`);
+    return false;
+  } finally {
+    voiceBusy = false;
+    setActionButtonLabel(recordVoiceButton, "Speak");
+    if (isCurrentSessionRevision(revision)) {
+      submit.disabled = false;
+      input.disabled = false;
+      setSessionControlsDisabled(false);
+      setCommandDisabled(false);
+      setVoiceControlsDisabled(false);
+      input.focus();
+    }
+  }
+}
+
+function mergeDraftWithTranscript(draft, transcript) {
+  const current = String(draft || "").trim();
+  return current ? `${current}\n${transcript}` : transcript;
 }
 
 async function bootstrap() {
@@ -344,6 +482,13 @@ function setSessionControlsDisabled(disabled) {
   whitespaceEl.querySelectorAll("button[data-gap-prompt]").forEach((gap) => {
     gap.disabled = disabled;
   });
+  setVoiceControlsDisabled(disabled);
+}
+
+function setVoiceControlsDisabled(disabled) {
+  const recording = voiceRecorder?.state === "recording";
+  recordVoiceButton.disabled = voiceBusy || (disabled && !recording) || !bootstrapData;
+  uploadVoiceButton.disabled = voiceBusy || recording || disabled || !bootstrapData;
 }
 
 function resetSession() {

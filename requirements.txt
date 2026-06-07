@@ -1,9 +1,12 @@
 --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
 
 accelerate>=1.0,<2
+Cython>=3,<4
 gradio>=6.16.0,<7
 huggingface-hub>=0.36,<1
 llama-cpp-python==0.3.26
+nemo_toolkit[asr]==2.7.3
+packaging>=24,<26
 peft>=0.13,<1
 pillow>=10,<13
 spaces>=0.50,<1

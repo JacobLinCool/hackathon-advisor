@@ -1,6 +1,6 @@
 # Build Small Hackathon Advisor — Design & Implementation Notes
 
-> A **small-model agent** (text-first; voice is a later bonus) that investigates what other people have already built
+> A **small-model agent** with text and voice input that investigates what other people have already built
 > for the [Build Small Hackathon](https://huggingface.co/build-small-hackathon) and brainstorms an original new design
 > *with you*. Output = streaming text + live visuals (no TTS). All models small, open-weight, run locally.
 >
@@ -21,13 +21,13 @@ authoritative decision log; the rest of the doc is written to be consistent with
    archivist divines a fate-page; ink **bleeds and cites the real Spaces** you overlap (page 47, page 112…), or
    **blooms gold + sprouts a leaf** when it's unwritten. Engine unchanged underneath (crawl → whitespace/originality →
    score). The dry "advisor" stays under the hood. Full spec + de-risking grafts in §2.
-2. **Text-first.** Ship a fully demoable text-input (type / button) vertical slice first. Voice (push-to-talk → batch
-   ASR) is a later BONUS layer. Real-time streaming + in-browser turn detection are **deferred** (see §13 appendix).
+2. **Text-first with voice input.** The core workflow remains typed/editable text. Voice records or uploads a note,
+   transcribes it with batch ASR, and places the transcript in the same idea box. Real-time streaming + in-browser turn
+   detection are **deferred**.
 3. **Add a 🎯 Well-Tuned fine-tune** — a small LoRA (MiniCPM5 advisor persona / tool-calling), trained on Modal,
    published to the Hub → 6/6 badges → strong shot at 🎖️ Bonus Quest Champion ($2,000).
-4. **ASR = Nemotron primary (batch) + Parakeet fallback.** `nvidia/nemotron-speech-streaming-en-0.6b` used in BATCH
-   per-turn mode (`transcribe([wav])` — simple API). Day-1 spike confirms it builds + runs in one `@spaces.GPU` call;
-   if the ZeroGPU *environment* fights it, drop in `nvidia/parakeet-tdt-0.6b-v3` (native transformers, same batch API).
+4. **ASR = Nemotron batch.** `nvidia/nemotron-speech-streaming-en-0.6b` runs through NVIDIA NeMo in a ZeroGPU function.
+   Audio is normalized to mono WAV before calling `transcribe([wav])`.
 
 **Verified corrections:**
 - **Drop SGLang.** It needs a persistent GPU process → incompatible with ZeroGPU (same root cause as vLLM). Run
@@ -58,7 +58,7 @@ authoritative decision log; the rest of the doc is written to be consistent with
 - Trivial `@spaces.GPU` hello-cuda build GREEN on torch 2.8+, deps pinned, heavy deps added one at a time.
 - `gr.Server` minimal: static `index.html` + one same-origin `/api/agent-turn` NDJSON stream, plus the retained
   `@app.api()` generator for external clients, on the real ZeroGPU Space.
-- Nemotron `nemo_toolkit[asr]` install + one batch `transcribe()` inside `@spaces.GPU` (decision #4; else Parakeet).
+- Nemotron `nemo_toolkit[asr]` install + one batch `transcribe()` inside `@spaces.GPU` (decision #4).
 
 ---
 
@@ -110,7 +110,7 @@ UNWRITTEN." People compile draws into a "chapter" and dare friends to get a page
 
 **Defaults (revisit if time):** single-page artifact first (chapter compiler later); page-numbers visible, real titles
 on hover (keep the burn aimed at the idea, not a named builder); seal animation = safe typewriter + static-stamp floor
-first, bespoke ink-reveal last (graceful degradation); voice input stays text-first, a post-MVP flourish.
+first, bespoke ink-reveal last. Voice input is batch ASR that fills the same idea box before the user presses Ink.
 
 Input is **text-first**; the experience is fully delightful with typed input alone.
 
@@ -124,18 +124,16 @@ investigate → ideate → score loop — the experience collapses without the m
 
 | Role | Model | Params | Runtime | License | Prize hook |
 |---|---|---|---|---|---|
-| STT (batch, voice-later) | **`nvidia/nemotron-speech-streaming-en-0.6b`** (used in batch) | 0.6B | NeMo, GPU+CUDA | NVIDIA Open Model (commercial OK) | 🟩 NVIDIA Nemotron Quest |
-| ↳ fallback | `nvidia/parakeet-tdt-0.6b-v3` | 0.6B | **transformers** (no NeMo) | CC-BY-4.0 | 🟩 (Quest brand — verify, §5.1) |
+| STT (batch voice input) | **`nvidia/nemotron-speech-streaming-en-0.6b`** | 0.6B | NeMo, GPU+CUDA | NVIDIA Open Model (commercial OK) | 🟩 NVIDIA Nemotron Quest |
 | LLM brain | **`openbmb/MiniCPM5-1B`** ("OpenCPM5") | 1.08B | **transformers** (self-parse XML) / llama.cpp | **Apache-2.0** | 🏮 OpenBMB |
-| Turn detection (voice-later) | **`pipecat-ai/smart-turn-v3`** | ~8M | ONNX Runtime (browser) | BSD-2 | (natural voice UX) |
 | Embedder | **`ggml-org/embeddinggemma-300M-qat-q4_0-GGUF`** | ~300M | llama.cpp / llama-cpp-python | Gemma | 🔌 Off the Grid · 🦙 Llama Champion · 🟢 Modal |
 | Fine-tune | LoRA on MiniCPM5 → published to Hub | — | PEFT / HF Jobs | — | 🎯 Well-Tuned |
 
-**Total ≈ 1.9B params → ≤4B → 🐜 Tiny Titan eligible.** All open-weight, all runnable locally → 🔌 Off the Grid.
+**Total ≈ 1.98B params → ≤4B → 🐜 Tiny Titan eligible.** All open-weight, all runnable locally → 🔌 Off the Grid.
 
 > Naming: "OpenCPM5 1B" = `openbmb/MiniCPM5-1B` (MiniCPM 5.0, ~May 2026). "EmbeddingGemma 270M" =
 > `google/embeddinggemma-300m` (308M total; 270M = non-embedding transformer params). **SGLang dropped** (ZeroGPU
-> incompatible). STT used in **batch per-turn** mode, not streaming.
+> incompatible). STT is used in **batch voice-note** mode, not a persistent stream.
 
 ---
 
@@ -148,21 +146,21 @@ With **text-first + batch ASR**, the old "streaming ASR vs ZeroGPU" Config A/B t
 - **Text-first runtime loop:** user types → custom `/api/agent-turn` NDJSON endpoint → one `@spaces.GPU` call runs
   MiniCPM5 (tool loop, in `transformers`) → streamed text tokens + live visual updates. The `@app.api()` endpoint
   remains as the Gradio-client contract for external checks.
-- **Voice (later bonus):** push-to-talk records an utterance → POST blob → the same `@spaces.GPU` call also runs
-  Nemotron/Parakeet ASR (batch) before the brain. No persistent stream, no WebRTC, **no TURN server**.
+- **Voice input:** push-to-talk records an utterance or uploads a voice note → `/api/transcribe` normalizes audio with
+  ffmpeg → one `@spaces.GPU` call runs Nemotron ASR through NeMo → transcript fills the idea box. No persistent stream,
+  no WebRTC, **no TURN server**.
 - **Modal (build-time only):** crawl the org + build the llama.cpp EmbeddingGemma vector index offline; the Space ships
   with checked-in project vectors. Runtime never calls Modal → 🔌 Off the Grid holds (see §10).
 
 > Off the Grid = no proprietary cloud inference APIs. Open weights on an HF GPU Space / local box / Modal all qualify.
 
-**Deferred (voice-later appendix, §13):** real-time streaming ASR (`conformer_stream_step`), in-browser Smart Turn +
-Silero VAD turn detection, FastRTC. Documented but not on the text-first critical path.
+**Deferred:** real-time streaming ASR and turn detection are not part of the shipped app.
 
 ---
 
 ## 5. Per-model implementation notes
 
-### 5.1 ASR — `nvidia/nemotron-speech-streaming-en-0.6b` (batch) · fallback `parakeet-tdt-0.6b-v3`
+### 5.1 ASR — `nvidia/nemotron-speech-streaming-en-0.6b` (batch)
 
 - **Primary, batch usage (simple):**
   ```python
@@ -170,20 +168,10 @@ Silero VAD turn detection, FastRTC. Documented but not on the text-first critica
   asr = nemo_asr.models.ASRModel.from_pretrained("nvidia/nemotron-speech-streaming-en-0.6b")
   text = asr.transcribe(["utterance.wav"])      # 16 kHz mono WAV in; punctuated EN text out
   ```
-  Install (heavy; CUDA): `apt-get install -y libsndfile1 ffmpeg` + `pip install Cython packaging` +
-  `pip install "git+https://github.com/NVIDIA/NeMo.git@main#egg=nemo_toolkit[asr]"` (NeMo ≥ 25.11).
-  **Day-1 spike** must confirm this installs + runs in one `@spaces.GPU` call (load with `map_location="cpu"` at module
-  level, `.to("cuda")` inside the decorator; watch NeMo CUDA-at-import + the RNNT CUDA-graphs path).
-- **Fallback (if the ZeroGPU env fights NeMo):** `nvidia/parakeet-tdt-0.6b-v3` has **native transformers** support —
-  ```python
-  from transformers import pipeline
-  asr = pipeline("automatic-speech-recognition", model="nvidia/parakeet-tdt-0.6b-v3")
-  text = asr("utterance.wav")
-  ```
-  Same 0.6B, CC-BY-4.0, 25 languages, one clean `@spaces.GPU` batch call, no NeMo/git build.
-- **Quest caveat:** the award says "standout **Nemotron** builds." Parakeet is the encoder *inside* the Nemotron-Speech
-  family but is branded "Parakeet" → if we ship Parakeet, **confirm Quest eligibility with organizers**, or keep
-  Nemotron documented as the Quest narrative. Hosted NVIDIA NIM API would break Off the Grid — never in the badge demo.
+  Runtime install: `packages.txt` provides `ffmpeg` and `libsndfile1`; `requirements.txt` pins
+  `nemo_toolkit[asr]==2.7.3` plus Cython and packaging. The app records or uploads audio, normalizes it to mono
+  16 kHz WAV, runs NeMo in a ZeroGPU function, then returns the transcript to the idea box. Hosted NVIDIA NIM API would
+  break Off the Grid, so it is not used.
 
 ### 5.2 MiniCPM5-1B brain — `openbmb/MiniCPM5-1B` (transformers, self-parsed XML)
 
@@ -203,24 +191,6 @@ Silero VAD turn detection, FastRTC. Documented but not on the text-first critica
   tool-calling is a pending PR — verify before relying on it for the badge runtime.)
 - **1B discipline:** small tool schemas, few params each, clear descriptions, low temp, single-hop tool calls.
 
-### 5.3 Smart Turn v3 — `pipecat-ai/smart-turn-v3` (voice-later)
-
-- Whisper-tiny encoder + linear head, ~8M params, ONNX (`smart-turn-v3.1.onnx`), 8 MB int8 / 32 MB fp32, BSD-2.
-- Input: 16 kHz mono PCM float32, ≤8 s (front-padded). Output: sigmoid prob; **>0.5 = "user finished."** ~12 ms CPU.
-  ```python
-  import numpy as np, onnxruntime as ort
-  from transformers import WhisperFeatureExtractor
-  fe = WhisperFeatureExtractor(chunk_length=8); sess = ort.InferenceSession("smart-turn-v3.1.onnx")
-  def turn_complete(audio):
-      x = fe(audio, sampling_rate=16000, return_tensors="np", padding="max_length",
-             max_length=8*16000, truncation=True, do_normalize=True).input_features.astype("float32")
-      return sess.run(None, {"input_features": x})[0][0].item() > 0.5
-  ```
-- **Browser path (voice-later):** runs via ONNX Runtime Web / Transformers.js. The `.onnx` needs Whisper **log-mel
-  input_features** (128 mel bins, 8 s, NOT whisper-tiny's 80-mel) — no upstream JS example exists, so a small POC is
-  required before relying on it; fallbacks: port pipecat's numpy-only mel extractor to JS, or do feature-extraction +
-  onnx **server-side** per posted blob. Pair with `@ricky0123/vad-web` (Silero) for the speech start/stop gate.
-
 ### 5.4 EmbeddingGemma GGUF — `ggml-org/embeddinggemma-300M-qat-q4_0-GGUF`
 
 - Active retrieval model: `embeddinggemma-300M-qat-Q4_0.gguf`, 768-dimensional normalized embeddings.
@@ -239,8 +209,7 @@ llama.cpp on Modal, and runtime query embeddings use the same llama.cpp path.
 |---|---|---|---|
 | `openbmb/MiniCPM5-1B` | ✅ planned only | llama.cpp / Ollama | Not used for deployed tool-calling; Transformers + LoRA is the deployed brain. |
 | `ggml-org/embeddinggemma-300M-qat-q4_0-GGUF` | ✅ active | llama.cpp / llama-cpp-python | Builds project vectors on Modal and embeds runtime queries in the Space. |
-| ASR (Nemotron / Parakeet) | ❌ | NeMo / transformers | FastConformer-RNNT |
-| `pipecat-ai/smart-turn-v3` | ❌ | ONNX Runtime | Whisper encoder + classifier head |
+| ASR (Nemotron) | ❌ | NeMo | FastConformer-RNNT |
 
 If retrieval quality becomes the bottleneck, compare Q4_0 against Q8_0, but do not keep two runtime retrieval paths.
 
@@ -393,12 +362,12 @@ open grimoire as the hero component.
 | Target | How it's earned |
 |---|---|
 | 🍄 Thousand Token Wood | **The Unwritten Almanac** (§2) — the bleed-citation wow IS the engine rendered; AI load-bearing; original |
-| 🐜 Tiny Titan (special, $1.5k) | total ~1.9B, every model ≤4B; largest single = MiniCPM5 1.08B |
+| 🐜 Tiny Titan (special, $1.5k) | total ~1.98B, every model ≤4B; largest single = MiniCPM5 1.08B |
 | 🔌 Off the Grid (badge) | all open weights run locally; offline index; no cloud inference at runtime |
 | 🎯 Well-Tuned (badge) | published LoRA fine-tune of MiniCPM5 on the Hub (§10) → **6/6 badges** |
 | 🎨 Off-Brand (badge + $1.5k) | `gr.Server` custom UI is the agent's output surface |
 | 🏮 OpenBMB ($10k) | brain = MiniCPM5-1B ("OpenBMB pick") |
-| 🟩 NVIDIA Quest (2× RTX 5080) | ASR = Nemotron (verify if Parakeet qualifies, §5.1) |
+| 🟩 NVIDIA Quest (2× RTX 5080) | ASR = Nemotron (§5.1) |
 | 🦙 Llama Champion (badge) | EmbeddingGemma GGUF retrieval index and runtime query embeddings run through llama.cpp (§5.5) |
 | 📡 Sharing is Caring (badge) | publish the agent's tool-call trace to the Hub |
 | 📓 Field Notes (badge) | this DESIGN.md → a build blog post |
@@ -417,22 +386,20 @@ lever is §11 custom-UI polish.
 
 ## 13. Risks / open items
 
-1. **Day-1 spikes are go/no-go** (§1): ZeroGPU hello-cuda build; gr.Server same-origin NDJSON browser streaming;
-   Nemotron batch in `@spaces.GPU` (else Parakeet). Do these before feature work.
+1. **Deployment smoke tests are mandatory:** ZeroGPU Space build, same-origin NDJSON browser streaming, and Nemotron
+   batch ASR in `@spaces.GPU` must be verified after every runtime dependency change.
 2. **EmbeddingGemma is gated** — accept Gemma terms + `HF_TOKEN` before any crawl/build.
 3. **MiniCPM5 tool-call reliability at 1B** — covered by the degradation ladder (§8); validate name+args in code.
-4. **NVIDIA Quest brand** — Parakeet is not "Nemotron"-branded; confirm eligibility with organizers or keep Nemotron
-   primary (§5.1).
-5. **Concept skin** — **chosen: The Unwritten Almanac** (§2). Make-or-break is the bleed/bloom hero animation; build the
+4. **Concept skin** — **chosen: The Unwritten Almanac** (§2). Make-or-break is the bleed/bloom hero animation; build the
    safe typewriter + static-stamp floor first (graceful degradation), upgrade ink last. Watch the thin-org echo
    threshold + the dry-but-benevolent tone (real cited Spaces, never punch at a named builder).
-6. **Param-budget claim** — document the 1.9B total in the README/Space card for Tiny Titan judging.
+5. **Param-budget claim** — document the 1.98B total in the README/Space card for Tiny Titan judging.
 
 ---
 
 ## 14. Build order
 
-**Text-first vertical slice first; voice as a bonus layer.** Always keep a demoable artifact.
+**Text-first vertical slice first; voice input is now part of the app.** Always keep a demoable artifact.
 
 0. **Day-1 spikes** (§1) — get the three go/no-go builds green.
 1. **`crawler.py` + Modal index** — crawl the org, embed with EmbeddingGemma, build the local index. *You immediately
@@ -442,27 +409,24 @@ lever is §11 custom-UI polish.
 4. **`app.py`** — `gr.Server` custom frontend (idea board, project/whitespace wall, streaming text), called via
    first-party `/api/...` endpoints; concept skin applied.
 5. **Well-Tuned LoRA** — small fine-tune on Modal → publish to Hub (→ 6/6 badges).
-6. **Polish + submission** — demo video + social post (Best Demo / Community Choice), publish agent trace (📡),
+6. **Voice input** — push-to-talk record and voice-note upload through Nemotron batch ASR in `/api/transcribe`.
+7. **Polish + submission** — demo video + social post (Best Demo / Community Choice), publish agent trace (📡),
    write up Field Notes (📓).
 
-**Voice bonus (only if time):** push-to-talk record → batch ASR (Nemotron/Parakeet) in the existing `@spaces.GPU` call.
-**Deferred:** real-time streaming ASR, in-browser Smart Turn + Silero VAD, FastRTC + TURN. (Original streaming design is
-preserved in git history if revisited.)
+**Deferred:** real-time streaming ASR and turn detection. The shipped path stays batch audio → transcript → editable idea.
 
 ---
 
 ## 15. Sources
 
 **Models:** [nemotron-speech-streaming-en-0.6b](https://huggingface.co/nvidia/nemotron-speech-streaming-en-0.6b) ·
-[parakeet-tdt-0.6b-v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) ·
-[parakeet transformers doc](https://huggingface.co/docs/transformers/en/model_doc/parakeet) ·
 [MiniCPM5-1B](https://huggingface.co/openbmb/MiniCPM5-1B) · [MiniCPM5-1B-GGUF](https://huggingface.co/openbmb/MiniCPM5-1B-GGUF) ·
-[smart-turn-v3](https://huggingface.co/pipecat-ai/smart-turn-v3) · [embeddinggemma-300m](https://huggingface.co/google/embeddinggemma-300m)
+[embeddinggemma-300m](https://huggingface.co/google/embeddinggemma-300m)
 
 **Platforms:** [ZeroGPU docs](https://huggingface.co/docs/hub/spaces-zerogpu) ·
 [Introducing gradio.Server](https://huggingface.co/blog/introducing-gradio-server) · [Gradio Server Mode guide](https://www.gradio.app/guides/server-mode) ·
 [Modal GPU](https://modal.com/docs/guide/gpu) · [Modal model weights](https://modal.com/docs/guide/model-weights) · [Modal pricing](https://modal.com/pricing) ·
 [Build Small Hackathon](https://huggingface.co/build-small-hackathon)
 
-*Verify-before-ship: Nemotron-in-ZeroGPU (Day-1 spike); MiniCPM5 license on the live card; NVIDIA Quest eligibility for
-Parakeet; Smart Turn in-browser feature extraction (voice-later); llama.cpp MiniCPM5 tool-calling (pending PR).*
+*Verify-before-ship: Nemotron-in-ZeroGPU after dependency changes; MiniCPM5 license on the live card; llama.cpp MiniCPM5
+tool-calling remains planned only and is not used by the deployed brain.*

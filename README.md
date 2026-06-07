@@ -29,6 +29,7 @@ The current milestone is a deployed ZeroGPU + MiniCPM5 LoRA advisor:
 
 - Local snapshot of public `build-small-hackathon` Spaces.
 - Modal-built EmbeddingGemma GGUF retrieval index, with runtime query embeddings computed through llama.cpp.
+- Nemotron Speech Streaming voice input through NVIDIA NeMo ASR on ZeroGPU.
 - Jargon correction for hackathon/model terms.
 - MiniCPM5 tool-call planning with a published PEFT LoRA adapter, plus deterministic local rules for tests and CPU-only
   development.
@@ -87,6 +88,13 @@ Board and refreshes the seal, wood map, plan, and PNG artifact around the chosen
 Users can also click any Idea Board page to make it current before pressing `Plan`.
 If the board is empty, `Plan` and `Compare` do not create placeholder pages; they prompt the user to write an idea or
 press `Gap` first.
+
+## Voice Input
+
+The `Speak` and `Voice note` controls send audio to `/api/transcribe`. The backend normalizes the uploaded audio with
+ffmpeg, then transcribes it with `nvidia/nemotron-speech-streaming-en-0.6b` through NVIDIA NeMo inside the same ZeroGPU
+runtime used by the advisor. The transcript is placed back in the idea box so the user can edit it before pressing
+`Ink`.
 
 ## Gap Exploration
 
@@ -180,12 +188,13 @@ ADVISOR_ADAPTER_ID=build-small-hackathon/hackathon-advisor-minicpm5-lora
 ADVISOR_ADAPTER_REVISION=25de69bcde397e1bcdd852923b56a42f10222650
 ADVISOR_EMBEDDING_MODEL_REPO=ggml-org/embeddinggemma-300M-qat-q4_0-GGUF
 ADVISOR_EMBEDDING_MODEL_FILE=embeddinggemma-300M-qat-Q4_0.gguf
+ADVISOR_ASR_MODEL_ID=nvidia/nemotron-speech-streaming-en-0.6b
 ```
 
 `agent_turn` wraps the engine call with `spaces.GPU` when `ADVISOR_ZERO_GPU=1`, so model loading and generation run on
 the ZeroGPU allocation. The retrieval query embedder downloads the GGUF model through `huggingface_hub` unless
-`ADVISOR_EMBEDDING_MODEL_PATH` points to a local file. Local tests and CPU-only development still default to
-`ADVISOR_MODEL_BACKEND=rules`.
+`ADVISOR_EMBEDDING_MODEL_PATH` points to a local file. `/api/transcribe` uses the same ZeroGPU wrapper for Nemotron ASR.
+Local tests and CPU-only development still default to `ADVISOR_MODEL_BACKEND=rules`.
 
 ## Test
 
