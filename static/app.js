@@ -410,10 +410,12 @@ function applyDemoSession(data) {
 }
 
 function renderProvenance(data) {
-  const snapshot = shortDate(data.snapshot_generated_at);
-  const index = shortDate(data.index_generated_at);
-  const digest = String(data.snapshot_digest || "").slice(0, 10);
-  provenanceEl.textContent = `${data.index_algorithm || "index"} · snapshot ${snapshot} · index ${index} · ${digest}`;
+  const projectCount = Number(data.project_count || data.top_projects?.length || 0);
+  const countLabel = projectCount
+    ? `${projectCount} project page${projectCount === 1 ? "" : "s"} mapped`
+    : "Current project map loaded";
+  const updated = shortDate(data.snapshot_generated_at || data.index_generated_at);
+  provenanceEl.textContent = `${countLabel} · updated ${updated}`;
 }
 
 function renderRestoredSession(data) {

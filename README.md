@@ -75,14 +75,14 @@ The `chapter` Gradio API endpoint and `Chapter` button export the public-facing 
 one idea page per saved direction, each with verdict, score, selected goals, and closest cited pages. It is the
 shareable companion to the working notes artifact.
 
-## Idea Board Ranking
+## Idea Board Compare
 
-The `Rank` command rescans the saved idea board, recalculates each seal against the selected goals, selects the
+The `Compare` command rescans the saved idea board, recalculates each seal against the selected goals, selects the
 strongest page as the active idea, and drafts the next build step. The app then moves that page to the top of the Idea
 Board and refreshes the seal, wood map, plan, and PNG artifact around the chosen direction.
 Users can also click any Idea Board page to make it current before pressing `Plan`.
-If the board is empty, `Plan` and `Rank` do not create placeholder pages; they prompt the user to write an idea or press
-`Gap` first.
+If the board is empty, `Plan` and `Compare` do not create placeholder pages; they prompt the user to write an idea or
+press `Gap` first.
 
 ## Gap Exploration
 
@@ -93,7 +93,7 @@ planning.
 ## Profile-Aware Plans
 
 The `Profile` panel is part of the planning loop. Skills, time, preferences, and constraints are stored in the session
-and inserted into `Plan` and `Rank` build paths, so the app can turn "one evening", "frontend prototyping", or
+and inserted into `Plan` and `Compare` build paths, so the app can turn "one evening", "frontend prototyping", or
 "CPU-only Space" into concrete scoping steps instead of generic advice.
 
 ## LoRA Dataset Artifact
