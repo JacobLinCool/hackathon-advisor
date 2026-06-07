@@ -15,6 +15,10 @@ def test_main_interface_copy_is_builder_facing() -> None:
     assert "/api/agent-turn" in app_js
     assert "/api/transcribe" in app_js
     assert "MediaRecorder" in app_js
+    assert "voiceRecordingState" in app_js
+    assert "stopVoiceRecording" in app_js
+    assert 'recording: "Stop"' in app_js
+    assert 'stopping: "Stopping..."' in app_js
     assert "readNdjson" in app_js
     assert "@gradio/client" not in app_js
     assert "renderArtifactCanvas" not in app_js

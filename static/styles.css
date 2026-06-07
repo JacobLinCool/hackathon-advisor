@@ -364,6 +364,16 @@ textarea:disabled {
   border-color: #265935;
 }
 
+.btn-voice.recording {
+  background: var(--oxblood);
+  border-color: var(--oxblood);
+}
+
+.btn-voice.recording:hover:not(:disabled) {
+  background: var(--oxblood-2);
+  border-color: var(--oxblood-2);
+}
+
 .btn-ghost {
   color: var(--ink-soft);
   background: transparent;

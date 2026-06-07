@@ -50,6 +50,7 @@ let voiceBusy = false;
 let voiceRecorder = null;
 let voiceStream = null;
 let voiceChunks = [];
+let voiceRecordingState = "idle";
 
 bootstrap().catch(handleBootstrapError);
 
@@ -99,7 +100,7 @@ recordVoiceButton.addEventListener("click", async () => {
 });
 
 uploadVoiceButton.addEventListener("click", () => {
-  if (uploadVoiceButton.disabled || voiceBusy || sessionControlsLocked) return;
+  if (uploadVoiceButton.disabled || voiceBusy || sessionControlsLocked || voiceRecordingState !== "idle") return;
   voiceFileInput.click();
 });
 
@@ -234,19 +235,23 @@ async function runCommand(command) {
 }
 
 async function toggleVoiceRecording() {
-  if (voiceRecorder?.state === "recording") {
-    voiceRecorder.stop();
+  if (voiceRecordingState === "recording" && voiceRecorder?.state === "recording") {
+    stopVoiceRecording();
     return;
   }
+  if (voiceRecordingState !== "idle") return;
   await startVoiceRecording();
 }
 
 async function startVoiceRecording() {
-  if (sessionControlsLocked || voiceBusy) return;
+  if (sessionControlsLocked || voiceBusy || voiceRecordingState !== "idle") return;
   if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
     setSessionStatus("Voice recording is not available in this browser. Upload a voice note instead.");
     return;
   }
+  setVoiceRecordingState("starting");
+  submit.disabled = true;
+  setCommandDisabled(true);
   try {
     voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     voiceChunks = [];
@@ -257,29 +262,54 @@ async function startVoiceRecording() {
     });
     voiceRecorder.addEventListener("stop", () => {
       const recorderMimeType = voiceRecorder?.mimeType || mimeType || "audio/webm";
+      const recordedChunks = voiceChunks;
       stopVoiceStream();
       const extension = recorderMimeType.includes("mp4")
         ? "m4a"
         : recorderMimeType.includes("ogg")
           ? "ogg"
           : "webm";
-      const blob = new Blob(voiceChunks, { type: recorderMimeType });
+      const blob = new Blob(recordedChunks, { type: recorderMimeType });
       voiceRecorder = null;
       voiceChunks = [];
-      setActionButtonLabel(recordVoiceButton, "Speak");
-      setVoiceControlsDisabled(false);
+      if (!blob.size) {
+        setVoiceRecordingState("idle");
+        submit.disabled = false;
+        setCommandDisabled(false);
+        setSessionStatus("Voice note is empty.");
+        return;
+      }
+      setVoiceRecordingState("transcribing");
       transcribeVoiceBlob(blob, `recorded-idea.${extension}`);
     });
     voiceRecorder.start();
-    setActionButtonLabel(recordVoiceButton, "Stop");
-    setVoiceControlsDisabled(false);
+    setVoiceRecordingState("recording");
     setSessionStatus("Listening. Press Stop when your idea is ready.");
   } catch (error) {
     stopVoiceStream();
     voiceRecorder = null;
-    setActionButtonLabel(recordVoiceButton, "Speak");
-    setVoiceControlsDisabled(false);
+    voiceChunks = [];
+    setVoiceRecordingState("idle");
+    submit.disabled = false;
+    setCommandDisabled(false);
     setSessionStatus(`Voice recording could not start: ${error.message}`);
+  }
+}
+
+function stopVoiceRecording() {
+  if (!voiceRecorder || voiceRecorder.state !== "recording") return;
+  setVoiceRecordingState("stopping");
+  setSessionStatus("Stopping recording.");
+  try {
+    voiceRecorder.stop();
+  } catch (error) {
+    stopVoiceStream();
+    voiceRecorder = null;
+    voiceChunks = [];
+    setVoiceRecordingState("idle");
+    submit.disabled = false;
+    setCommandDisabled(false);
+    setSessionStatus(`Voice recording could not stop: ${error.message}`);
   }
 }
 
@@ -296,18 +326,18 @@ function stopVoiceStream() {
 
 async function transcribeVoiceBlob(blob, filename) {
   if (sessionControlsLocked || voiceBusy) return false;
+  if (voiceRecordingState !== "idle" && voiceRecordingState !== "transcribing") return false;
   if (!blob?.size) {
     setSessionStatus("Voice note is empty.");
     return false;
   }
   const revision = bumpSessionRevision();
   voiceBusy = true;
+  setVoiceRecordingState("transcribing");
   submit.disabled = true;
   input.disabled = true;
   setCommandDisabled(true);
   setSessionControlsDisabled(true);
-  setVoiceControlsDisabled(true);
-  setActionButtonLabel(recordVoiceButton, "Hearing...");
   setSessionStatus("Transcribing voice note.");
   try {
     const formData = new FormData();
@@ -331,13 +361,12 @@ async function transcribeVoiceBlob(blob, filename) {
     return false;
   } finally {
     voiceBusy = false;
-    setActionButtonLabel(recordVoiceButton, "Speak");
+    setVoiceRecordingState("idle");
     if (isCurrentSessionRevision(revision)) {
       submit.disabled = false;
       input.disabled = false;
       setSessionControlsDisabled(false);
       setCommandDisabled(false);
-      setVoiceControlsDisabled(false);
       input.focus();
     }
   }
@@ -486,9 +515,26 @@ function setSessionControlsDisabled(disabled) {
 }
 
 function setVoiceControlsDisabled(disabled) {
-  const recording = voiceRecorder?.state === "recording";
-  recordVoiceButton.disabled = voiceBusy || (disabled && !recording) || !bootstrapData;
-  uploadVoiceButton.disabled = voiceBusy || recording || disabled || !bootstrapData;
+  const recording = voiceRecordingState === "recording" && voiceRecorder?.state === "recording";
+  const lockedForState = ["starting", "stopping", "transcribing"].includes(voiceRecordingState);
+  recordVoiceButton.disabled = !bootstrapData || voiceBusy || lockedForState || (disabled && !recording);
+  uploadVoiceButton.disabled = !bootstrapData || voiceBusy || disabled || voiceRecordingState !== "idle";
+}
+
+function setVoiceRecordingState(state) {
+  voiceRecordingState = state;
+  recordVoiceButton.dataset.voiceState = state;
+  recordVoiceButton.classList.toggle("recording", state === "recording");
+  recordVoiceButton.setAttribute("aria-pressed", state === "recording" ? "true" : "false");
+  const labels = {
+    idle: "Speak",
+    starting: "Starting...",
+    recording: "Stop",
+    stopping: "Stopping...",
+    transcribing: "Hearing...",
+  };
+  setActionButtonLabel(recordVoiceButton, labels[state] || "Speak");
+  setVoiceControlsDisabled(sessionControlsLocked);
 }
 
 function resetSession() {
