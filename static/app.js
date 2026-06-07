@@ -92,6 +92,7 @@ resetButton.addEventListener("click", () => {
 goalsEl.addEventListener("change", (event) => {
   const target = event.target;
   if (!(target instanceof HTMLInputElement) || !target.dataset.goal) return;
+  bumpSessionRevision();
   const checked = new Set(
     Array.from(goalsEl.querySelectorAll("input[data-goal]:checked")).map((input) => input.dataset.goal),
   );
@@ -106,6 +107,7 @@ goalsEl.addEventListener("change", (event) => {
 profileEl.addEventListener("input", (event) => {
   const target = event.target;
   if (!(target instanceof HTMLInputElement) || !target.dataset.profileField) return;
+  bumpSessionRevision();
   const profile = { ...(session.profile || {}) };
   const value = target.value.trim();
   if (value) {
@@ -168,8 +170,8 @@ async function runTurn(message) {
   } finally {
     clearTurnWatchdog();
     submit.disabled = false;
-    setCommandDisabled(false);
     setSessionControlsDisabled(false);
+    setCommandDisabled(false);
     input.focus();
   }
   return completed;
@@ -345,9 +347,7 @@ function resetSession() {
   renderProjects([], "Score an idea to see nearby echoes.");
   renderWhitespace(bootstrapData.whitespace || []);
   restoreExportButtonLabels();
-  exportButton.disabled = true;
-  setButtonDisabled(exportNotesButton, true);
-  setButtonDisabled(exportChapterButton, true);
+  setCommandDisabled(false);
   saveSession();
   input.focus();
 }
@@ -372,8 +372,8 @@ async function loadDemoSession() {
     ink.classList.add("bleed");
   } finally {
     submit.disabled = false;
-    setCommandDisabled(false);
     setSessionControlsDisabled(false);
+    setCommandDisabled(false);
     input.focus();
   }
 }
@@ -404,9 +404,7 @@ function applyDemoSession(data) {
   } else {
     renderProjects(data.projects || []);
   }
-  exportButton.disabled = !currentArtifact;
-  setButtonDisabled(exportNotesButton, !(session.trace?.length));
-  setButtonDisabled(exportChapterButton, !(session.ideas?.length));
+  setCommandDisabled(false);
   corrections.textContent = session.ui_status;
   saveSession();
 }
@@ -435,18 +433,15 @@ function renderRestoredSession(data) {
     } else {
       renderProjects([]);
     }
-    exportButton.disabled = !currentArtifact;
   } else {
     renderScore(null);
     setVerdictDisplay("READY", 0, null);
     renderWoodMap(null);
     renderProjects([], "Score an idea to see nearby echoes.");
-    exportButton.disabled = true;
   }
   renderIdeas(session.ideas || []);
   renderPlan(session.last_plan || []);
-  setButtonDisabled(exportNotesButton, !(session.trace?.length));
-  setButtonDisabled(exportChapterButton, !(session.ideas?.length));
+  setCommandDisabled(false);
   restoreSessionCopy();
 }
 
@@ -624,10 +619,8 @@ function handleEvent(event) {
     if (event.artifact?.title) {
       currentArtifact = event.artifact;
       renderWoodMap(event.artifact.wood_map || null);
-      exportButton.disabled = false;
     }
-    setButtonDisabled(exportNotesButton, !(session.trace?.length));
-    setButtonDisabled(exportChapterButton, !(session.ideas?.length));
+    setCommandDisabled(false);
     saveSession();
   }
 }
@@ -721,12 +714,12 @@ function renderSelectedIdeaArtifact(idea) {
     currentArtifact = artifact;
     session.last_artifact = artifact;
     renderWoodMap(currentArtifact.wood_map || null);
-    exportButton.disabled = false;
+    setCommandDisabled(false);
     return;
   }
   currentArtifact = null;
   renderWoodMap(null);
-  exportButton.disabled = true;
+  setCommandDisabled(false);
 }
 
 function goalDisplayName(goal) {
@@ -869,17 +862,14 @@ function renderPlan(steps) {
   }
 }
 
-function setButtonDisabled(button, disabled) {
-  if (button) button.disabled = disabled;
-}
-
 function setCommandDisabled(disabled) {
   document.querySelectorAll(".command-row button").forEach((button) => {
     const isArtifact = button.id === "export-artifact";
     const isNotes = button.id === "export-notes";
     const isChapter = button.id === "export-chapter";
+    const locked = disabled || sessionControlsLocked;
     button.disabled =
-      disabled ||
+      locked ||
       (isArtifact && !currentArtifact) ||
       (isNotes && !session.trace?.length) ||
       (isChapter && !session.ideas?.length);
@@ -928,7 +918,7 @@ function invalidateCurrentSeal(message) {
   setVerdictDisplay("READY", 0, null);
   renderWoodMap(null);
   renderProjects([]);
-  exportButton.disabled = true;
+  setCommandDisabled(false);
   if (message) setSessionStatus(message);
 }
 
@@ -998,8 +988,7 @@ async function exportMarkdown({ endpoint, filename, button, busyLabel, pendingLa
     corrections.textContent = session.ui_status;
   } finally {
     setActionButtonLabel(button, idleLabel);
-    if (!isCurrentSessionRevision(revision)) return;
-    saveSession();
+    if (isCurrentSessionRevision(revision)) saveSession();
     setCommandDisabled(false);
   }
 }
