@@ -99,7 +99,7 @@ goalsEl.addEventListener("change", (event) => {
   );
   session.goals = goalOptions.filter((option) => checked.has(option));
   syncCurrentIdeaGoals();
-  invalidateCurrentSeal("Goals updated. Press Ink or Plan to refresh the seal.");
+  invalidateCurrentSeal("Goals updated. Press Ink or Plan to refresh the score.");
   saveSession();
   renderGoals(session.goals);
   renderIdeas(session.ideas || []);
@@ -166,7 +166,7 @@ async function runTurn(message) {
     completed = true;
   } catch (error) {
     clearTurnWatchdog();
-    ink.textContent = `The page tore before it could answer: ${error.message}`;
+    ink.textContent = `The advisor could not answer: ${error.message}`;
     ink.classList.remove("thinking");
     ink.classList.add("bleed");
   } finally {
@@ -336,7 +336,7 @@ function resetSession() {
   input.disabled = false;
   setSessionControlsDisabled(false);
   input.value = "";
-  ink.textContent = "The book is open. The next page waits for its first line.";
+  ink.textContent = "The book is open. Describe an idea to start a new page.";
   ink.classList.remove("thinking", "bleed", "gold");
   corrections.textContent = "Session reset.";
   renderGoals(session.goals);
@@ -362,14 +362,14 @@ async function loadDemoSession() {
   setSessionControlsDisabled(true);
   ink.classList.remove("bleed", "gold");
   ink.classList.add("thinking");
-  ink.textContent = "A sample page is being inked.";
+  ink.textContent = "Loading an example idea board.";
   corrections.textContent = "";
   try {
     const response = await fetch("/api/demo-session");
-    if (!response.ok) throw new Error(`demo rehearsal failed with ${response.status}`);
+    if (!response.ok) throw new Error(`example session failed with ${response.status}`);
     applyDemoSession(await response.json());
   } catch (error) {
-    ink.textContent = `The demo rehearsal could not be loaded: ${error.message}`;
+    ink.textContent = `The example session could not be loaded: ${error.message}`;
     ink.classList.remove("thinking");
     ink.classList.add("bleed");
   } finally {
@@ -385,9 +385,9 @@ function applyDemoSession(data) {
   session.profile = session.profile || {};
   session.goals = Array.isArray(session.goals) ? session.goals : [];
   session.last_response = data.response || session.last_response || "";
-  session.ui_status = `example loaded: ${data.turn_count || 0} advisor turns`;
+  session.ui_status = `Example loaded: ${data.turn_count || 0} advisor turns`;
   currentArtifact = data.artifact || session.last_artifact || null;
-  ink.textContent = data.response || "Demo rehearsal loaded.";
+  ink.textContent = data.response || "Example session loaded.";
   ink.classList.remove("thinking");
   if (data.score) {
     setVerdictDisplay(data.score.verdict, data.score.overall, data.score);
@@ -657,7 +657,7 @@ function renderProjectReferenceState() {
   currentArtifact = null;
   renderScore(null);
   setVerdictDisplay("READY", 0, null);
-  sealCopyEl.textContent = "Project pages are shown below. Score an idea to press a new seal.";
+  sealCopyEl.textContent = "Project pages are shown below. Write or select an idea to score it.";
   ink.classList.remove("bleed", "gold");
   renderWoodMap(null);
 }
@@ -670,7 +670,7 @@ function renderIdeas(ideas) {
   if (ideaCountEl) ideaCountEl.textContent = ideas.length;
   ideasEl.innerHTML = "";
   if (!ideas.length) {
-    ideasEl.innerHTML = `<div class="empty">Your idea board is empty. Write an idea or open a gap.</div>`;
+    ideasEl.innerHTML = `<div class="empty">Your idea board is empty. Write an idea or choose an under-explored direction.</div>`;
     return;
   }
   for (const idea of visibleIdeas(ideas)) {
@@ -793,7 +793,7 @@ function renderScore(score) {
 function renderWoodMap(map) {
   woodMapEl.innerHTML = "";
   if (!map?.dots?.length) {
-    woodMapEl.innerHTML = `<div class="wood"><div class="empty wood-empty">No idea has been placed yet.</div></div>`;
+    woodMapEl.innerHTML = `<div class="wood"><div class="empty wood-empty">Score an idea to plot it on the map.</div></div>`;
     return;
   }
   const field = document.createElement("div");
@@ -824,11 +824,11 @@ function renderWoodMap(map) {
   `;
   const caption = document.createElement("p");
   caption.className = "wood-cap";
-  caption.textContent = map.caption || "Your page is plotted against the current Wood.";
+  caption.textContent = map.caption || "Your idea is plotted against the current project map.";
   woodMapEl.append(field, legend, caption);
 }
 
-function renderProjects(projects, emptyMessage = "No red ink yet.") {
+function renderProjects(projects, emptyMessage = "No nearby projects yet.") {
   projectsEl.innerHTML = "";
   if (!projects.length) {
     projectsEl.innerHTML = `<div class="empty">${escapeHtml(emptyMessage)}</div>`;
@@ -849,7 +849,7 @@ function renderProjects(projects, emptyMessage = "No red ink yet.") {
 function renderCitations(echoes) {
   projectsEl.innerHTML = "";
   if (!echoes.length) {
-    projectsEl.innerHTML = `<div class="empty">No red ink yet.</div>`;
+    projectsEl.innerHTML = `<div class="empty">No nearby project echoes yet.</div>`;
     return;
   }
   for (const echo of echoes.slice(0, 5)) {
@@ -874,7 +874,7 @@ function renderCitations(echoes) {
 function renderWhitespace(items) {
   whitespaceEl.innerHTML = "";
   if (!items.length) {
-    whitespaceEl.innerHTML = `<div class="empty">Gold has not gathered.</div>`;
+    whitespaceEl.innerHTML = `<div class="empty">No under-explored directions are loaded yet.</div>`;
     return;
   }
   for (const item of items.slice(0, 4)) {
@@ -895,7 +895,7 @@ function renderWhitespace(items) {
 function renderPlan(steps) {
   planEl.innerHTML = "";
   if (!steps.length) {
-    planEl.innerHTML = `<li class="empty">No wax path pressed.</li>`;
+    planEl.innerHTML = `<li class="empty">Press Plan to draft build steps for the selected idea.</li>`;
     return;
   }
   for (const step of steps) {
@@ -922,11 +922,11 @@ function setCommandDisabled(disabled) {
 function startTurnWatchdog() {
   clearTurnWatchdog();
   sawTurnToken = false;
-  ink.textContent = "The page is choosing its words.";
+  ink.textContent = "Checking the current project map.";
   ink.classList.add("thinking");
   turnWatchdog = window.setTimeout(() => {
     if (sawTurnToken) return;
-    ink.textContent = "Still riffling the inked pages.";
+    ink.textContent = "Still comparing against nearby projects.";
   }, 2200);
 }
 
@@ -1158,7 +1158,7 @@ function drawWoodMap(ctx, map, x, y, width, height, verdict) {
 
   ctx.fillStyle = "#6b4e35";
   ctx.font = "800 18px Inter, sans-serif";
-  ctx.fillText("YOU VS THE WOOD", x, y - 14);
+  ctx.fillText("IDEA MAP", x, y - 14);
 
   for (const dot of map.dots) {
     const px = x + (width * boundedPercent(dot.x)) / 100;
