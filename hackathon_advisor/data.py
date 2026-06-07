@@ -11,6 +11,16 @@ import re
 
 
 TOKEN_RE = re.compile(r"[a-z0-9][a-z0-9.+_-]*", re.IGNORECASE)
+GENERIC_PUBLIC_TITLE_RE = re.compile(
+    r"^(?:my\s+)?build\s+small\s+hackathon$",
+    re.IGNORECASE,
+)
+GENERIC_PUBLIC_SUMMARY_RE = re.compile(
+    r"(?:\bthis\s+(?:is\s+)?(?:space\s+is\s+for|my\s+submission)\b.*\b(?:build[-\s]*small|hackathon)\b)"
+    r"|(?:\bhacka?ton\s+project\b)"
+    r"|(?:^\s*todo\s*$)",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -67,6 +77,23 @@ class Project:
     def to_public_dict(self) -> dict:
         return {
             "id": self.id,
+            "title": public_project_title(self.title),
+            "summary": public_project_summary(self.summary),
+            "tags": list(self.tags),
+            "models": list(self.models),
+            "datasets": list(self.datasets),
+            "likes": self.likes,
+            "sdk": self.sdk,
+            "license": self.license,
+            "created_at": self.created_at,
+            "last_modified": self.last_modified,
+            "host": self.host,
+            "url": self.url,
+        }
+
+    def to_snapshot_dict(self) -> dict:
+        return {
+            "id": self.id,
             "title": self.title,
             "summary": self.summary,
             "tags": list(self.tags),
@@ -106,6 +133,24 @@ class WhitespaceItem:
             "score": round(self.score, 3),
             "nearby_projects": [project.to_public_dict() for project in self.nearby_projects],
         }
+
+
+def public_project_title(title: str) -> str:
+    cleaned = " ".join(str(title).split())
+    if not cleaned:
+        return "Untitled project"
+    if GENERIC_PUBLIC_TITLE_RE.search(cleaned):
+        return "Untitled project"
+    return cleaned
+
+
+def public_project_summary(summary: str) -> str:
+    cleaned = " ".join(str(summary).split())
+    if not cleaned:
+        return ""
+    if GENERIC_PUBLIC_SUMMARY_RE.search(cleaned):
+        return ""
+    return cleaned
 
 
 @dataclass(frozen=True)
@@ -354,7 +399,7 @@ def project_snapshot_digest(projects: list[Project], generated_at: str, source: 
     payload = {
         "generated_at": generated_at,
         "source": source,
-        "projects": [project.to_public_dict() for project in projects],
+        "projects": [project.to_snapshot_dict() for project in projects],
     }
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
     return sha256(encoded).hexdigest()

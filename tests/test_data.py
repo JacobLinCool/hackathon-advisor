@@ -1,7 +1,7 @@
 from pathlib import Path
 import json
 
-from hackathon_advisor.data import ProjectIndex
+from hackathon_advisor.data import Project, ProjectIndex, public_project_summary, public_project_title
 
 
 def test_project_index_searches_snapshot() -> None:
@@ -22,6 +22,34 @@ def test_project_index_whitespace() -> None:
 
     assert len(items) == 3
     assert all(item.label for item in items)
+
+
+def test_public_project_cards_hide_generic_submission_copy() -> None:
+    assert public_project_title("My Build Small Hackathon") == "Untitled project"
+    assert public_project_summary("This is my submission for the build-small-hackathon") == ""
+    assert public_project_summary("Todo") == ""
+    assert public_project_summary("Local-first personal knowledge agent") == "Local-first personal knowledge agent"
+
+    project = Project(
+        id="build-small-hackathon/my-build-small-hackathon",
+        title="My Build Small Hackathon",
+        summary="This is my submission for the build-small-hackathon",
+        tags=(),
+        models=(),
+        datasets=(),
+        likes=0,
+        sdk="gradio",
+        license="",
+        created_at="",
+        last_modified="",
+        host="",
+        url="https://example.test",
+    )
+
+    public = project.to_public_dict()
+
+    assert public["title"] == "Untitled project"
+    assert public["summary"] == ""
 
 
 def test_project_index_rejects_mismatched_snapshot(tmp_path: Path) -> None:

@@ -765,10 +765,8 @@ function renderProjects(projects) {
     item.href = project.url;
     item.target = "_blank";
     item.rel = "noreferrer";
-    item.innerHTML = `
-      <strong>${escapeHtml(project.title)}</strong>
-      <p>${escapeHtml(project.summary || project.id)}</p>
-    `;
+    const summary = project.summary ? `<p>${escapeHtml(project.summary)}</p>` : "";
+    item.innerHTML = `<strong>${escapeHtml(project.title || "Untitled project")}</strong>${summary}`;
     projectsEl.append(item);
   }
 }
@@ -788,9 +786,10 @@ function renderCitations(echoes) {
     item.rel = "noreferrer";
     item.title = project.title || project.id || "Project citation";
     const matched = (echo.matched_terms || []).slice(0, 5).join(", ") || "no shared terms";
+    const summary = project.summary ? `<p>${escapeHtml(project.summary)}</p>` : "";
     item.innerHTML = `
-      <strong>Page ${escapeHtml(echo.page_number || "?")} · ${escapeHtml(project.title || project.id || "Untitled")}</strong>
-      <p>${escapeHtml(project.summary || project.id || "")}</p>
+      <strong>Page ${escapeHtml(echo.page_number || "?")} · ${escapeHtml(project.title || "Untitled project")}</strong>
+      ${summary}
       <span class="matched">${Number(echo.score || 0).toFixed(3)} · ${escapeHtml(matched)}</span>
     `;
     projectsEl.append(item);
