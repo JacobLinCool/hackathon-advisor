@@ -68,7 +68,7 @@ document.querySelectorAll(".mobile-nav [data-tab]").forEach((button) => {
 
 document.querySelectorAll("[data-command]").forEach((button) => {
   button.addEventListener("click", async () => {
-    await runTurn(button.dataset.command);
+    await runCommand(button.dataset.command || "");
   });
 });
 
@@ -144,6 +144,7 @@ async function runTurn(message) {
   delete session.ui_status;
   startTurnWatchdog();
 
+  let completed = false;
   try {
     const client = await clientPromise;
     const submission = client.submit("/agent_turn", {
@@ -158,6 +159,7 @@ async function runTurn(message) {
         handleEvent(JSON.parse(raw));
       }
     }
+    completed = true;
   } catch (error) {
     clearTurnWatchdog();
     ink.textContent = `The page tore before it could answer: ${error.message}`;
@@ -170,6 +172,17 @@ async function runTurn(message) {
     setSessionControlsDisabled(false);
     input.focus();
   }
+  return completed;
+}
+
+async function runCommand(command) {
+  if (!command) return;
+  const draft = input.value.trim();
+  if (draft) {
+    const savedDraft = await runTurn(draft);
+    if (!savedDraft) return;
+  }
+  await runTurn(command);
 }
 
 async function bootstrap() {
