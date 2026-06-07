@@ -4,7 +4,7 @@ from typing import Any
 
 
 DEMO_PROMPT = (
-    "A local-first archive cartographer for family photos that runs offline, cites nearby Spaces, "
+    "idea: Archive Cartographer -- A local-first family-photo map that runs offline, cites nearby Spaces, "
     "and exports build notes."
 )
 DEMO_PLAN_PROMPT = "make a build plan"
