@@ -681,28 +681,46 @@ function selectIdea(ideaId) {
   if (Array.isArray(idea.goals) && idea.goals.length) {
     session.goals = goalOptions.filter((option) => idea.goals.includes(option));
   }
-  const score = idea.score || null;
-  if (score) {
-    setVerdictDisplay(score.verdict || "DRAFT", score.overall || 0, score);
-    renderScore(score);
-    ink.classList.toggle("bleed", String(score.verdict || "").startsWith("ECHO"));
-    ink.classList.toggle("gold", String(score.verdict || "").startsWith("UNWRITTEN"));
-  }
-  if (session.last_artifact?.title === idea.title) {
-    currentArtifact = session.last_artifact;
-    renderWoodMap(currentArtifact.wood_map || null);
-    exportButton.disabled = false;
-  } else {
-    currentArtifact = null;
-    renderWoodMap(null);
-    exportButton.disabled = true;
-  }
+  renderSelectedIdeaSeal(idea);
+  renderSelectedIdeaArtifact(idea);
   renderGoals(session.goals || []);
   renderIdeas(session.ideas);
   renderPlan([]);
   session.ui_status = `selected: ${idea.title}`;
   corrections.textContent = session.ui_status;
   saveSession();
+}
+
+function renderSelectedIdeaSeal(idea) {
+  const score = idea?.score || null;
+  if (!score) {
+    renderScore(null);
+    setVerdictDisplay("READY", 0, null);
+    ink.classList.remove("bleed", "gold");
+    renderProjects([], "Score this idea to see nearby echoes.");
+    return;
+  }
+  setVerdictDisplay(score.verdict || "DRAFT", score.overall || 0, score);
+  renderScore(score);
+  ink.classList.toggle("bleed", String(score.verdict || "").startsWith("ECHO"));
+  ink.classList.toggle("gold", String(score.verdict || "").startsWith("UNWRITTEN"));
+  if (score.echoes?.length) {
+    renderCitations(score.echoes);
+  } else {
+    renderProjects([]);
+  }
+}
+
+function renderSelectedIdeaArtifact(idea) {
+  if (session.last_artifact?.title === idea.title) {
+    currentArtifact = session.last_artifact;
+    renderWoodMap(currentArtifact.wood_map || null);
+    exportButton.disabled = false;
+    return;
+  }
+  currentArtifact = null;
+  renderWoodMap(null);
+  exportButton.disabled = true;
 }
 
 function goalDisplayName(goal) {
