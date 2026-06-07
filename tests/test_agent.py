@@ -86,6 +86,8 @@ def test_plan_command_uses_current_idea() -> None:
     assert planned.plan
     assert planned.artifact["title"] == first.artifact["title"]
     assert planned.state["ideas"][0]["title"] == first.artifact["title"]
+    assert all("Record the trace" not in step for step in planned.plan)
+    assert all("session trace" not in step for step in planned.plan)
 
 
 def test_non_plan_turns_clear_stale_build_plan() -> None:
@@ -275,6 +277,7 @@ def test_well_tuned_goal_adds_training_step_to_plan() -> None:
 
     assert first.state["ideas"][0]["goals"] == ["Well-Tuned"]
     assert any("LoRA" in step for step in planned.plan)
+    assert all("advisor turns" not in step for step in planned.plan)
 
 
 def test_planner_score_idea_scores_current_idea() -> None:

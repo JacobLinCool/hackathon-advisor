@@ -24,7 +24,7 @@ GOAL_PROFILE_BY_ID = {
     },
     "Well-Tuned": {
         "label": "Trainable",
-        "description": "Shape good turns into a tiny fine-tune dataset.",
+        "description": "Shape good examples into a tiny fine-tune dataset.",
     },
     "Off-Brand": {
         "label": "Distinct voice",
@@ -40,7 +40,7 @@ GOAL_PROFILE_BY_ID = {
     },
     "Field Notes": {
         "label": "Build notes",
-        "description": "Keep decisions easy to write up from the session trace.",
+        "description": "Keep decisions easy to write up from the saved session.",
     },
 }
 
@@ -151,11 +151,11 @@ class AdvisorTools:
 
     def make_plan(self, idea: Idea, profile: dict[str, Any] | None = None) -> tuple[list[str], ToolEvent]:
         plan = [
-            "Lock a one-sentence promise and one demo input that proves originality.",
+            "Lock a one-sentence promise and one test input that proves what is different.",
             "Compare against the nearest echoes, then sharpen the part only this idea can own.",
-            "Build the smallest happy path: input, citations, score seal, and shareable artifact.",
-            "Add one goal hook only after the core loop is smooth enough to demo without narration.",
-            "Record the trace and write build notes from the exact decisions.",
+            "Build the smallest happy path: input, nearby project citations, score, and one shareable output.",
+            "Add one selected-goal feature only after the core loop is smooth enough to explain without narration.",
+            "Write build notes from the exact decisions, screenshots, and outputs.",
         ]
         profile_steps = profile_plan_steps(profile)
         if profile_steps:
@@ -163,7 +163,7 @@ class AdvisorTools:
         if any("Well" in goal for goal in idea.goals):
             plan.insert(
                 max(0, len(plan) - 1),
-                "Prepare a tiny LoRA dataset from successful advisor turns before training.",
+                "Collect successful advisor examples before training a tiny LoRA.",
             )
         return plan, ToolEvent("make_plan", f"Drafted {len(plan)} build steps.")
 

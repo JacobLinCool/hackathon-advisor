@@ -46,6 +46,7 @@ def test_bootstrap_exposes_index_metadata() -> None:
     assert "description" in payload["goal_profiles"][0]
     assert "skills" in payload["profile_fields"]
     assert "prize_ledger" not in payload
+    assert all("trace" not in goal["description"].lower() for goal in payload["goal_profiles"])
 
 
 def test_trace_artifact_endpoint_exports_jsonl() -> None:
@@ -72,7 +73,7 @@ def test_field_notes_endpoint_exports_markdown() -> None:
     assert "Goals: Build notes" in payload
     assert "Targets: Field Notes" not in payload
     assert "## Turn Trace" in payload
-    assert "Record the trace and write build notes" in payload
+    assert "Write build notes from the exact decisions" in payload
 
 
 def test_chapter_endpoint_exports_markdown() -> None:

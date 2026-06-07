@@ -38,4 +38,5 @@ def test_checked_in_sample_trace_matches_schema() -> None:
     assert "Add one prize" not in sample_text
     assert "set_target" not in sample_text
     assert "side_quests" not in sample_text
-    assert "Record the trace and write build notes from the exact decisions." in lines[-1]["response"]
+    assert "Record the trace" not in sample_text
+    assert "Write build notes from the exact decisions" in lines[-1]["response"]

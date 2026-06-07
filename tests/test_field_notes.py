@@ -30,7 +30,7 @@ def test_field_notes_markdown_contains_session_decisions() -> None:
     assert "Targets: Field Notes" not in markdown
     assert "A local-first archive cartographer for family photos" in markdown
     assert "## Build Plan" in markdown
-    assert "Record the trace and write build notes" in markdown
+    assert "Write build notes from the exact decisions" in markdown
     assert "Closest cited Spaces" in markdown
     assert "Page " in markdown
     assert "## Wood Map" in markdown
