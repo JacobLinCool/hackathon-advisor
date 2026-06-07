@@ -133,7 +133,6 @@ class MiniCPMTransformersPlanner:
         ]
         inputs = self._tokenizer.apply_chat_template(
             messages,
-            tools=tool_schemas(),
             add_generation_prompt=True,
             enable_thinking=False,
             tokenize=True,
@@ -189,6 +188,7 @@ def render_context(message: str, state: dict[str, Any]) -> str:
         [
             "Choose exactly one tool call for the next advisor action.",
             "Return only <function name=\"tool_name\">{...json...}</function>.",
+            f"Available tools: {', '.join(spec['function']['name'] for spec in tool_schemas())}.",
             f"User message: {message}",
             "Idea board:",
             *(idea_lines or ["- empty"]),

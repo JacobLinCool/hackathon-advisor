@@ -105,6 +105,8 @@ def test_render_context_includes_state() -> None:
     assert "Archive Cartographer" in context
     assert "ECHO x2" in context
     assert '<function name="tool_name">' in context
+    assert "Available tools:" in context
+    assert "search_projects" in context
 
 
 def test_system_prompt_keeps_runtime_role_user_facing() -> None:
