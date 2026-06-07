@@ -129,8 +129,8 @@ evidence.
 
 `/api/demo-bundle.zip` downloads a server-built ZIP for the deterministic demo session. The bundle includes a manifest,
 demo session JSON, Prize Ledger JSON, trace JSONL, Field Notes, Almanac chapter, LoRA SFT JSONL, LoRA training kit,
-Submission Packet, and a PNG export note. This gives judges or collaborators one auditable package without depending on
-browser `localStorage`.
+Submission Packet, and the rendered fate-page PNG. This gives judges or collaborators one auditable package without
+depending on browser `localStorage`.
 
 ## Prize Ledger
 

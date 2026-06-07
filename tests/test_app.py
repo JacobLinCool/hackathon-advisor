@@ -151,6 +151,7 @@ def test_demo_bundle_endpoint_returns_zip_attachment() -> None:
     assert "submission-packet.md" in names
     assert "lora-sft.jsonl" in names
     assert "lora-training-kit.zip" in names
+    assert "archive-cartographer.png" in names
     assert manifest["turn_count"] == 2
 
 

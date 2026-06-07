@@ -8,6 +8,7 @@ license = { text = "MIT" }
 authors = [{ name = "Jacob LinCool" }]
 dependencies = [
   "gradio>=6.16.0,<7",
+  "pillow>=10,<13",
 ]
 
 [project.optional-dependencies]

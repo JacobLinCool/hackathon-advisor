@@ -10,6 +10,7 @@ from hackathon_advisor.chapter import build_chapter_markdown
 from hackathon_advisor.field_notes import build_field_notes_markdown
 from hackathon_advisor.lora_dataset import build_lora_dataset_jsonl
 from hackathon_advisor.lora_training_kit import build_lora_training_kit_zip
+from hackathon_advisor.png_export import artifact_png_filename, render_artifact_png
 from hackathon_advisor.submission_packet import build_submission_packet_markdown
 from hackathon_advisor.trace_export import build_trace_jsonl
 
@@ -29,7 +30,8 @@ def build_demo_bundle_zip(
 
     buffer = BytesIO()
     with ZipFile(buffer, "w", compression=ZIP_DEFLATED) as archive:
-        archive.writestr("manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
+        manifest_json = json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True)
+        archive.writestr("manifest.json", f"{manifest_json}\n")
         for filename, content in files.items():
             archive.writestr(filename, content)
     return buffer.getvalue()
@@ -41,16 +43,19 @@ def _bundle_files(
     ledger: dict[str, Any],
     demo: dict[str, Any],
 ) -> dict[str, str | bytes]:
+    artifact = demo.get("artifact") if isinstance(demo.get("artifact"), dict) else {}
+    png_filename = artifact_png_filename(artifact)
+    ledger_json = json.dumps(ledger, ensure_ascii=False, indent=2, sort_keys=True)
     return {
         "demo-session.json": json.dumps(demo, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        "prize-ledger.json": json.dumps(ledger, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        "prize-ledger.json": f"{ledger_json}\n",
         "trace.jsonl": build_trace_jsonl(session, metadata),
         "field-notes.md": build_field_notes_markdown(session, metadata),
         "almanac-chapter.md": build_chapter_markdown(session, metadata),
         "lora-sft.jsonl": build_lora_dataset_jsonl(session, metadata),
         "lora-training-kit.zip": build_lora_training_kit_zip(session, metadata, ledger),
         "submission-packet.md": build_submission_packet_markdown(session, metadata, ledger),
-        "png-export-note.md": _png_note(demo),
+        png_filename: render_artifact_png(artifact),
     }
 
 
@@ -82,18 +87,6 @@ def _manifest(
             "snapshot_digest": _clean(metadata.get("snapshot_digest")),
         },
     }
-
-
-def _png_note(demo: dict[str, Any]) -> str:
-    artifact = demo.get("artifact") if isinstance(demo.get("artifact"), dict) else {}
-    title = _clean(artifact.get("title")) or "current fate page"
-    return (
-        "# PNG Export Note\n\n"
-        "The visual fate-page PNG is rendered client-side from the same session artifact so the browser can draw the "
-        "canvas with the deployed CSS and fonts. Load the Demo session in the Space, then press `PNG` to export it.\n\n"
-        f"Demo artifact title: {title}\n"
-    )
-
 
 def _clean(value: Any) -> str:
     if value is None:
