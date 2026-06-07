@@ -106,6 +106,7 @@ class AdvisorEngine:
             tool_events.append(event)
             response = self._whitespace_response(idea, whitespace, score)
             artifact = self._artifact(idea, score)
+            self._attach_artifact(state, idea, artifact)
             return self._result(
                 normalized,
                 corrections,
@@ -173,6 +174,11 @@ class AdvisorEngine:
             stored.append(idea.to_dict())
         state["ideas"] = stored
 
+    def _attach_artifact(self, state: dict[str, Any], idea: Idea, artifact: dict[str, Any]) -> None:
+        idea.artifact = artifact
+        self._store_idea(state, idea)
+        state["last_artifact"] = artifact
+
     def _current_idea(self, state: dict[str, Any]) -> Idea | None:
         current_id = state.get("current_idea_id")
         for item in state.get("ideas", []):
@@ -222,6 +228,7 @@ class AdvisorEngine:
             tool_events.append(event)
             response = self._whitespace_response(idea, whitespace, score)
         artifact = self._artifact(idea, score)
+        self._attach_artifact(state, idea, artifact)
         return self._result(
             normalized,
             corrections,
@@ -260,6 +267,7 @@ class AdvisorEngine:
         tool_events.append(event)
         response = self._plan_response(idea, score, plan)
         artifact = self._artifact(idea, score)
+        self._attach_artifact(state, idea, artifact)
         return self._result(normalized, corrections, response, state, tool_events, [], [], score, plan, artifact)
 
     def _compare_turn(
@@ -278,6 +286,8 @@ class AdvisorEngine:
             )
             return self._result(normalized, corrections, response, state, tool_events, [], [], None, [], {})
 
+        for idea, idea_score in ranked:
+            idea.artifact = self._artifact(idea, idea_score)
         ideas = [idea for idea, _score in ranked]
         state["ideas"] = [idea.to_dict() for idea in ideas]
         winner, score = ranked[0]
@@ -286,7 +296,8 @@ class AdvisorEngine:
         plan, event = self.tools.make_plan(winner, self._profile_context(state))
         tool_events.append(event)
         response = self._compare_response(ranked, plan)
-        artifact = self._artifact(winner, score)
+        artifact = winner.artifact or self._artifact(winner, score)
+        self._attach_artifact(state, winner, artifact)
         return self._result(normalized, corrections, response, state, tool_events, [], [], score, plan, artifact)
 
     def _project_turn(
@@ -329,6 +340,7 @@ class AdvisorEngine:
         tool_events.append(event)
         response = f"The wax seal reads {score.overall}/10, {score.verdict}, for {idea.title}."
         artifact = self._artifact(idea, score)
+        self._attach_artifact(state, idea, artifact)
         return self._result(normalized, corrections, response, state, tool_events, [], [], score, [], artifact)
 
     def _profile_turn(
@@ -360,7 +372,12 @@ class AdvisorEngine:
         idea = self._current_idea(state)
         if idea is not None:
             idea.goals = goals
+            idea.score = None
+            idea.artifact = None
             self._store_idea(state, idea)
+            last_artifact = state.get("last_artifact")
+            if isinstance(last_artifact, dict) and last_artifact.get("title") == idea.title:
+                del state["last_artifact"]
         tool_events.append(ToolEvent("set_goals", f"Set {len(goals)} goals."))
         labels = [goal_label(goal) for goal in goals]
         response = "The seal will now bias toward: " + (", ".join(labels) or "no specific goals")

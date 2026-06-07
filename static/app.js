@@ -712,8 +712,10 @@ function renderSelectedIdeaSeal(idea) {
 }
 
 function renderSelectedIdeaArtifact(idea) {
-  if (session.last_artifact?.title === idea.title) {
-    currentArtifact = session.last_artifact;
+  const artifact = idea.artifact || (session.last_artifact?.title === idea.title ? session.last_artifact : null);
+  if (artifact) {
+    currentArtifact = artifact;
+    session.last_artifact = artifact;
     renderWoodMap(currentArtifact.wood_map || null);
     exportButton.disabled = false;
     return;
@@ -934,6 +936,7 @@ function invalidateCurrentPlan(message) {
 
 function clearCurrentArtifactFor(idea) {
   if (!idea || currentArtifact?.title === idea.title) currentArtifact = null;
+  if (idea?.artifact) delete idea.artifact;
   if (!idea || session.last_artifact?.title === idea.title) delete session.last_artifact;
 }
 

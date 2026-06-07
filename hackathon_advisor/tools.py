@@ -89,6 +89,7 @@ class Idea:
     pitch: str
     goals: list[str] = field(default_factory=lambda: GOALS[:3])
     score: dict | None = None
+    artifact: dict[str, Any] | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -97,6 +98,7 @@ class Idea:
             "pitch": self.pitch,
             "goals": self.goals,
             "score": self.score,
+            "artifact": self.artifact,
         }
 
 

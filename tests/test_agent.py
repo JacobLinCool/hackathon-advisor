@@ -33,6 +33,7 @@ def test_agent_scores_and_persists_idea() -> None:
     assert result.state["last_tool_resolution"]["call"]["name"] == "save_idea"
     assert result.state["trace"][0]["tool_resolution"]["call"]["name"] == "save_idea"
     assert result.state["last_artifact"]["title"] == result.artifact["title"]
+    assert result.state["ideas"][0]["artifact"]["title"] == result.artifact["title"]
     assert result.artifact["wood_map"]["caption"]
     assert {dot["kind"] for dot in result.artifact["wood_map"]["dots"]} >= {"idea", "echo", "inked"}
     assert result.score.to_dict()["echoes"][0]["page_number"] >= 1
@@ -133,6 +134,8 @@ def test_distinct_idea_turns_append_to_board() -> None:
     assert len(second.state["ideas"]) == 2
     assert second.state["ideas"][0]["title"] == first.artifact["title"]
     assert second.state["ideas"][1]["title"] == second.artifact["title"]
+    assert second.state["ideas"][0]["artifact"]["title"] == first.artifact["title"]
+    assert second.state["ideas"][1]["artifact"]["title"] == second.artifact["title"]
 
 
 def test_compare_ideas_reranks_board_and_selects_winner() -> None:
@@ -147,6 +150,7 @@ def test_compare_ideas_reranks_board_and_selects_winner() -> None:
     assert ranked.artifact["title"] == ranked.state["ideas"][0]["title"]
     assert ranked.state["current_idea_id"] == ranked.state["ideas"][0]["id"]
     assert ranked.state["ideas"][0]["score"]["overall"] >= ranked.state["ideas"][1]["score"]["overall"]
+    assert all(idea["artifact"]["title"] == idea["title"] for idea in ranked.state["ideas"])
     assert ranked.plan
     assert "Ranked pages:" in ranked.response
     assert ranked.tool_events[0].name == "compare_ideas"
@@ -191,6 +195,22 @@ def test_planner_profile_and_goals_update_state() -> None:
     assert targeted.state["profile"]["skills"] == "frontend"
     assert targeted.state["goals"] == ["Off the Grid", "Field Notes"]
     assert "Local-first, Build notes" in targeted.response
+
+
+def test_goal_update_invalidates_current_idea_artifact() -> None:
+    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    first = AdvisorEngine(index).turn("A local-first archive cartographer for family photos", {})
+    target_engine = AdvisorEngine(
+        index,
+        planner=StaticPlanner(ToolCall("set_goals", {"goals": ["Field Notes"]})),
+    )
+
+    targeted = target_engine.turn("set goals", first.state)
+
+    idea = targeted.state["ideas"][0]
+    assert idea["score"] is None
+    assert idea["artifact"] is None
+    assert "last_artifact" not in targeted.state
 
 
 def test_session_goals_apply_to_new_and_current_ideas() -> None:
