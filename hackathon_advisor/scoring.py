@@ -11,7 +11,7 @@ class ScoreCard:
     delight: int
     ai_necessity: int
     feasibility: int
-    prize_fit: int
+    goal_fit: int
     verdict: str
     echoes: tuple[SearchHit, ...]
 
@@ -23,7 +23,7 @@ class ScoreCard:
                 + self.delight * 0.20
                 + self.ai_necessity * 0.20
                 + self.feasibility * 0.15
-                + self.prize_fit * 0.15
+                + self.goal_fit * 0.15
             ),
             1,
         )
@@ -34,7 +34,7 @@ class ScoreCard:
             "delight": self.delight,
             "ai_necessity": self.ai_necessity,
             "feasibility": self.feasibility,
-            "prize_fit": self.prize_fit,
+            "goal_fit": self.goal_fit,
             "overall": self.overall,
             "verdict": self.verdict,
             "echoes": [
@@ -64,7 +64,7 @@ def score_idea(index: ProjectIndex, title: str, pitch: str, targets: list[str] |
     )
     complexity_penalty = _keyword_count(tokens, {"realtime", "video", "multiplayer", "payments", "social"})
     feasibility = clamp_score(8 - complexity_penalty)
-    prize_fit = clamp_score(
+    goal_fit = clamp_score(
         4
         + _keyword_count(tokens, {"local", "offline", "small", "llama", "fine", "trace", "gradio"}) * 2
         + min(len(targets), 3)
@@ -75,7 +75,7 @@ def score_idea(index: ProjectIndex, title: str, pitch: str, targets: list[str] |
         delight=delight,
         ai_necessity=ai_necessity,
         feasibility=feasibility,
-        prize_fit=prize_fit,
+        goal_fit=goal_fit,
         verdict=verdict,
         echoes=tuple(hits),
     )

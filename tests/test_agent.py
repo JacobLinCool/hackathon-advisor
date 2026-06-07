@@ -25,6 +25,10 @@ def test_agent_scores_and_persists_idea() -> None:
     assert result.score is not None
     assert result.state["ideas"]
     assert result.state["ideas"][0]["score"] is not None
+    assert "goal_fit" in result.state["ideas"][0]["score"]
+    assert "prize_fit" not in result.state["ideas"][0]["score"]
+    assert "goal_fit" in result.artifact["seal"]
+    assert "prize_fit" not in result.artifact["seal"]
     assert result.state["trace"]
     assert result.state["last_tool_resolution"]["call"]["name"] == "save_idea"
     assert result.state["trace"][0]["tool_resolution"]["call"]["name"] == "save_idea"

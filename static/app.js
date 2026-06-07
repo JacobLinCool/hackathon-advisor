@@ -700,7 +700,7 @@ function renderScore(score) {
     ["Delight", score?.delight || 0],
     ["AI Need", score?.ai_necessity || 0],
     ["Feasible", score?.feasibility || 0],
-    ["Goal Fit", score?.prize_fit || 0],
+    ["Goal Fit", score?.goal_fit || 0],
   ];
   scoreEl.innerHTML = rows
     .map(
@@ -999,7 +999,7 @@ function renderArtifactCanvas(artifact) {
     ["Delight", seal.delight || 0],
     ["AI Need", seal.ai_necessity || 0],
     ["Feasible", seal.feasibility || 0],
-    ["Goal Fit", seal.prize_fit || 0],
+    ["Goal Fit", seal.goal_fit || 0],
   ];
   rows.forEach(([label, value], index) => {
     const y = 418 + index * 34;
