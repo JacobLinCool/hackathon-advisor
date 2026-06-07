@@ -890,6 +890,7 @@ function invalidateCurrentSeal(message) {
   renderScore(null);
   setVerdictDisplay("READY", 0, null);
   renderWoodMap(null);
+  renderProjects([]);
   exportButton.disabled = true;
   if (message) setSessionStatus(message);
 }
