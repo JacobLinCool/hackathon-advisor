@@ -1,5 +1,3 @@
-import { Client } from "https://cdn.jsdelivr.net/npm/@gradio/client/dist/index.min.js";
-
 const form = document.querySelector("#turn-form");
 const input = document.querySelector("#message");
 const submit = document.querySelector("#submit");
@@ -35,7 +33,6 @@ const CHAPTER_FILENAME = "hackathon-advisor-chapter.md";
 const PNG_EXPORT_LABEL = "PNG";
 
 let session = {};
-let clientPromise = Client.connect(window.location.origin);
 let currentArtifact = null;
 let goalOptions = [];
 let goalProfiles = [];
@@ -150,18 +147,19 @@ async function runTurn(message) {
 
   let completed = false;
   try {
-    const client = await clientPromise;
-    const submission = client.submit("/agent_turn", {
-      message,
-      session_json: JSON.stringify(session),
+    const response = await fetch("/api/agent-turn", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message,
+        session_json: JSON.stringify(session),
+      }),
     });
+    if (!response.ok) throw new Error(`advisor failed with ${response.status}`);
+    if (!response.body) throw new Error("advisor stream was empty");
 
-    for await (const event of submission) {
-      if (event.type !== "data") continue;
-      const payloads = Array.isArray(event.data) ? event.data : [event.data];
-      for (const raw of payloads) {
-        handleEvent(JSON.parse(raw));
-      }
+    for await (const raw of readNdjson(response.body)) {
+      handleEvent(JSON.parse(raw));
     }
     completed = true;
   } catch (error) {
@@ -177,6 +175,29 @@ async function runTurn(message) {
     input.focus();
   }
   return completed;
+}
+
+async function* readNdjson(stream) {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let newlineIndex = buffer.indexOf("\n");
+    while (newlineIndex >= 0) {
+      const line = buffer.slice(0, newlineIndex).trim();
+      buffer = buffer.slice(newlineIndex + 1);
+      if (line) yield line;
+      newlineIndex = buffer.indexOf("\n");
+    }
+  }
+
+  buffer += decoder.decode();
+  const finalLine = buffer.trim();
+  if (finalLine) yield finalLine;
 }
 
 async function runCommand(command) {
@@ -993,7 +1014,7 @@ function setSessionStatus(message) {
 
 async function exportNotes() {
   await exportMarkdown({
-    endpoint: "/field_notes",
+    endpoint: "/api/field-notes",
     filename: FIELD_NOTES_FILENAME,
     button: exportNotesButton,
     busyLabel: "Notes...",
@@ -1004,7 +1025,7 @@ async function exportNotes() {
 
 async function exportChapter() {
   await exportMarkdown({
-    endpoint: "/chapter",
+    endpoint: "/api/chapter",
     filename: CHAPTER_FILENAME,
     button: exportChapterButton,
     busyLabel: "Chapter...",
@@ -1023,12 +1044,15 @@ async function exportMarkdown({ endpoint, filename, button, busyLabel, pendingLa
   corrections.textContent = session.ui_status;
   saveSession();
   try {
-    const client = await clientPromise;
-    const result = await client.predict(endpoint, {
-      session_json: JSON.stringify(session),
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        session_json: JSON.stringify(session),
+      }),
     });
-    const data = Array.isArray(result.data) ? result.data[0] : result.data;
-    const text = String(data || "");
+    if (!response.ok) throw new Error(`export failed with ${response.status}`);
+    const text = await response.text();
     if (!text.trim()) throw new Error("empty export");
     if (!isCurrentSessionRevision(revision)) return;
     downloadText(filename, text, "text/markdown;charset=utf-8");

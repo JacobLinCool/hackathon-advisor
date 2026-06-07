@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Iterator
 
 from fastapi import Body
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response, StreamingResponse
 from gradio import Server
 
 from hackathon_advisor.agent import AdvisorEngine
@@ -44,6 +44,48 @@ def _json_event(payload: dict) -> str:
 @gpu_task
 def _engine_turn(message: str, session: dict[str, Any]):
     return engine.turn(message, session)
+
+
+def _session_from_json(session_json: str = "{}") -> dict[str, Any]:
+    try:
+        session = json.loads(session_json or "{}")
+    except json.JSONDecodeError:
+        return {}
+    return session if isinstance(session, dict) else {}
+
+
+def _session_from_payload(payload: dict[str, Any] | None) -> dict[str, Any]:
+    payload = payload or {}
+    return _session_from_json(str(payload.get("session_json") or "{}"))
+
+
+def _agent_turn_events(message: str, session_json: str = "{}") -> Iterator[str]:
+    session = _session_from_json(session_json)
+    result = _engine_turn(message, session)
+    yield _json_event(
+        {
+            "type": "start",
+            "corrections": [correction.to_dict() for correction in result.corrections],
+            "normalized_text": result.normalized_text,
+            "tool_events": [event.to_dict() for event in result.tool_events],
+        }
+    )
+
+    for chunk in result.stream_chunks():
+        yield _json_event({"type": "token", "text": chunk})
+
+    yield _json_event(
+        {
+            "type": "done",
+            "state": result.state,
+            "response": result.response,
+            "projects": [project.to_public_dict() for project in result.projects],
+            "whitespace": [item.to_dict() for item in result.whitespace],
+            "score": result.score.to_dict() if result.score else None,
+            "plan": result.plan,
+            "artifact": result.artifact,
+        }
+    )
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -135,6 +177,45 @@ def artifact_png(artifact: dict[str, Any] | None = Body(default=None)) -> Respon
     )
 
 
+@app.post("/api/agent-turn")
+def agent_turn_stream(payload: dict[str, Any] | None = Body(default=None)) -> StreamingResponse:
+    payload = payload or {}
+    message = str(payload.get("message") or "")
+    session_json = str(payload.get("session_json") or "{}")
+
+    def stream() -> Iterator[str]:
+        for event in _agent_turn_events(message, session_json):
+            yield f"{event}\n"
+
+    return StreamingResponse(stream(), media_type="application/x-ndjson")
+
+
+@app.post("/api/field-notes")
+def field_notes_api(payload: dict[str, Any] | None = Body(default=None)) -> Response:
+    session = _session_from_payload(payload)
+    content = build_field_notes_markdown(
+        session,
+        {
+            **trace_metadata(index),
+            "project_count": len(index.projects),
+        },
+    )
+    return Response(content=content, media_type="text/markdown; charset=utf-8")
+
+
+@app.post("/api/chapter")
+def chapter_api(payload: dict[str, Any] | None = Body(default=None)) -> Response:
+    session = _session_from_payload(payload)
+    content = build_chapter_markdown(
+        session,
+        {
+            **trace_metadata(index),
+            "project_count": len(index.projects),
+        },
+    )
+    return Response(content=content, media_type="text/markdown; charset=utf-8")
+
+
 @app.get("/api/lora-training-kit.zip")
 def lora_training_kit() -> Response:
     runtime_status = engine.runtime_status()
@@ -160,19 +241,13 @@ def tool_contract_check(model_output: str, fallback_query: str = "") -> dict:
 
 @app.api(name="trace_artifact", concurrency_limit=8)
 def trace_artifact(session_json: str = "{}") -> str:
-    try:
-        session = json.loads(session_json or "{}")
-    except json.JSONDecodeError:
-        session = {}
+    session = _session_from_json(session_json)
     return build_trace_jsonl(session, trace_metadata(index))
 
 
 @app.api(name="field_notes", concurrency_limit=8)
 def field_notes_artifact(session_json: str = "{}") -> str:
-    try:
-        session = json.loads(session_json or "{}")
-    except json.JSONDecodeError:
-        session = {}
+    session = _session_from_json(session_json)
     return build_field_notes_markdown(
         session,
         {
@@ -184,10 +259,7 @@ def field_notes_artifact(session_json: str = "{}") -> str:
 
 @app.api(name="chapter", concurrency_limit=8)
 def chapter_artifact(session_json: str = "{}") -> str:
-    try:
-        session = json.loads(session_json or "{}")
-    except json.JSONDecodeError:
-        session = {}
+    session = _session_from_json(session_json)
     return build_chapter_markdown(
         session,
         {
@@ -199,10 +271,7 @@ def chapter_artifact(session_json: str = "{}") -> str:
 
 @app.api(name="lora_dataset", concurrency_limit=8)
 def lora_dataset_artifact(session_json: str = "{}") -> str:
-    try:
-        session = json.loads(session_json or "{}")
-    except json.JSONDecodeError:
-        session = {}
+    session = _session_from_json(session_json)
     return build_lora_dataset_jsonl(
         session,
         {
@@ -214,10 +283,7 @@ def lora_dataset_artifact(session_json: str = "{}") -> str:
 
 @app.api(name="submission_packet", concurrency_limit=8)
 def submission_packet_artifact(session_json: str = "{}") -> str:
-    try:
-        session = json.loads(session_json or "{}")
-    except json.JSONDecodeError:
-        session = {}
+    session = _session_from_json(session_json)
     runtime_status = engine.runtime_status()
     return build_submission_packet_markdown(
         session,
@@ -231,36 +297,7 @@ def submission_packet_artifact(session_json: str = "{}") -> str:
 
 @app.api(name="agent_turn", concurrency_limit=4, stream_every=0.04)
 def agent_turn(message: str, session_json: str = "{}") -> Iterator[str]:
-    try:
-        session = json.loads(session_json or "{}")
-    except json.JSONDecodeError:
-        session = {}
-
-    result = _engine_turn(message, session)
-    yield _json_event(
-        {
-            "type": "start",
-            "corrections": [correction.to_dict() for correction in result.corrections],
-            "normalized_text": result.normalized_text,
-            "tool_events": [event.to_dict() for event in result.tool_events],
-        }
-    )
-
-    for chunk in result.stream_chunks():
-        yield _json_event({"type": "token", "text": chunk})
-
-    yield _json_event(
-        {
-            "type": "done",
-            "state": result.state,
-            "response": result.response,
-            "projects": [project.to_public_dict() for project in result.projects],
-            "whitespace": [item.to_dict() for item in result.whitespace],
-            "score": result.score.to_dict() if result.score else None,
-            "plan": result.plan,
-            "artifact": result.artifact,
-        }
-    )
+    yield from _agent_turn_events(message, session_json)
 
 
 if __name__ == "__main__":

@@ -12,6 +12,9 @@ def test_main_interface_copy_is_builder_facing() -> None:
     assert "Loading an example idea board." in app_js
     assert "Example idea board loaded with a plan and share page." in app_js
     assert "/api/artifact.png" in app_js
+    assert "/api/agent-turn" in app_js
+    assert "readNdjson" in app_js
+    assert "@gradio/client" not in app_js
     assert "renderArtifactCanvas" not in app_js
     assert "canvas.toDataURL" not in app_js
     assert 'aria-label="Export build notes"' in html

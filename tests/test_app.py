@@ -1,14 +1,18 @@
 import json
+import asyncio
 from io import BytesIO
 from zipfile import ZipFile
 
 from app import (
+    agent_turn_stream,
     artifact_png,
     bootstrap,
+    chapter_api,
     chapter_artifact,
     demo_bundle,
     demo_session,
     engine,
+    field_notes_api,
     field_notes_artifact,
     health,
     index,
@@ -21,6 +25,13 @@ from app import (
     tool_contracts,
     trace_artifact,
 )
+
+
+async def _read_streaming_response(response) -> str:
+    chunks = []
+    async for chunk in response.body_iterator:
+        chunks.append(chunk.decode("utf-8") if isinstance(chunk, bytes) else chunk)
+    return "".join(chunks)
 
 
 def test_health_exposes_index_metadata() -> None:
@@ -48,6 +59,35 @@ def test_bootstrap_exposes_index_metadata() -> None:
     assert "skills" in payload["profile_fields"]
     assert "prize_ledger" not in payload
     assert all("trace" not in goal["description"].lower() for goal in payload["goal_profiles"])
+
+
+def test_agent_turn_stream_endpoint_exports_ndjson_events() -> None:
+    response = agent_turn_stream(
+        {
+            "message": "A local-first archive cartographer for family photos",
+            "session_json": "{}",
+        }
+    )
+    payload = asyncio.run(_read_streaming_response(response))
+    lines = [json.loads(line) for line in payload.splitlines()]
+
+    assert response.media_type == "application/x-ndjson"
+    assert lines[0]["type"] == "start"
+    assert any(line["type"] == "token" for line in lines)
+    assert lines[-1]["type"] == "done"
+    assert lines[-1]["state"]["ideas"]
+
+
+def test_markdown_api_endpoints_return_plain_markdown() -> None:
+    state = engine.turn("A local-first archive cartographer for family photos", {}).state
+
+    notes = field_notes_api({"session_json": json.dumps(state)})
+    chapter = chapter_api({"session_json": json.dumps(state)})
+
+    assert notes.media_type == "text/markdown; charset=utf-8"
+    assert notes.body.decode("utf-8").startswith("# Hackathon Advisor Field Notes")
+    assert chapter.media_type == "text/markdown; charset=utf-8"
+    assert chapter.body.decode("utf-8").startswith("# The Unwritten Almanac Chapter")
 
 
 def test_trace_artifact_endpoint_exports_jsonl() -> None:
