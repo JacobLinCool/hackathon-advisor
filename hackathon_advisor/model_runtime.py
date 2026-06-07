@@ -140,6 +140,7 @@ class MiniCPMTransformersPlanner:
             return_dict=True,
             return_tensors="pt",
         ).to(next(self._model.parameters()).device)
+        _strip_unused_generation_inputs(inputs)
         context = self._inference_mode() if self._inference_mode is not None else nullcontext()
         with context:
             generated = self._model.generate(
@@ -203,6 +204,10 @@ def system_prompt() -> str:
         "Use tools to inspect existing projects, find whitespace, save ideas, score ideas, and make plans. "
         "Emit exactly one XML tool call."
     )
+
+
+def _strip_unused_generation_inputs(inputs: dict[str, Any]) -> None:
+    inputs.pop("token_type_ids", None)
 
 
 def _json_string(value: str) -> str:

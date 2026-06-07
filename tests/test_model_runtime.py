@@ -8,6 +8,7 @@ from hackathon_advisor.model_runtime import (
     render_context,
     runtime_status,
     system_prompt,
+    _strip_unused_generation_inputs,
 )
 from hackathon_advisor.zerogpu import gpu_task, zero_gpu_duration_seconds, zero_gpu_enabled
 
@@ -176,3 +177,11 @@ def test_zerogpu_duration_validates_positive_values(monkeypatch: pytest.MonkeyPa
     monkeypatch.setenv("ADVISOR_ZERO_GPU_DURATION", "121")
     with pytest.raises(RuntimeError, match="at most 120"):
         zero_gpu_duration_seconds()
+
+
+def test_generation_inputs_drop_token_type_ids() -> None:
+    inputs = {"input_ids": [1], "attention_mask": [1], "token_type_ids": [0]}
+
+    _strip_unused_generation_inputs(inputs)
+
+    assert inputs == {"input_ids": [1], "attention_mask": [1]}
