@@ -181,11 +181,14 @@ def test_planner_get_project_drives_project_response() -> None:
 
 def test_planner_profile_and_goals_update_state() -> None:
     index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    planned = AdvisorEngine(index).turn("A local-first archive cartographer for family photos", {})
+    planned = AdvisorEngine(index).turn("make a build plan", planned.state)
+    assert planned.state["last_plan"]
     profile_engine = AdvisorEngine(
         index,
         planner=StaticPlanner(ToolCall("update_profile", {"field": "skills", "value": "frontend"})),
     )
-    profile = profile_engine.turn("remember this", {})
+    profile = profile_engine.turn("remember this", planned.state)
     target_engine = AdvisorEngine(
         index,
         planner=StaticPlanner(ToolCall("set_goals", {"goals": ["Off the Grid", "Field Notes"]})),
@@ -194,12 +197,16 @@ def test_planner_profile_and_goals_update_state() -> None:
 
     assert targeted.state["profile"]["skills"] == "frontend"
     assert targeted.state["goals"] == ["Off the Grid", "Field Notes"]
+    assert "last_plan" not in profile.state
+    assert "last_plan" not in targeted.state
     assert "Local-first, Build notes" in targeted.response
 
 
 def test_goal_update_invalidates_current_idea_artifact() -> None:
     index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
     first = AdvisorEngine(index).turn("A local-first archive cartographer for family photos", {})
+    first = AdvisorEngine(index).turn("make a build plan", first.state)
+    assert first.state["last_plan"]
     target_engine = AdvisorEngine(
         index,
         planner=StaticPlanner(ToolCall("set_goals", {"goals": ["Field Notes"]})),
@@ -211,6 +218,7 @@ def test_goal_update_invalidates_current_idea_artifact() -> None:
     assert idea["score"] is None
     assert idea["artifact"] is None
     assert "last_artifact" not in targeted.state
+    assert "last_plan" not in targeted.state
 
 
 def test_session_goals_apply_to_new_and_current_ideas() -> None:

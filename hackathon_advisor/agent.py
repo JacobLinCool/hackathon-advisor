@@ -355,6 +355,7 @@ class AdvisorEngine:
         field = str(call.arguments["field"])
         profile[field] = str(call.arguments["value"])
         state["profile"] = profile
+        state.pop("last_plan", None)
         tool_events.append(ToolEvent("update_profile", f"Remembered {field}."))
         response = f"Profile updated: {field} = {profile[field]}."
         return self._result(normalized, corrections, response, state, tool_events, [], [], None, [], {})
@@ -369,6 +370,7 @@ class AdvisorEngine:
     ) -> TurnResult:
         goals = normalize_goals(call.arguments.get("goals"), default=[])
         state["goals"] = goals
+        state.pop("last_plan", None)
         idea = self._current_idea(state)
         if idea is not None:
             idea.goals = goals

@@ -616,6 +616,10 @@ function handleEvent(event) {
       renderScore(event.score);
       ink.classList.toggle("bleed", event.score.verdict.startsWith("ECHO"));
       ink.classList.toggle("gold", event.score.verdict.startsWith("UNWRITTEN"));
+    } else if (!event.projects?.length) {
+      const idea = currentIdea();
+      renderSelectedIdeaSeal(idea);
+      renderSelectedIdeaArtifact(idea || {});
     }
     if (event.artifact?.title) {
       currentArtifact = event.artifact;
