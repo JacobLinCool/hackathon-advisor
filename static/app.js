@@ -52,6 +52,7 @@ let voiceStream = null;
 let voiceChunks = [];
 let voiceRecordingState = "idle";
 
+setVoiceRecordingState("idle");
 bootstrap().catch(handleBootstrapError);
 
 form.addEventListener("submit", async (event) => {
@@ -244,7 +245,7 @@ async function toggleVoiceRecording() {
 }
 
 async function startVoiceRecording() {
-  if (sessionControlsLocked || voiceBusy || voiceRecordingState !== "idle") return;
+  if (!bootstrapData || sessionControlsLocked || voiceBusy || voiceRecordingState !== "idle") return;
   if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
     setSessionStatus("Voice recording is not available in this browser. Upload a voice note instead.");
     return;
@@ -394,6 +395,7 @@ async function bootstrap() {
   renderProfile(session.profile);
   renderRestoredSession(data);
   renderWhitespace(data.whitespace || []);
+  setVoiceRecordingState("idle");
 }
 
 function handleBootstrapError(error) {
