@@ -6,9 +6,12 @@ gradio>=6.16.0,<7
 huggingface-hub>=0.36,<1
 llama-cpp-python==0.3.26
 nemo_toolkit[asr]==2.7.3
+numpy>=2,<3
 packaging>=24,<26
 peft>=0.13,<1
 pillow>=10,<13
+requests>=2.32,<3
+scikit-learn>=1.5,<2
 spaces>=0.50,<1
 torch>=2.8,<3
 transformers>=4.55,<5

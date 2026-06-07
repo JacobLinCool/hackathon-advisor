@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/VoiceGate",
+  "slug": "VoiceGate",
+  "title": "VoiceGate",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "# VoiceGate HF Space VoiceGate is a multilingual dubbing Space built with Gradio and ComfyUI. It transcribes speech into timed subtitles, translates the text, generates target language speech, aligns the generated speech back to the subtitle timeline, and mixes it with the original background audio. This repository is the Hugging Face Space deployment wrapper for VoiceGate. The runtime prepares ComfyUI, custom nodes, and model paths for the hosted workflow.",
+  "APP_FILE": "from __future__ import annotations\nfrom pathlib import Path\nfrom typing import Any\nfrom scripts.workflow_client import load_workflow, patch_voicegate_workflow\n\nfrom __future__ import annotations\n\nimport json\nimport math\nimport os\nimport shutil\nimport subprocess\nimport sys\nimport time\nimport uuid\nimport wave\nfrom pathlib import Path\nfrom typing import Any\n\ntry:\n    import matplotlib\n\n    matplotlib.use(\"Agg\")\nexcept ImportError:\n    pass\n\nimport gradio as gr\nimport requests\nimport spaces\nimport torch\nimport websocket\n\nfrom scripts.workflow_client import load_workflow, patch_voicegate_workflow\n\n\nROOT = Path(__file__).resolve().parent\nCOMFY_DIR = ROOT / \"ComfyUI\"\nCOMFY_INPUT_DIR = COMFY_DIR / \"input\"\nCOMFY_LOG = Path(\"/tmp/voicegate_comfy_gradio.log\")\nCOMFY_URL = \"http://127.0.0.1:8188\"\nCOMFY_HOST = \"127.0.0.1\"\nCOMFY_PORT = \"8188\"\n\nCOMFY_PROCESS: subprocess.Popen | None = None\nPREPARE_PROCESS: subprocess.Popen | None = None\nBOOTSTRAPPED = False\nBOOTSTRAP_LOG = Path(\"/tmp/voicegate_bootstrap.log\")\nUSER_OUTPUT_DIR = ROOT / \"user_outputs\"\nREQUIRED_MODEL_PATHS = [\n    COMFY_DIR / \"models\" / \"diffusion_models\" / \"MelBandRoFormer_comfy\" / \"MelBandRoformer_fp32.safetensors\",\n    COMFY_DIR / \"models\" / \"voxcpm\" / \"VoxCPM2\" / \"model.safetensors\",\n    COMFY_DIR / \"models\" / \"voxcpm\" / \"VoxCPM2\" / \"audiovae.pth\",\n    COMFY_DIR / \"models\" / \"Qwen3-ASR\" / \"Qwen3-ASR-1.7B\",\n    COMFY_DIR / \"models\" / \"Qwen3-ASR\" / \"Qwen3-ForcedAligner-0.6B\",\n]\nTARGET_LANGUAGES = [\n    \"Arabic\",\n    \"Burmese\",\n    \"Chinese\",\n    \"Danish\",\n    \"Dutch\",\n    \"English\",\n    \"Finnish\",\n    \"French\",\n    \"German\",\n    \"Greek\",\n    \"Hebrew\",\n    \"Hindi\",\n    \"Indonesian\",\n    \"Italian\",\n    \"Japanese\",\n    \"Khmer\",\n    \"Korean\",\n    \"Lao\",\n    \"Malay\",\n    \"Norwegian\",\n    \"Polish\",\n    \"Portuguese\",\n    \"Russian\",\n    \"Spanish\",\n    \"Swahili\",\n    \"Swedish\",\n    \"Tagalog\",\n    \"Thai\",\n    \"Turkish\",\n    \"Vie ..."
+}

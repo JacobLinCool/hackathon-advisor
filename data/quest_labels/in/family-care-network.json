@@ -1,0 +1,22 @@
+{
+  "id": "build-small-hackathon/family-care-network",
+  "slug": "family-care-network",
+  "title": "Adwuma Pa",
+  "sdk": "gradio",
+  "declared_models": [
+    "facebook/mms-1b-all",
+    "ninte/twi-en-nllb-v2",
+    "Qwen/Qwen2.5-7B-Instruct",
+    "facebook/mms-tts-aka",
+    "facebook/mms-tts-eng",
+    "teckedd/whisper_small-waxal_akan-asr-v1",
+    "GiftMark/akan-whisper-model"
+  ],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "# Adwuma Pa Adwuma Pa is a small-model family care network for Ghanaian elders. It creates real checkup requests, collects text or voice responses in Twi, Fante, or English, translates Akan-family responses to English, analyzes concern with Qwen, routes follow-up to nearby relatives, and gives the family coordinator a live Gradio dashboard. Built for the Build Small Hackathon, Backyard AI track. ## Built With OpenAI Codex OpenAI Codex is being used as the coding agent for this build. Codex created and patched the ASR eval Space, the main family care Space, SQLite persistence, configurable silence escalation, and the community voting workflow. See `CODEX_BUILD_LOG.md` and `HACKATHON_TODO.md`. ## Why This Should Be Competitive - Specific real user: a Ghanaian family coordinator checking on elders across cities. - Small-model compliant: ASR, concern scoring, and TTS are each under the 32B parameter cap. - Real workflow: tokenized checkup requests, silence detection, first-party relay, alerts, and loop closure. - Bonus badges targeted: custom Gradio UI, field notes, published fine-tuned Akan ASR model, and shared build trace. - OpenAI track angle: Codex-assisted build process, documented agent trace, and a practical agentic care workflow where the AI routes work to the right human. ## Run Locally ```bash python -m venv .venv source .venv/bin/activate pip install -r requirements.txt python app.py ``` Then open the local Gradio URL. ## Hugging Face Space Use the main app Space: ``` ...",
+  "APP_FILE": "from __future__ import annotations\nfrom config.models import ASR_CONFIG, LLM_CONFIG, TRANSLATION_CONFIG, TTS_CONFIG, total_parameter_budget_b\nfrom db import database as db\nfrom services.relay import dashboard_rows, scan_silence, simulate_nudge\nfrom services import modal_client, pipeline\n\nfrom __future__ import annotations\n\nimport json\n\nimport gradio as gr\n\nfrom config.models import ASR_CONFIG, LLM_CONFIG, TRANSLATION_CONFIG, TTS_CONFIG, total_parameter_budget_b\nfrom db import database as db\nfrom services.relay import dashboard_rows, scan_silence, simulate_nudge\nfrom services import modal_client, pipeline\n\nFAMILY_HEADERS = [\n    \"Name\",\n    \"City\",\n    \"Region\",\n    \"Language\",\n    \"Status\",\n    \"Concern\",\n    \"Minutes silent\",\n    \"Reminder min\",\n    \"Amber min\",\n    \"Red min\",\n    \"Last summary\",\n    \"Analysis\",\n    \"Next action\",\n    \"Token\",\n]\nALERT_HEADERS = [\"Alert\", \"Member\", \"Type\", \"Created\", \"State\", \"Notes\"]\nOPEN_LOOP_HEADERS = [\"Member\", \"Type\", \"Created\", \"Notes\"]\nCHECKIN_HEADERS = [\"Submitted\", \"Source\", \"Input\", \"Status\", \"Concern\", \"Summary\", \"Translation\", \"Transcript\", \"Error\"]\nREQUEST_HEADERS = [\"Request\", \"Token\", \"Member\", \"Type\", \"Reason\", \"Priority\", \"Status\", \"Created\", \"Completed\"]\nNUDGE_HEADERS = [\"Sent\", \"Contact\", \"Request\", \"Responded\", \"Check-in\"]\nAFFILIATION_HEADERS = [\"Subject\", \"Related\", \"Relationship\", \"Care role\", \"Priority\", \"Coordinator\", \"Notes\"]\nASR_MODEL_CHOICES = [\n    (\"MMS-1B-all (Akan)\", \"primary\"),\n    (\"Adwuma Pa Akan Whisper fine-tune\", \"fine_tuned\"),\n    (\"GiftMark Akan Whisper\", \"fallback\"),\n]\nROLE_CHOICES = [\n    (\"Elder / care recipient\", \"elder\"),\n    (\"Coordinator\", \"coordinator\"),\n    (\"Relative\", \"relative\"),\n    (\"Nearby contact\", \"nearby_contact\"),\n    (\"Caregiver\", \"caregiver\"),\n]\nRELATIONSHIP_CHOICES = [\n    (\"Daughter\", \"daughter\"),\n    (\"Son\", \"son\"),\n    (\"Mother\", \"mother\"),\n    (\"Father\", \"father\"),\n    ( ..."
+}

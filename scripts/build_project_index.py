@@ -30,6 +30,8 @@ def main() -> None:
     parser.add_argument("--model-path", default="")
     parser.add_argument("--n-ctx", type=int, default=DEFAULT_N_CTX)
     parser.add_argument("--n-threads", type=int, default=0)
+    parser.add_argument("--build-source", default="local")
+    parser.add_argument("--builder", default="scripts/build_project_index.py")
     args = parser.parse_args()
 
     payload = build_payload(
@@ -39,8 +41,8 @@ def main() -> None:
         model_path=args.model_path,
         n_ctx=args.n_ctx,
         n_threads=args.n_threads or None,
-        build_source="local",
-        builder="scripts/build_project_index.py",
+        build_source=args.build_source,
+        builder=args.builder,
     )
     output = Path(args.out)
     output.parent.mkdir(parents=True, exist_ok=True)

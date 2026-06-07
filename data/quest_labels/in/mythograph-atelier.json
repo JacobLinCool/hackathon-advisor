@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/mythograph-atelier",
+  "slug": "mythograph-atelier",
+  "title": "Mythograph Atelier",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "# Mythograph Atelier Abstract art with a meaning you can explain. Mythograph Atelier is a Gradio app for Hugging Face's Build Small Hackathon. It creates an abstract painting backwards: first a small local text model asks short adaptive questions and chooses safe UI controls, then FLUX.2 Klein renders a landscape abstract artwork with a title, symbol map, and short explanation. ## Current MVP - Chat-first dynamic interview with starter chips, assistant messages, and controls that appear only when needed. - No external inference APIs: `llama.cpp` runs the text model on ZeroGPU, and FLUX.2 Klein runs afterward on ZeroGPU for image generation. - Dynamic control tray for choice cards, multi-choice cards, visual sliders, palette mood, text refinement, and create readiness. - FLUX.2 Klein image generation with Pillow as a reliable fallback. - JSONL trace logging for conversation turns, control responses, model calls, image generation, and demo sessions. - Custom Gradio shell designed for the Off-Brand badge path. ## Hackathon Fit - **Track:** An Adventure in Thousand Token Wood - **Small models only:** Nemotron-3-Nano-4B for text and FLUX.2 Klein 4B for images. - **Built on Gradio:** The app is a Gradio Blocks application. - **Off the Grid:** No cloud inference APIs are required. - **Llama Champion:** Text inference runs through `llama.cpp`. ## Run Locally For quick UI testing without model download: ```bash MYTHOGRAPH_LLM_MODE=mock python app.py ``` For the no-API llama.cpp path: ...",
+  "APP_FILE": "from mythograph.ui.blocks import build_demo\n\nfrom mythograph.ui.blocks import build_demo\n\n\ndemo = build_demo()\n\n\nif __name__ == \"__main__\":\n    demo.queue(default_concurrency_limit=1).launch(ssr_mode=False)"
+}

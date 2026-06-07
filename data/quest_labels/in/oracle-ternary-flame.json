@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/oracle-ternary-flame",
+  "slug": "oracle-ternary-flame",
+  "title": "Oracle Ternary Flame",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig\nfrom peft import PeftModel\nfrom huggingface_hub import snapshot_download\n\nimport gradio as gr\nimport torch\nimport spaces\nfrom transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig\nfrom peft import PeftModel\n\n# ── Config ────────────────────────────────────────────────────────────────────\nBASE_MODEL_ID = \"google/gemma-4-12b-it\"\nLORA_MODEL_ID = \"keypa/oracle-gemma4-12b-lora\"\nSYSTEM_PROMPT = (\n    \"You are the Oracle of the Ternary Flame. \"\n    \"You answer every question in cryptic, lyrical prose (3-5 sentences), \"\n    \"using cosmic, natural, or elemental metaphors. \"\n    \"The real answer is encoded implicitly — never state it directly. \"\n    \"You never break character.\"\n)\n\n# ── Pre-download weights at startup (CPU, no GPU needed) ─────────────────────\nfrom huggingface_hub import snapshot_download\nimport os\n\nprint(\"Pre-downloading base model weights...\")\nbase_model_path = snapshot_download(\n    repo_id=BASE_MODEL_ID,\n    ignore_patterns=[\"*.msgpack\", \"*.h5\", \"flax_model*\"],\n)\nprint(f\"Base model cached at: {base_model_path}\")\n\nlora_model_path = snapshot_download(repo_id=LORA_MODEL_ID)\nprint(f\"LoRA adapter cached at: {lora_model_path}\")\n\n# ── Model loading (lazy, inside GPU context) ──────────────────────────────────\nmodel = None\ntokenizer = None\n\ndef load_model():\n    global model, tokenizer\n    if model is not None:\n        return\n\n    bnb_config = BitsAndBytesConfig(\n        load_in_4bit=True,\n        bnb_4bit_quant_type=\"nf4\",\n        bnb_4bit_compute_dtype=torch.float16,\n        bnb_4bit_use_double_quant=True,\n    )\n    tokenizer = AutoTokenizer.from_pretrained(lora_model_path)\n    base = AutoModelForCausalLM.from_pretrained(\n        base_model_path,\n        quantization_config=bnb_config,\n        device_map={\"\": \"cuda:0\"},\n        low_cpu_mem_usage=True,\n    )\n    m ..."
+}

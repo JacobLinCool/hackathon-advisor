@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/gemma-task-agent-trace",
+  "slug": "gemma-task-agent-trace",
+  "title": "Gemma Task Agent Trace",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "import gradio as gr\n\ndef mock_agent_with_trace(user_input):\n    # Simulate a lightweight model's reasoning path (Trace) to match the Bonus Quest\n    thought_trace = f\"== [Agent Trace] ==\\n1. Received instruction: '{user_input}'\\n2. Invoking local Gemma-2B-it model for inference...\\n3. Task analysis completed. Generating optimal response.\\n====================\"\n    reply = f\"Hello! I am a local-first task automation assistant powered by Gemma-2B. You just said: '{user_input}'. The system is running smoothly, ready to explore the Thousand Token Wood!\"\n    return thought_trace, reply\n\n# Create a clean and thematic Gradio interface\nwith gr.Blocks(title=\"Gemma Local Task Agent\") as demo:\n    gr.Markdown(\"# 🌲 Build Small Hackathon - Gemma-2B Agent\")\n    gr.Markdown(\"A lightweight personal task automation prototype focused on visualizing explicit agent reasoning traces.\")\n    \n    with gr.Group():\n        user_msg = gr.Textbox(label=\"Enter your task command:\", placeholder=\"e.g., Translate this recipe for my neighbor...\")\n        submit_btn = gr.Button(\"🚀 Run Agent (Simulated)\", variant=\"primary\")\n    \n    with gr.Row():\n        trace_box = gr.Textbox(label=\"📡 Live Agent Trace\", lines=8)\n        output_box = gr.Textbox(label=\"🤖 Agent Final Output\", lines=5)\n        \n    submit_btn.click(fn=mock_agent_with_trace, inputs=user_msg, outputs=[trace_box, output_box])\n\ndemo.launch()"
+}

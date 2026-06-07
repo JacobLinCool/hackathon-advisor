@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/repair-guy",
+  "slug": "repair-guy",
+  "title": "Repair Guy",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from huggingface_hub import snapshot_download\nfrom PIL import Image, ImageDraw\nfrom transformers import AutoModel, AutoProcessor, GenerationConfig\n\n\"\"\"Gradio + ZeroGPU Space for NVIDIA Nemotron Parse v1.2.\n\nUpload a PDF, pick a page, and get back the parsed markdown, a structured JSON of\nelements, and the page image annotated with bounding boxes.\n\nRuns on ZeroGPU: the model is loaded onto cuda at module level (ZeroGPU emulates\nCUDA at startup) and inference runs inside an @spaces.GPU-decorated function.\n\nThis file targets the Space (cuda/bfloat16). For local CPU testing use\nparse_page.py in the repo root instead.\n\"\"\"\n\nimport json\nimport sys\n\nimport fitz  # pymupdf\nimport gradio as gr\nimport spaces\nimport torch\nfrom huggingface_hub import snapshot_download\nfrom PIL import Image, ImageDraw\nfrom transformers import AutoModel, AutoProcessor, GenerationConfig\n\nMODEL_ID = \"nvidia/NVIDIA-Nemotron-Parse-v1.2\"\nDEVICE = \"cuda\"\nDTYPE = torch.bfloat16\nMAX_PROMPT_DURATION = 120  # seconds of GPU time per page\n\n# ---------------------------------------------------------------------------\n# Load helpers + model once at module level (ZeroGPU loads cuda weights here).\n# ---------------------------------------------------------------------------\n\n\ndef load_postprocessing():\n    \"\"\"Download the repo's .py helpers and import postprocessing.\n\n    postprocessing.py imports sibling modules (latex2html, ...), so we pull all\n    top-level .py files into one dir and put it on sys.path before importing.\n    \"\"\"\n    repo_dir = snapshot_download(repo_id=MODEL_ID, allow_patterns=[\"*.py\"])\n    if repo_dir not in sys.path:\n        sys.path.insert(0, repo_dir)\n    import postprocessing  # noqa: E402  (resolved via sys.path above)\n\n    return postprocessing\n\n\npp = load_postprocessing()\n\n# Every load passes trust_remote_code=True so the nested C-RADIO encoder code is\n# accepted non-interactively (no [y ..."
+}

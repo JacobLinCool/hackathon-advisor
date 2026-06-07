@@ -1,14 +1,19 @@
 import json
 import asyncio
+import time
 from io import BytesIO
 from zipfile import ZipFile
 
+import app as app_module
 from app import (
     agent_turn_stream,
     artifact_png,
     bootstrap,
     chapter_api,
     chapter_artifact,
+    dashboard,
+    dashboard_refresh_start,
+    dashboard_refresh_status,
     demo_bundle,
     demo_session,
     engine,
@@ -26,6 +31,8 @@ from app import (
     tool_contracts,
     trace_artifact,
 )
+from hackathon_advisor.dashboard import build_dashboard_payload
+from hackathon_advisor.data import Project, ProjectIndex
 
 
 async def _read_streaming_response(response) -> str:
@@ -55,6 +62,31 @@ class DummyUpload:
         start = self._offset
         self._offset = min(len(self._content), self._offset + size)
         return self._content[start : self._offset]
+
+
+def _reset_refresh_state(status: str = "idle") -> None:
+    with app_module._refresh_lock:
+        app_module._refresh_state.update(
+            {
+                "status": status,
+                "run_id": "test-run" if status == "running" else "",
+                "stage": "crawling" if status == "running" else "",
+                "stage_label": "Fetching public Spaces" if status == "running" else "",
+                "started_at": "",
+                "finished_at": "",
+                "error": "",
+                "result": None,
+            }
+        )
+
+
+def _wait_for_refresh(timeout: float = 5.0) -> dict:
+    deadline = time.monotonic() + timeout
+    state = dashboard_refresh_status()
+    while state["status"] == "running" and time.monotonic() < deadline:
+        time.sleep(0.05)
+        state = dashboard_refresh_status()
+    return state
 
 
 def test_health_exposes_index_metadata() -> None:
@@ -90,6 +122,186 @@ def test_bootstrap_exposes_index_metadata(monkeypatch) -> None:
     assert "skills" in payload["profile_fields"]
     assert "prize_ledger" not in payload
     assert all("trace" not in goal["description"].lower() for goal in payload["goal_profiles"])
+
+
+def test_dashboard_endpoint_exposes_atlas_payload() -> None:
+    payload = dashboard()
+
+    assert payload["layout"]["algorithm"] == "tsne"
+    assert payload["project_count"] == len(payload["points"])
+    assert payload["clusters"]
+    assert payload["links"]
+    assert payload["quest_report"]["status"] in {"analyzed", "not_analyzed"}
+    assert payload["refresh"]["status"] in {"idle", "running", "succeeded", "failed"}
+
+
+def test_dashboard_refresh_requires_bucket(monkeypatch) -> None:
+    _reset_refresh_state()
+    monkeypatch.delenv("ADVISOR_CACHE_DIR", raising=False)
+
+    try:
+        dashboard_refresh_start()
+    except Exception as error:
+        assert getattr(error, "status_code", None) == 400
+    else:
+        raise AssertionError("dashboard refresh should require ADVISOR_CACHE_DIR")
+
+
+def test_dashboard_refresh_rejects_concurrent_run(monkeypatch, tmp_path) -> None:
+    monkeypatch.setenv("ADVISOR_CACHE_DIR", str(tmp_path))
+    _reset_refresh_state(status="running")
+
+    try:
+        dashboard_refresh_start()
+    except Exception as error:
+        assert getattr(error, "status_code", None) == 409
+    else:
+        raise AssertionError("concurrent dashboard refresh should fail")
+    finally:
+        _reset_refresh_state()
+
+
+def test_dashboard_refresh_embedding_build_runs_in_subprocess(monkeypatch, tmp_path) -> None:
+    project_path = tmp_path / "projects.json"
+    index_path = tmp_path / "project_index.json"
+    project_path.write_text(
+        json.dumps({"generated_at": "2026-06-08T00:00:00+00:00", "source": "test", "projects": []}),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("ADVISOR_EMBEDDING_MODEL_REPO", "test/repo")
+    monkeypatch.setenv("ADVISOR_EMBEDDING_MODEL_FILE", "model.gguf")
+    monkeypatch.setenv("ADVISOR_EMBEDDING_MODEL_PATH", "/tmp/model.gguf")
+    captured = {}
+
+    def fake_run(command, *, cwd, capture_output, text, check):
+        captured["command"] = command
+        captured["cwd"] = cwd
+        captured["capture_output"] = capture_output
+        captured["text"] = text
+        captured["check"] = check
+        index_path.write_text(json.dumps({"schema": "ok"}), encoding="utf-8")
+        return app_module.subprocess.CompletedProcess(command, 0, "wrote index", "")
+
+    monkeypatch.setattr(app_module.subprocess, "run", fake_run)
+
+    payload = app_module._build_refresh_index_payload(project_path, index_path)
+
+    command = captured["command"]
+    assert payload == {"schema": "ok"}
+    assert captured["cwd"] == app_module.ROOT
+    assert captured["capture_output"] is True
+    assert captured["text"] is True
+    assert captured["check"] is False
+    assert command[1].endswith("scripts/build_project_index.py")
+    assert command[command.index("--model-repo") + 1] == "test/repo"
+    assert command[command.index("--model-file") + 1] == "model.gguf"
+    assert command[command.index("--model-path") + 1] == "/tmp/model.gguf"
+    assert command[command.index("--build-source") + 1] == "space dashboard refresh"
+    assert command[command.index("--builder") + 1] == "app.py:/api/dashboard/refresh"
+
+
+def test_dashboard_refresh_persists_and_swaps_latest(monkeypatch, tmp_path) -> None:
+    monkeypatch.setenv("ADVISOR_CACHE_DIR", str(tmp_path))
+    _reset_refresh_state()
+
+    def fake_refresh_payloads(run_id: str) -> tuple[dict, dict, dict]:
+        projects_payload = json.loads(app_module.DATA_PATH.read_text(encoding="utf-8"))
+        index_payload = json.loads(app_module.INDEX_PATH.read_text(encoding="utf-8"))
+        refreshed_index = ProjectIndex.from_files(app_module.DATA_PATH, app_module.INDEX_PATH)
+        refreshed_dashboard = build_dashboard_payload(
+            refreshed_index,
+            generated_at="2026-06-08T00:00:00+00:00",
+        )
+        return projects_payload, index_payload, refreshed_dashboard
+
+    monkeypatch.setattr(app_module, "_build_refresh_payloads", fake_refresh_payloads)
+    response = dashboard_refresh_start()
+    assert response.status_code == 202
+
+    state = _wait_for_refresh()
+    assert state["status"] == "succeeded"
+    assert (tmp_path / "latest.json").is_file()
+    assert state["result"]["project_count"] == len(app_module.index.projects)
+    assert dashboard()["provenance"]["snapshot_digest"] == state["result"]["snapshot_digest"]
+
+
+def test_dashboard_refresh_quest_analysis_uses_minicpm_analyzer(monkeypatch) -> None:
+    project = Project(
+        id="build-small-hackathon/minicpm-refresh-smoke",
+        title="MiniCPM Refresh Smoke",
+        summary="A local llama.cpp project that exports field notes.",
+        tags=("local-first", "gradio"),
+        models=("tinyllama-gguf",),
+        datasets=("examples",),
+        likes=1,
+        sdk="gradio",
+        license="mit",
+        created_at="2026-06-01T00:00:00+00:00",
+        last_modified="2026-06-08T00:00:00+00:00",
+        host="https://minicpm-refresh-smoke.hf.space",
+        url="https://huggingface.co/spaces/build-small-hackathon/minicpm-refresh-smoke",
+        app_file="app.py",
+        app_file_embedding_text="download artifact trace report lora training local model",
+    )
+
+    class FakeMiniCPMAnalyzer:
+        source = "minicpm-json-quest-analyzer"
+
+        def analyze(self, projects):
+            assert [item.id for item in projects] == [project.id]
+            return {
+                project.id: [
+                    {
+                        "quest": "Off the Grid",
+                        "confidence": 0.82,
+                        "evidence": "local llama.cpp project",
+                        "source": "readme",
+                    },
+                    {
+                        "quest": "Field Notes",
+                        "confidence": 0.78,
+                        "evidence": "exports field notes",
+                        "source": "readme",
+                    },
+                ]
+            }
+
+    monkeypatch.setattr(app_module, "create_quest_analyzer", lambda device: FakeMiniCPMAnalyzer())
+
+    result = app_module._analyze_dashboard_quests([project.to_refresh_snapshot_dict()])
+
+    quests = {match["quest"] for match in result["matches_by_project"][project.id]}
+    assert result["source"] == "minicpm-json-quest-analyzer"
+    assert quests == {"Off the Grid", "Field Notes"}
+
+
+def test_dashboard_refresh_quest_analysis_requires_two_segment_snapshot() -> None:
+    project = Project(
+        id="build-small-hackathon/missing-evidence",
+        title="Missing Evidence",
+        summary="summary is not enough",
+        tags=("gradio",),
+        models=(),
+        datasets=(),
+        likes=0,
+        sdk="gradio",
+        license="mit",
+        created_at="2026-06-01T00:00:00+00:00",
+        last_modified="2026-06-08T00:00:00+00:00",
+        host="https://missing-evidence.hf.space",
+        url="https://huggingface.co/spaces/build-small-hackathon/missing-evidence",
+        app_file="app.py",
+        app_file_embedding_text="signals are not enough",
+    )
+    row = project.to_refresh_snapshot_dict()
+    del row["readme_body"]
+
+    try:
+        app_module._analyze_dashboard_quests([row])
+    except RuntimeError as error:
+        assert "readme_body and app_file_source" in str(error)
+    else:
+        raise AssertionError("quest analysis should require the two-segment refresh snapshot")
 
 
 def test_agent_turn_stream_endpoint_exports_ndjson_events() -> None:

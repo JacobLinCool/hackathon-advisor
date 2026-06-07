@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/Advent_of_a_World_of_Flowering_Trees",
+  "slug": "Advent_of_a_World_of_Flowering_Trees",
+  "title": "Advent Of A World Of Flowering Trees",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference ## For development: first download uv and hf cli tool ```bash uv venv --python 3.13 --seed ``` then activate the virtual env .venv ```bash source .venv/Scripts/activate ``` then download dependencies ```python python -m pip install -r requirements.txt ``` then play around and change code..",
+  "APP_FILE": "from huggingface_hub import hf_hub_download\nfrom llama_cpp import Llama\n\nimport gradio as gr\nimport spaces\nfrom huggingface_hub import hf_hub_download\nimport os\nimport ctypes\n\n\nMODEL_REPO_ID = \"CohereLabs/tiny-aya-global-GGUF\"\nMODEL_FILENAME = \"tiny-aya-global-q4_k_m.gguf\"\n\nmodel_path = hf_hub_download(\n    repo_id=MODEL_REPO_ID,\n    filename=MODEL_FILENAME,\n)\n\n_llm = None\n\n# try:\n#     import nvidia.cuda_runtime\n#     import nvidia.cublas\n#     cudart = os.path.join(os.path.dirname(nvidia.cuda_runtime.__file__), \"lib\", \"libcudart.so.12\")\n#     cublas = os.path.join(os.path.dirname(nvidia.cublas.__file__), \"lib\", \"libcublas.so.12\")\n#     ctypes.CDLL(cudart, mode=ctypes.RTLD_GLOBAL)\n#     ctypes.CDLL(cublas, mode=ctypes.RTLD_GLOBAL)\n# except Exception:\n#     pass\n\ndef get_llm():\n    global _llm\n    if _llm is None:\n        from llama_cpp import Llama\n\n        _llm = Llama(\n            model_path=model_path,\n            n_gpu_layers=-1,\n            n_ctx=1024,\n            flash_attn=True,\n            verbose=False,\n        )\n    return _llm\n\n\n@spaces.GPU(duration=120)\ndef run_inference(prompt: str) -> str:\n    prompt = prompt.strip()\n    if not prompt:\n        return \"Enter a prompt to generate a response.\"\n\n    try:\n        llm = get_llm()\n    except Exception as exc:\n        return f\"llama-cpp initialization failed: {exc}\"\n\n    response = llm.create_chat_completion(\n        messages=[{\"role\": \"user\", \"content\": prompt}],\n        max_tokens=512,\n        temperature=0.7,\n    )\n    return response[\"choices\"][0][\"message\"][\"content\"].strip()\n\n\nwith gr.Blocks(title=\"Advent Of A World Of Flowering Trees\") as demo:\n    gr.Markdown(\"# Advent Of A World Of Flowering Trees\")\n    gr.Markdown(\"Tiny Aya GGUF demo running with `llama-cpp-python`.\")\n\n    prompt = gr.Textbox(\n        label=\"Prompt\",\n        lines=6,\n        placeholder=\"Ask something...\",\n    )\n    output = gr.Textbo ..."
+}

@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/team_lunch_app_v1",
+  "slug": "team_lunch_app_v1",
+  "title": "Team Lunch App V1",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from transformers import pipeline\n\nimport gradio as gr\nfrom transformers import pipeline\n\npipe = pipeline(\n    \"text-generation\",\n    model=\"Qwen/Qwen2.5-1.5B-Instruct\",\n    device=\"cpu\",\n    torch_dtype=\"auto\"\n)\n\norders = []\n\nMENU = {\n    \"Ugali + Beef Stew\": {\"price\": 180, \"image\": \"ugalibeef.png\"},\n    \"Ugali + Chicken Stew\": {\"price\": 200, \"image\": \"ugalichickenstew.png\"},\n    \"Githeri (Maize & Beans)\": {\"price\": 120, \"image\": \"githeri.png\"},\n    \"Pilau Rice with Beef\": {\"price\": 220, \"image\": \"pilau.png\"},\n    \"Chapati + Beans\": {\"price\": 150, \"image\": \"chapatibeans.png\"},\n    \"Vegetable Rice + Stir Fry\": {\"price\": 160, \"image\": \"vegricestirfry.png\"},\n    \"Matoke + Beef\": {\"price\": 190, \"image\": \"matokebeef.png\"},\n    \"Nyama Choma + Ugali\": {\"price\": 250, \"image\": \"nyamachomaugali.png\"},\n}\n\ndef submit_order(name, menu_choice, custom, meal_type, quantity, allergies):\n    preference = custom.strip() if custom and custom.strip() else menu_choice\n    price_per = MENU.get(menu_choice, {\"price\": 150})[\"price\"]\n    total_cost = price_per * quantity\n\n    order = {\n        \"name\": name or \"Anonymous\",\n        \"preference\": preference,\n        \"meal_type\": meal_type,\n        \"quantity\": quantity,\n        \"allergies\": allergies or \"None\",\n        \"price_per\": price_per,\n        \"total_cost\": total_cost\n    }\n    orders.append(order)\n\n    status = f\"\"\"✅ **Order Submitted Successfully!**\n\n**{name}** ordered **{preference}**\n{meal_type} × {quantity}\n**Total: KSh {total_cost}** (@ KSh {price_per} each)\"\"\"\n\n    return status, get_full_summary(), MENU[menu_choice][\"image\"]\n\ndef get_full_summary():\n    if not orders:\n        return \"**No orders submitted yet.**\"\n\n    total_people = sum(o[\"quantity\"] for o in orders)\n    grand_total = sum(o[\"total_cost\"] for o in orders)\n\n    text = f\"### 📊 LIVE ORDERS SUMMARY\\n\"\n    text += f\"**Total People:** {total_people}   |   **Grand Total:** ..."
+}

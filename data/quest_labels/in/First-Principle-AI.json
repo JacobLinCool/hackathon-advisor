@@ -1,0 +1,21 @@
+{
+  "id": "build-small-hackathon/First-Principle-AI",
+  "slug": "First-Principle-AI",
+  "title": "First-Principle AI",
+  "sdk": "gradio",
+  "declared_models": [
+    "build-small-hackathon/phase-3-gguf"
+  ],
+  "tags": [
+    "build-small-hackathon",
+    "chatbot",
+    "gguf",
+    "gradio",
+    "llama-cpp",
+    "model-lab",
+    "zerogpu"
+  ],
+  "app_file": "app.py",
+  "README": "# First-Principle AI First-Principle AI is a compact Gradio console for running and probing the `build-small-hackathon/phase-3-gguf` Q8 GGUF model through the official `llama.cpp` Ubuntu `llama-server` release. The UI includes benchmark-style examples inspired by common LLM evaluation areas: math reasoning, commonsense, science QA, truthfulness, instruction following, coding, logic, summarization, extraction, robustness, and goal-binding prompts where the model must identify which real-world object needs to move. The questions are original prompts, not copied benchmark items. ## Runtime Notes - Model repo: `build-small-hackathon/phase-3-gguf` - Model file: `model-Q8_0.gguf` - Runtime: official `llama.cpp` `llama-server` - Hardware target: ZeroGPU - Fallback behavior: visible runtime diagnostics instead of silent mock output - Model loading: runtime download/load through a persistent `llama-server` - Default llama.cpp settings: `n_ctx=2048`, `n_batch=256`, `n_ubatch=64`, memory-mapped weights, no warmup, and CPU fallback if CUDA offload is unavailable ZeroGPU is a Gradio dynamic GPU runtime primarily documented around PyTorch workloads. This app targets ZeroGPU as requested, but it runs the GGUF through the official llama.cpp CLI path so it does not depend on a Python extension compile during the Space build. If the runtime does not expose enough memory or a compatible llama.cpp binary, the app returns a visible compatibility message. The model is intentionally not preloaded d ...",
+  "APP_FILE": "from __future__ import annotations\nfrom pathlib import Path\nfrom typing import Any\nfrom huggingface_hub import HfApi, hf_hub_download\n\nfrom __future__ import annotations\n\nimport os\nimport platform\nimport re\nimport threading\nimport time\nimport subprocess\nimport tarfile\nimport urllib.request\nimport json\nfrom pathlib import Path\nfrom typing import Any\n\nimport gradio as gr\nfrom huggingface_hub import HfApi, hf_hub_download\n\ntry:\n    import spaces\nexcept Exception:  # pragma: no cover - the package exists on HF ZeroGPU runtimes\n    spaces = None  # type: ignore[assignment]\n\nMODEL_REPO = os.getenv(\"PHASE3_MODEL_REPO\", \"build-small-hackathon/phase-3-gguf\")\nMODEL_FILE = os.getenv(\"PHASE3_MODEL_FILE\", \"model-Q8_0.gguf\")\nMODEL_LABEL = \"First-Principle AI\"\nLOCAL_MODEL_PATH = Path(\"/Users/user/.lmstudio/models/owenisas/Phase-3-GGUF/model-Q8_0.gguf\")\nLLAMA_RELEASE = os.getenv(\"PHASE3_LLAMA_RELEASE\", \"b9360\")\nLLAMA_URL = os.getenv(\n    \"PHASE3_LLAMA_URL\",\n    f\"https://github.com/ggml-org/llama.cpp/releases/download/{LLAMA_RELEASE}/llama-{LLAMA_RELEASE}-bin-ubuntu-x64.tar.gz\",\n)\nMAX_CONTEXT = int(os.getenv(\"PHASE3_MAX_CONTEXT\", \"2048\"))\nMIN_RAM_GB = float(os.getenv(\"PHASE3_MIN_RAM_GB\", \"38\"))\nDISABLE_MODEL = os.getenv(\"PHASE3_DISABLE_MODEL\", \"\").lower() in {\"1\", \"true\", \"yes\"}\nUSE_ZEROGPU_DECORATOR = os.getenv(\"PHASE3_USE_ZEROGPU\", \"\").lower() in {\"1\", \"true\", \"yes\"}\nN_BATCH = int(os.getenv(\"PHASE3_N_BATCH\", \"256\"))\nN_UBATCH = int(os.getenv(\"PHASE3_N_UBATCH\", \"64\"))\nN_THREADS = int(os.getenv(\"PHASE3_THREADS\", str(max(1, min(16, os.cpu_count() or 2)))))\nN_THREADS_BATCH = int(os.getenv(\"PHASE3_THREADS_BATCH\", str(N_THREADS)))\nUSE_MMAP = os.getenv(\"PHASE3_USE_MMAP\", \"1\").lower() not in {\"0\", \"false\", \"no\"}\nUSE_MLOCK = os.getenv(\"PHASE3_USE_MLOCK\", \"\").lower() in {\"1\", \"true\", \"yes\"}\nFLASH_ATTN = os.getenv(\"PHASE3_FLASH_ATTN\", \"\").lower() in {\"1\", \"true\", \"yes\"}\nOFFLOAD_KQV = os.getenv ..."
+}

@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/Family-Bill-Assistant",
+  "slug": "Family-Bill-Assistant",
+  "title": "Family Bill Assistant",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from ui.layout import create_ui\nfrom tools.vision import process_receipt_image\nfrom agent.brain import process_workflow\n\nimport gradio as gr\nfrom ui.layout import create_ui\nfrom tools.vision import process_receipt_image\nfrom agent.brain import process_workflow\n\n# Load the custom CSS for the \"Off-Brand\" Badge\ntry:\n    with open(\"ui/style.css\", \"r\") as f:\n        custom_css = f.read()\nexcept FileNotFoundError:\n    custom_css = \"\"\n\n# Build the Gradio App\ndemo = gr.Blocks()\nmy_theme = gr.themes.Default(\n    primary_hue=\"blue\", \n    neutral_hue=\"slate\"\n)\n\nwith demo:\n    # Initialize the UI layout from the ui folder\n    image_input, audio_input, submit_btn, chatbot, msg_input = create_ui()\n    \n    # Bind the submit button to the Core Boss workflow\n    def handle_analyze(image, user_msg, history):\n        if not user_msg:\n            user_msg = \"Please analyze this bill.\"\n            \n        # Step 1: If an image is provided, extract raw text\n        raw_text = None\n        if image:\n            raw_text = process_receipt_image(image)\n            print(f\"=== VISION MODEL RAW TEXT ===\\n{raw_text}\\n=============================\")\n            \n        # Step 2: Route everything to the Core Boss\n        bot_response = process_workflow(user_text=user_msg, raw_vision_text=raw_text)\n        print(f\"=== CORE ROUTER RESPONSE ===\\n{bot_response}\\n============================\")\n        \n        # Step 3: Append to chat history\n        history.append({\"role\": \"user\", \"content\": user_msg})\n        history.append({\"role\": \"assistant\", \"content\": str(bot_response)})\n        return history\n        \n    submit_btn.click(\n        fn=handle_analyze,\n        inputs=[image_input, msg_input, chatbot],\n        outputs=[chatbot]\n    )\n\nif __name__ == \"__main__\":\n    demo.launch(theme=my_theme, css=custom_css)"
+}

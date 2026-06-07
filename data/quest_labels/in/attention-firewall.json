@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/attention-firewall",
+  "slug": "attention-firewall",
+  "title": "Attention Firewall",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "# Attention Firewall MVP 1 is a deployment skeleton for a future attention triage workflow. It provides a small chat-style Gradio interface that accepts chaotic work context and returns deterministic placeholder text. This version does not perform model inference, graph extraction, llama.cpp execution, Mellea validation, or markdown daemon updates. ## Local Development Install dependencies: ```bash uv sync ``` Run the app: ```bash uv run python app.py ``` The canonical public Space is: ```text https://huggingface.co/spaces/build-small-hackathon/attention-firewall ``` The running app URL is: ```text https://build-small-hackathon-attention-firewall.hf.space ```",
+  "APP_FILE": "from __future__ import annotations\n\nfrom __future__ import annotations\n\nimport gradio as gr\n\n\nEMPTY_RESPONSE = (\n    \"Paste a short snapshot of your current work context so the MVP 1 skeleton \"\n    \"can acknowledge it.\"\n)\n\n\ndef respond(message: str, history: list[dict[str, str]] | None = None) -> str:\n    \"\"\"Return deterministic MVP 1 placeholder text for the chat interface.\"\"\"\n    del history\n\n    context = message.strip()\n    if not context:\n        return EMPTY_RESPONSE\n\n    word_count = len(context.split())\n    char_count = len(context)\n    return (\n        \"Attention Firewall MVP 1 received your work context.\\n\\n\"\n        f\"- Snapshot size: {word_count} words, {char_count} characters.\\n\"\n        \"- Current behavior: deterministic deployment skeleton response.\\n\"\n        \"- Later MVPs will add structured firewall processing after the Space \"\n        \"foundation is verified.\"\n    )\n\n\ndef build_demo() -> gr.ChatInterface:\n    return gr.ChatInterface(\n        fn=respond,\n        title=\"Attention Firewall\",\n        description=(\n            \"Paste chaotic work context and get a deterministic MVP 1 skeleton \"\n            \"acknowledgement.\"\n        ),\n        examples=[\n            \"I have three urgent threads, a half-written spec, and unclear review feedback.\",\n            \"My deployment is blocked, notes are scattered, and I need the next concrete action.\",\n        ],\n        textbox=gr.Textbox(\n            placeholder=\"Paste work context to triage later...\",\n            autofocus=True,\n            container=False,\n        ),\n    )\n\n\ndemo = build_demo()\n\n\nif __name__ == \"__main__\":\n    demo.launch()"
+}

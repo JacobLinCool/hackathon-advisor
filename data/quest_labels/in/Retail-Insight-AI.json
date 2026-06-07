@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/Retail-Insight-AI",
+  "slug": "Retail-Insight-AI",
+  "title": "Retail Insight AI Pro",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "# 🛒 Retail-Insight-AI v2.5 ### ⚡ Build Small Hackathon Submission (Backyard AI Track) Retail-Insight-AI ek privacy-first, 100% offline edge analytics dashboard hai jo local shopkeepers ko enterprise-level operational insights deta hai bina unka data cloud par leak kiye. ### ✨ Key Features - **Instant 10K Row Audit:** Sirf 2 seconds mein pure sales log ko process karta hai. - **Semantic Mapping:** Intelligent column mapping automatic Product Names aur Revenue attributes ko detect karti hai. - **Edge Heuristics:** Zero cloud API dependencies, complete privacy for local stores. ## 📺 Live Video Demo [Watch the Demo Video Here](https://www.instagram.com/reel/DZNAcHlv72c/?utm_source=ig_web_copy_link&igsh=MzRlODBiNWFlZA==)",
+  "APP_FILE": "import sys\nimport types\n\n# 🚨 DYNAMIC FIX 1: Python 3.13 Compatibility Audio Patch\nif 'audioop' not in sys.modules:\n    dummy_audioop = types.ModuleType('audioop')\n    dummy_audioop.error = Exception\n    sys.modules['audioop'] = dummy_audioop\n\nif 'pyaudioop' not in sys.modules:\n    dummy_pyaudioop = types.ModuleType('pyaudioop')\n    dummy_pyaudioop.error = Exception\n    sys.modules['pyaudioop'] = dummy_pyaudioop\n\n# 🚨 DYNAMIC FIX 2: Critical HuggingFace Hub 'HfFolder' Import Patch\ntry:\n    import huggingface_hub\nexcept ImportError:\n    huggingface_hub = types.ModuleType('huggingface_hub')\n    sys.modules['huggingface_hub'] = huggingface_hub\n\nif not hasattr(huggingface_hub, 'HfFolder'):\n    class DummyHfFolder:\n        @staticmethod\n        def get_token(): return None\n        @staticmethod\n        def save_token(token): pass\n        @staticmethod\n        def delete_token(): pass\n    huggingface_hub.HfFolder = DummyHfFolder\n\nimport gradio as gr\nimport pandas as pd\nimport os\n\ndef generate_local_insights(summary_data):\n    insights = []\n    if 'top_product' in summary_data:\n        insights.append(f\"🔥 **Inventory Focus:** Your star performer is **{summary_data['top_product']}**. Consider running targeted local ads or bundling weaker products with it to clear old stock.\")\n    if 'low_stock' in summary_data and summary_data['low_stock']:\n        items = \", \".join([str(i).title() for i in summary_data['low_stock']])\n        insights.append(f\"🚨 **Supply Chain Alert:** Restock emergency! **{items}** are dropping below critical levels. Reorder immediately to avoid missing out on sales volume.\")\n    else:\n        insights.append(\"✅ **Stock Status:** Inventory levels are healthy across detected lines. Keep monitoring expiration or seasonal dips.\")\n    if 'total_revenue' in summary_data:\n        insights.append(f\"📈 **Revenue Milestone:** Total processed volume stands at **{summary_ ..."
+}

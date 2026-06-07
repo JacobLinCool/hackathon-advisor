@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/one-for-all",
+  "slug": "one-for-all",
+  "title": "One for All — Soul Transfer",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "**One for All** distills 5 heterogeneous teacher LLMs (Qwen2.5-1.5B, SmolLM2-1.7B, Phi-3.5-mini, gemma-2-2b-it, MiniCPM-2B) into a single Qwen2.5-0.5B student via gated CKA geometry distillation (Path B — geometry-only, tokenizer-agnostic). ### Tabs - **∀ Almas** — 3D UMAP soul space of all 6 models over 24 probe texts. Type a prompt to run the student live on ZeroGPU and see where it lands in the embedding space. - **⬡ Geometria** — CKA alignment heatmap across all model pairs. - **↗ Treino** — Loss curves and gate evolution over training steps.",
+  "APP_FILE": "from __future__ import annotations\n\n\"\"\"\nspace/app.py — One for All HuggingFace ZeroGPU Gradio Space.\n\nRun locally (from space/ dir, with a local viz_data.json):\n    cd space && HF_TOKEN=xxx python app.py\n\"\"\"\nfrom __future__ import annotations\nimport os\nimport gradio as gr\nimport spaces\n\nimport html as _html_stdlib\nimport _data\nimport _fig\nimport _html\nimport _probe\nimport _three\n\n\ndef _response_html(text: str) -> str:\n    safe = _html_stdlib.escape(text).replace(\"\\n\", \"<br>\")\n    return (\n        '<div style=\"background:#0d1117;border:1px solid #30363d;border-radius:6px;'\n        'padding:14px;margin-top:8px;\">'\n        '<div style=\"font-size:10px;color:#8b949e;font-family:monospace;'\n        'margin-bottom:8px;letter-spacing:0.04em;\">MODEL RESPONSE</div>'\n        f'<div style=\"font-size:13px;color:#e6edf3;line-height:1.65;\">{safe}</div>'\n        \"</div>\"\n    )\n\n# ── Startup: load data, fit UMAP, build base traces, load student ─────────\nHF_TOKEN = os.environ.get(\"HF_TOKEN\")\n\ntry:\n    VIZ = _data.load_and_parse(HF_TOKEN)\nexcept Exception as e:\n    print(f\"[ofa-space] viz_data.json not available ({e}), using empty state\")\n    VIZ = _data.make_empty_viz()\n\nif VIZ[\"stacked\"].shape[0] > 3:\n    REDUCER  = _data.fit_umap3d(VIZ[\"stacked\"])\n    COORDS3D = REDUCER.embedding_\nelse:\n    REDUCER  = None\n    COORDS3D = None\n\ntry:\n    TOK, STUDENT, GATING = _probe.load_student(HF_TOKEN)\n    _MODEL_READY = True\nexcept Exception as e:\n    print(f\"[ofa-space] Student not available ({e}). Probe disabled.\")\n    TOK = STUDENT = GATING = None\n    _MODEL_READY = False\n\n# ── ZeroGPU probe handler ─────────────────────────────────────────────────\n@spaces.GPU\ndef probe_fn(text: str, probe_points: list) -> tuple:\n    if not text.strip():\n        return _three.build_umap_html(VIZ, COORDS3D, probe_points), probe_points, \"\", \"\", \"\"\n    if not _MODEL_READY or REDUCER is None:\n        msg = _html.g ..."
+}

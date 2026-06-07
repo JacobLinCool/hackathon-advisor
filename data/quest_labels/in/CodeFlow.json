@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/CodeFlow",
+  "slug": "CodeFlow",
+  "title": "CodeFlow",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from huggingface_hub import hf_hub_download\nfrom llama_cpp import Llama\nfrom gradio import Server\nfrom fastapi.responses import HTMLResponse # serve the custom frontend from a route\nfrom typing import Any, cast # to resolve PyLance freaking out over llama-cpp-python in the generate_flowchart function\nfrom textwrap import dedent\n\n\"\"\"\n3. Graph. Capture the resulting mermaid string and visualize it\n\nTo do\n- create the custom gradio look\n- explore making it look better\n- get a better model — Qwen 30b coder\n- use zerogpu\n\n\"\"\"\nfrom huggingface_hub import hf_hub_download\nfrom llama_cpp import Llama\nimport gradio as gr\nfrom gradio import Server\nfrom fastapi.responses import HTMLResponse # serve the custom frontend from a route\nfrom typing import Any, cast # to resolve PyLance freaking out over llama-cpp-python in the generate_flowchart function\nfrom textwrap import dedent\nimport re # remove thinking tag from response \n\n\n\n    out = []\n    for line in text.split('\\n'):\n        line = re.sub(r'(?<=\\w)\\[(.*?)\\]' + END, lambda m: '[\"' + esc(m.group(1)) + '\"]', line)\n        line = re.sub(r'(?<=\\w)\\{(.*?)\\}' + END, lambda m: '{\"' + esc(m.group(1)) + '\"}', line)\n        out.append(line)\n    return '\\n'.join(out)\n\n@app.api(name=\"generate_flowchart\")\ndef generate_flowchart(src_code: str) -> str:\n    # check if src_code is empty\n    if not src_code.strip(): return \"\"\n\n    # Set system prompt\n    system_prompt = dedent(\"\"\"\n    ## Role/Persona\n    You are a senior staff software architect and compiler engineer specializing in visual control-flow mapping. Your philosophy is pure utility: you translate raw execution logic into highly accurate, scannable, structural diagrams without any conversational filler, meta-commentary, or stylistic fluff.\n\n    ## Context/Objective\n    The user will provide source code files or logic snippets. Your sole objective is to parse the syntax and output a co ..."
+}

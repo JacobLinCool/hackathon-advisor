@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/memrl-canvas",
+  "slug": "memrl-canvas",
+  "title": "Memrl Canvas",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM\nfrom fastapi.staticfiles import StaticFiles\nfrom fastapi.responses import FileResponse\nfrom fastapi import UploadFile, File\nfrom pydantic import BaseModel\nfrom gradio import Server\n\nimport os\nimport re\nimport json\nimport sqlite3\nimport torch\nfrom transformers import pipeline, AutoTokenizer, AutoModelForCausalLM\nfrom fastapi.staticfiles import StaticFiles\nfrom fastapi.responses import FileResponse\nfrom fastapi import UploadFile, File\nfrom pydantic import BaseModel\nfrom gradio import Server\n\n# ==========================================\n# 1. ZeroGPU & Portable Decorator Setup\n# ==========================================\ntry:\n    import spaces\nexcept ImportError:\n    # Fallback mock decorator for local development\n    class spaces:\n        @staticmethod\n        def GPU(func):\n            return func\n\n# ==========================================\n# 2. SQLite Database Setup & Operations\n# ==========================================\nDB_DIR = \"/data\" if os.path.exists(\"/data\") else \".\"\nDB_PATH = os.path.join(DB_DIR, \"memrl_memory.db\")\n\ndef init_db():\n    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)\n    conn = sqlite3.connect(DB_PATH)\n    cursor = conn.cursor()\n    cursor.execute(\"\"\"\n        CREATE TABLE IF NOT EXISTS episodic_memory (\n            id INTEGER PRIMARY KEY AUTOINCREMENT,\n            query TEXT UNIQUE,\n            action_json TEXT,\n            q_value REAL\n        )\n    \"\"\")\n    # Seed default memories if the database is newly initialized\n    cursor.execute(\"SELECT COUNT(*) FROM episodic_memory\")\n    if cursor.fetchone()[0] == 0:\n        baseline_memories = [\n            (\"draw a red circle\", json.dumps([{\"shape\": \"circle\", \"color\": \"red\", \"size\": 100, \"x\": \"center\", \"y\": \"center\"}]), 1.0),\n            (\"make a blue square\", json.dumps([{\"shape\": \"square\", \"color\": \"blue\", \"size\": 120, \"x ..."
+}

@@ -1,0 +1,17 @@
+{
+  "id": "build-small-hackathon/ducks-happen",
+  "slug": "ducks-happen",
+  "title": "Ducks Happen",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "art",
+    "flux",
+    "fun",
+    "generative-art",
+    "rubber-duck"
+  ],
+  "app_file": "app.py",
+  "README": "# 🦆 Ducks Happen Rubber ducks materialize here. There is nothing you can do about it. Built for the [Build Small Hackathon 2026](https://huggingface.co/build-small-hackathon) — **Thousand Token Wood** track. Every 45–120 seconds, FLUX.1-schnell generates a rubber duck in a random outfit, setting, mood, and artistic style. Ducks accumulate. There is no end state. Pure chaos. Maximum duck. ---",
+  "APP_FILE": "from diffusers import FluxPipeline\n\nimport gradio as gr\nimport spaces\nimport torch\nfrom diffusers import FluxPipeline\nimport random\nimport time\n\n# ── Prompt Ingredients ────────────────────────────────────────────────────────\n\nSETTINGS = [\n    \"outer space\", \"a medieval tavern\", \"the bottom of the ocean\",\n    \"a Tokyo street at night\", \"a Victorian drawing room\",\n    \"an Ancient Egyptian tomb\", \"a pirate ship deck\", \"a haunted forest\",\n    \"the Arctic tundra\", \"a Paris sidewalk café\", \"a Wild West saloon\",\n    \"a cyberpunk alley\", \"a Renaissance fair\", \"ancient jungle temple ruins\",\n    \"a cloud kingdom\", \"a submarine interior\", \"a 1920s jazz club\",\n    \"the Roman Colosseum\", \"a dragon's lair\", \"an enchanted library\",\n    \"a Mars colony\", \"a cozy hobbit hole\", \"a floating sky island\",\n    \"a neon-lit casino\", \"sunken Atlantis\", \"a volcano crater rim\",\n    \"a hedge maze\", \"a moon base\", \"an interdimensional rift\",\n    \"a hot air balloon over the Alps\",\n]\n\nOUTFITS = [\n    \"a pirate costume\", \"Victorian mourning wear\", \"a hazmat suit\",\n    \"a beekeeper suit\", \"an astronaut suit\", \"Renaissance knight armor\",\n    \"wizard robes\", \"a cowboy hat and spurs\", \"samurai armor\",\n    \"a ballerina tutu\", \"a heavy metal band t-shirt\",\n    \"a royal crown and velvet cape\", \"a chef's hat and apron\",\n    \"a detective trench coat\", \"a superhero cape\", \"full scuba gear\",\n    \"a tuxedo\", \"a Hawaiian shirt\", \"a ninja outfit\", \"a disco jumpsuit\",\n    \"a graduation cap and gown\", \"a viking helmet\",\n    \"full plate armor\", \"a lab coat and goggles\", \"a pharaoh's headdress\",\n    \"a clown costume\", \"a judge's wig and robes\",\n]\n\nMOODS = [\n    \"looking deeply contemplative\", \"appearing extremely suspicious\",\n    \"seemingly thrilled beyond reason\", \"looking absolutely baffled\",\n    \"radiating unearned confidence\", \"looking mildly judgmental\",\n    \"appearing philosophical\", \"seeming utterly delighted\" ..."
+}

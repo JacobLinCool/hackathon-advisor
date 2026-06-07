@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/receipt_scanner",
+  "slug": "receipt_scanner",
+  "title": "Receipt Scanner",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from PIL import Image\nfrom transformers import AutoModelForImageTextToText, AutoProcessor\n\n\"\"\"\nReceipt Scanner — AI-powered receipt parser using MiniCPM-V 4.6\nDeploy to Hugging Face Spaces (GPU T4 small or better recommended).\n\"\"\"\n\n# `spaces` MUST be imported before torch/transformers on HF Spaces —\n# the package hooks into CUDA initialisation and raises a RuntimeError\n# if anything has already touched CUDA before it loads.\n# The try/except makes the same file work fine when running locally.\ntry:\n    import spaces  # noqa: F401\nexcept ImportError:\n    pass\n\nimport json\nimport re\nimport io\nimport base64\nimport numpy as np\nimport gradio as gr\nimport torch\nfrom PIL import Image\nfrom transformers import AutoModelForImageTextToText, AutoProcessor\n\n# ─────────────────────────────────────────────────────────────────────────────\n# Config\n# ─────────────────────────────────────────────────────────────────────────────\nMODEL_ID = \"openbmb/MiniCPM-V-4.6\"\nDOWNSAMPLE_MODE = \"4x\"   # \"4x\" = finer detail, ideal for dense receipt text\nMAX_SLICE_NUMS  = 36     # allow high-res slicing for sharp photos\nMAX_NEW_TOKENS  = 1200\n\n\n# ─────────────────────────────────────────────────────────────────────────────\n# Structured extraction prompt\n# ─────────────────────────────────────────────────────────────────────────────\nRECEIPT_PROMPT = \"\"\"\\\nYou are a precise receipt data extractor. Carefully read every part of the receipt image.\n\nReturn ONLY a valid JSON object — no markdown fences, no explanation, nothing else.\nUse this exact schema (set any unknown field to null):\n\n{\n  \"store\": {\n    \"name\": \"string | null\",\n    \"address\": \"string | null\",\n    \"phone\": \"string | null\"\n  },\n  \"transaction\": {\n    \"date\": \"YYYY-MM-DD string | null\",\n    \"time\": \"HH:MM string | null\",\n    \"receipt_number\": \"string | null\",\n    \"cashier\": \"string | null\"\n  },\n  \"items\": [\n    {\n      \"name\": \"string\",\n      \"q ..."
+}

@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/NEXUS-Visual-Weaver",
+  "slug": "NEXUS-Visual-Weaver",
+  "title": "NEXUS Visual Weaver",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from diffusers import Flux2KleinPipeline\n\nimport spaces  # MUST be imported before any CUDA-touching package (torch/diffusers)\n\nimport gradio as gr\nimport numpy as np\nimport random\nimport torch\nfrom diffusers import Flux2KleinPipeline\n\n# ---------------------------------------------------------------------------\n# Model: FLUX.2 [klein] 4B\n#   - Apache-2.0, 4B params, BFL's fastest small model (sub-second, ~13GB VRAM)\n#   - Unified text-to-image + multi-reference editing\n#   - Released Jan 2026 (current BFL small-model generation)\n# ---------------------------------------------------------------------------\nMODEL_REPO_ID = \"black-forest-labs/FLUX.2-klein-4B\"\n\ndtype = torch.bfloat16\ndevice = \"cuda\" if torch.cuda.is_available() else \"cpu\"\n\n# Load on cuda at module level. (No enable_model_cpu_offload() on ZeroGPU —\n# the GPU is only attached inside @spaces.GPU; module-level cuda uses the\n# ZeroGPU CUDA-emulation, and offload would conflict.)\npipe = Flux2KleinPipeline.from_pretrained(MODEL_REPO_ID, torch_dtype=dtype).to(device)\n\nMAX_SEED = np.iinfo(np.int32).max\nMAX_IMAGE_SIZE = 2048\n\n\n@spaces.GPU(duration=60)\ndef infer(\n    prompt,\n    seed,\n    randomize_seed,\n    width,\n    height,\n    num_inference_steps,\n    guidance_scale,\n    progress=gr.Progress(track_tqdm=True),\n):\n    if randomize_seed:\n        seed = random.randint(0, MAX_SEED)\n    generator = torch.Generator(device=device).manual_seed(seed)\n    image = pipe(\n        prompt=prompt,\n        width=width,\n        height=height,\n        num_inference_steps=num_inference_steps,\n        guidance_scale=guidance_scale,\n        generator=generator,\n    ).images[0]\n    return image, seed\n\n\nexamples = [\n    \"A magical city at twilight, glowing windows, storybook illustration, warm light\",\n    \"A cat holding a sign that says hello world\",\n    \"Astronaut in a jungle, cold color palette, muted colors, detailed, 8k\",\n]\n\ncss = ..."
+}

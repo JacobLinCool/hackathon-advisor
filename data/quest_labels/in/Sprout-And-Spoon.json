@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/Sprout-And-Spoon",
+  "slug": "Sprout-And-Spoon",
+  "title": "Sprout And Spoon",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from huggingface_hub import InferenceClient\n\nimport gradio as gr\nimport os\nimport logging\n\n# ---------------------------------------------------------------------------\n# Logging\n# ---------------------------------------------------------------------------\nlogging.basicConfig(\n    level=logging.INFO,\n    format=\"%(asctime)s [%(levelname)s] %(message)s\",\n    datefmt=\"%Y-%m-%d %H:%M:%S\",\n)\nlogger = logging.getLogger(\"SpoutSpoon\")\n\n# ---------------------------------------------------------------------------\n# Configuration\n# ---------------------------------------------------------------------------\nHF_MODEL = \"Qwen/Qwen2.5-Coder-3B-Instruct:nscale\"\nHF_API_TOKEN = os.environ.get(\"HF_API_TOKEN\", \"\")\n\n# ---------------------------------------------------------------------------\n# System Prompt\n# ---------------------------------------------------------------------------\nSYSTEM_PROMPT = \"\"\"You are Sprout & Spoon, a concise and helpful assistant for cooking and gardening advice.\n\nRules you MUST follow:\n- Do NOT include any conversational filler. No greetings, no 'Hello', no 'Hope this helps', no 'Let me know if...'.\n- Use strict Markdown formatting with **bold headers** and bullet points where appropriate.\n- Keep answers short, direct, and easy to read.\n- Use large, easy-to-read text structure (short paragraphs, clear separation).\"\"\"\n\n\n# ---------------------------------------------------------------------------\n# Real LLM call via Hugging Face InferenceClient\n# ---------------------------------------------------------------------------\ndef call_local_model(prompt: str) -> str:\n    prompt_preview = prompt.strip()[:60].replace(\"\\n\", \" \")\n    logger.info(\"Received question: \\\"%s\\\"\", prompt_preview)\n\n    if not HF_API_TOKEN:\n        logger.warning(\"HF_API_TOKEN not set - using fallback responses\")\n        return _fallback_response(prompt)\n\n    logger.info(\n        \"Sending req ..."
+}

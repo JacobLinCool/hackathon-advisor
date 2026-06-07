@@ -1,0 +1,15 @@
+{
+  "id": "build-small-hackathon/wan2-2-fp8da-aoti-14B-fast",
+  "slug": "wan2-2-fp8da-aoti-14B-fast",
+  "title": "Wan2.2 14B Fast Preview",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "mcp-server",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from tqdm import tqdm\nfrom huggingface_hub import list_models\nfrom torch.nn import functional as F\nfrom PIL import Image\nfrom diffusers import (\nfrom diffusers.pipelines.wan.pipeline_wan_i2v import WanImageToVideoPipeline\nfrom diffusers.utils.export_utils import export_to_video\nfrom torchao.quantization import quantize_, Float8DynamicActivationFloat8WeightConfig, Int8WeightOnlyConfig\nfrom train_log.RIFE_HDv3 import Model\n\nimport os\nimport spaces\nimport shutil\nimport subprocess\nimport sys\nimport copy\nimport random\nimport tempfile\nimport warnings\nimport time\nimport gc\nimport uuid\nfrom tqdm import tqdm\nimport cv2\nimport numpy as np\nimport torch\nimport torch._dynamo\nfrom huggingface_hub import list_models\nfrom torch.nn import functional as F\nfrom PIL import Image\n\nimport gradio as gr\nfrom diffusers import (\n    FlowMatchEulerDiscreteScheduler,\n    SASolverScheduler,\n    DEISMultistepScheduler,\n    DPMSolverMultistepInverseScheduler,\n    UniPCMultistepScheduler,\n    DPMSolverMultistepScheduler,\n    DPMSolverSinglestepScheduler,\n)\nfrom diffusers.pipelines.wan.pipeline_wan_i2v import WanImageToVideoPipeline\nfrom diffusers.utils.export_utils import export_to_video\n\nfrom torchao.quantization import quantize_, Float8DynamicActivationFloat8WeightConfig, Int8WeightOnlyConfig\nimport aoti\n\nos.environ[\"TOKENIZERS_PARALLELISM\"] = \"true\"\nwarnings.filterwarnings(\"ignore\")\nIS_ZERO_GPU = bool(os.getenv(\"SPACES_ZERO_GPU\"))\n\n# if IS_ZERO_GPU:\n#     print(\"Loading...\")\n#     subprocess.run(\"rm -rf /data-nvme/zerogpu-offload/*\", env={}, shell=True)\n\n# --- FRAME EXTRACTION JS & LOGIC ---\n\n# JS to grab timestamp from the output video\nget_timestamp_js = \"\"\"\nfunction() {\n    // Select the video element specifically inside the component with id 'generated-video'\n    const video = document.querySelector('#generated-video video');\n    \n    if (video) {\n        console.log(\"Video found! Time: \" + vi ..."
+}

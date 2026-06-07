@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/AI-Puppet-Theater",
+  "slug": "AI-Puppet-Theater",
+  "title": "AI Puppet Theater",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "AI Puppet Theater is a public Gradio Space for building short interactive puppet shows from a user premise.",
+  "APP_FILE": "from html import escape\nfrom time import sleep\nfrom puppet_theater import (\n\nfrom html import escape\nimport os\nfrom time import sleep\n\nimport gradio as gr\n\nfrom puppet_theater import (\n    DEFAULT_OPENBMB_MODEL_ID,\n    TheaterSession,\n    create_show_from_premise,\n    get_backend_status,\n    request_finale,\n    run_one_beat,\n    summon_actor,\n    throw_prop,\n    warm_up_openbmb,\n)\n\n\nEMPTY_STAGE = \"\"\"\n<div class=\"puppet-stage stage-empty\">\n  <div class=\"stage-valance\"></div>\n  <div class=\"stage-backdrop\">\n    <div class=\"stage-marquee\">AI Puppet Theater</div>\n    <div class=\"empty-stage-copy\">Enter a premise and raise the curtain.</div>\n  </div>\n  <div class=\"stage-floorboards\"></div>\n</div>\n\"\"\"\n\nEMPTY_TRANSCRIPT = \"No show yet. The transcript will appear here.\"\nEMPTY_DIRECTOR_LOG = \"No director notes yet.\"\nEMPTY_TRACE = \"No trace events yet.\"\nEMPTY_BACKEND = (\n    \"Active backend: deterministic\\n\"\n    \"OpenBMB model id: openbmb/MiniCPM5-1B\\n\"\n    \"Model status: unloaded\\n\"\n    \"Fallback: deterministic safety path enabled\"\n)\nBACKEND_CHOICES = [\"deterministic\", \"openbmb\"]\nOPENBMB_MODEL_ID = os.getenv(\"OPENBMB_MODEL_ID\", DEFAULT_OPENBMB_MODEL_ID)\nDEFAULT_MAX_NEW_TOKENS = 80\nDEFAULT_TEMPERATURE = 0.8\nPLAYBACK_DELAY_SECONDS = 0.75\nPROP_EMOJI = {\n    \"rubber duck\": \"🐤\",\n    \"duck\": \"🐤\",\n    \"egg\": \"🥚\",\n    \"flowers\": \"💐\",\n    \"flower\": \"💐\",\n    \"tomato\": \"🍅\",\n    \"crown\": \"👑\",\n    \"tiny crown\": \"👑\",\n    \"scroll\": \"📜\",\n    \"banana\": \"🍌\",\n    \"mirror\": \"🪞\",\n}\n\nCUSTOM_CSS = \"\"\"\nbody,\n.gradio-container {\n    background:\n        radial-gradient(circle at 50% 0%, rgba(127, 29, 29, 0.18), transparent 28rem),\n        linear-gradient(180deg, #0b1020 0%, #070914 100%) !important;\n    color: #f8efe4 !important;\n}\n.gradio-container {\n    max-width: 1180px !important;\n    padding-top: 1rem !important;\n    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \" ..."
+}

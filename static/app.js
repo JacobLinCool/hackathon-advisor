@@ -1,4 +1,17 @@
 const form = document.querySelector("#turn-form");
+const atlasView = document.querySelector("#atlas-view");
+const advisorView = document.querySelector("#advisor-view");
+const openAdvisorButton = document.querySelector("#open-advisor");
+const openAtlasButton = document.querySelector("#open-atlas");
+const refreshDashboardButton = document.querySelector("#refresh-dashboard");
+const atlasStatusEl = document.querySelector("#atlas-status");
+const atlasStatsEl = document.querySelector("#atlas-stats");
+const atlasClustersEl = document.querySelector("#atlas-clusters");
+const atlasQuestsEl = document.querySelector("#atlas-quests");
+const atlasSvgEl = document.querySelector("#atlas-svg");
+const atlasDetailEl = document.querySelector("#atlas-detail");
+const atlasReportEl = document.querySelector("#atlas-report");
+const atlasRefreshProgressEl = document.querySelector("#atlas-refresh-progress");
 const input = document.querySelector("#message");
 const submit = document.querySelector("#submit");
 const ink = document.querySelector("#ink");
@@ -61,8 +74,15 @@ let voiceChunks = [];
 let voiceRecordingState = "idle";
 let decodeStartedAt = 0;
 let turnProgressTimer = null;
+let dashboardData = null;
+let selectedClusterId = "";
+let selectedQuestId = "";
+let selectedProjectId = "";
+let dashboardRefreshTimer = null;
 
 setVoiceRecordingState("idle");
+setupViewRouting();
+loadDashboard().catch(handleDashboardError);
 bootstrap().catch(handleBootstrapError);
 
 form.addEventListener("submit", async (event) => {
@@ -106,6 +126,18 @@ exportChapterButton.addEventListener("click", () => exportChapter());
 
 resetButton.addEventListener("click", () => {
   resetSession();
+});
+
+openAdvisorButton?.addEventListener("click", () => {
+  window.location.hash = "advisor";
+});
+
+openAtlasButton?.addEventListener("click", () => {
+  window.location.hash = "atlas";
+});
+
+refreshDashboardButton?.addEventListener("click", async () => {
+  await startDashboardRefresh();
 });
 
 recordVoiceButton.addEventListener("click", async () => {
@@ -167,6 +199,382 @@ whitespaceEl.addEventListener("click", async (event) => {
   if (card.disabled) return;
   await runTurn(card.dataset.gapPrompt || "");
 });
+
+function setupViewRouting() {
+  window.addEventListener("hashchange", applyCurrentView);
+  applyCurrentView();
+}
+
+function applyCurrentView() {
+  const view = window.location.hash.replace(/^#/, "") === "advisor" ? "advisor" : "atlas";
+  document.body.dataset.view = view;
+  if (atlasView) atlasView.hidden = view !== "atlas";
+  if (advisorView) advisorView.hidden = view !== "advisor";
+  if (view === "advisor" && input && !sessionControlsLocked) {
+    window.setTimeout(() => input.focus(), 30);
+  }
+}
+
+async function loadDashboard() {
+  const response = await fetch("/api/dashboard");
+  if (!response.ok) throw new Error(`dashboard failed with ${response.status}`);
+  const data = await response.json();
+  dashboardData = data;
+  renderDashboard(data);
+  renderRefreshState(data.refresh || {});
+  if (data.refresh?.status === "running") scheduleRefreshPoll();
+}
+
+function handleDashboardError(error) {
+  dashboardData = null;
+  if (atlasStatusEl) atlasStatusEl.textContent = `Atlas could not load: ${error.message}`;
+  if (atlasSvgEl) atlasSvgEl.innerHTML = "";
+  if (atlasStatsEl) atlasStatsEl.innerHTML = "";
+  if (atlasDetailEl) atlasDetailEl.innerHTML = `<p>Reload the page to try again.</p>`;
+}
+
+async function startDashboardRefresh() {
+  if (!refreshDashboardButton || refreshDashboardButton.disabled) return;
+  refreshDashboardButton.disabled = true;
+  if (atlasStatusEl) atlasStatusEl.textContent = "Starting refresh.";
+  try {
+    const response = await fetch("/api/dashboard/refresh", { method: "POST" });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || `refresh failed with ${response.status}`);
+    renderRefreshState(data);
+    scheduleRefreshPoll();
+  } catch (error) {
+    if (atlasStatusEl) atlasStatusEl.textContent = `Refresh could not start: ${error.message}`;
+    if (atlasRefreshProgressEl) {
+      atlasRefreshProgressEl.hidden = false;
+      atlasRefreshProgressEl.textContent = error.message;
+    }
+    refreshDashboardButton.disabled = false;
+  }
+}
+
+function scheduleRefreshPoll() {
+  if (dashboardRefreshTimer) window.clearTimeout(dashboardRefreshTimer);
+  dashboardRefreshTimer = window.setTimeout(pollDashboardRefresh, 1400);
+}
+
+async function pollDashboardRefresh() {
+  try {
+    const response = await fetch("/api/dashboard/refresh");
+    if (!response.ok) throw new Error(`refresh status failed with ${response.status}`);
+    const state = await response.json();
+    renderRefreshState(state);
+    if (state.status === "running") {
+      scheduleRefreshPoll();
+      return;
+    }
+    if (state.status === "succeeded") {
+      await loadDashboard();
+    }
+  } catch (error) {
+    if (atlasStatusEl) atlasStatusEl.textContent = `Refresh status unavailable: ${error.message}`;
+  } finally {
+    if (_refreshIsSettled()) refreshDashboardButton.disabled = false;
+  }
+}
+
+function _refreshIsSettled() {
+  const status = String(dashboardData?.refresh?.status || "");
+  return status !== "running";
+}
+
+function renderRefreshState(state) {
+  if (dashboardData) dashboardData.refresh = state || {};
+  const status = String(state?.status || "idle");
+  const stage = state?.stage_label || state?.stage || "";
+  if (atlasStatusEl) {
+    if (status === "running") {
+      atlasStatusEl.textContent = stage ? `Refresh running: ${stage}.` : "Refresh running.";
+    } else if (status === "succeeded") {
+      atlasStatusEl.textContent = `Atlas refreshed: ${state.result?.project_count || "current"} projects mapped.`;
+    } else if (status === "failed") {
+      atlasStatusEl.textContent = `Refresh failed: ${state.error || "unknown error"}`;
+    } else if (dashboardData) {
+      atlasStatusEl.textContent = atlasProvenanceCopy(dashboardData);
+    }
+  }
+  if (atlasRefreshProgressEl) {
+    const show = status === "running" || status === "failed";
+    atlasRefreshProgressEl.hidden = !show;
+    atlasRefreshProgressEl.textContent =
+      status === "running"
+        ? `${stage || "Working"} · run ${state.run_id || ""}`
+        : state.error || "";
+  }
+  if (refreshDashboardButton) refreshDashboardButton.disabled = status === "running";
+}
+
+function renderDashboard(data) {
+  if (!data?.points?.length) {
+    handleDashboardError(new Error("empty dashboard payload"));
+    return;
+  }
+  if (!selectedProjectId) selectedProjectId = mostLikedPoint(data.points)?.id || data.points[0].id;
+  renderAtlasStats(data);
+  renderAtlasClusters(data);
+  renderAtlasQuests(data);
+  renderAtlasSvg(data);
+  renderAtlasDetail(currentAtlasPoint(data));
+  renderAtlasReport(data);
+  if (atlasStatusEl) atlasStatusEl.textContent = atlasProvenanceCopy(data);
+}
+
+function atlasProvenanceCopy(data) {
+  const count = Number(data.project_count || data.points?.length || 0);
+  const updated = shortDate(data.provenance?.snapshot_generated_at || data.generated_at);
+  return `${count} projects mapped · ${data.layout?.algorithm || "layout"} · updated ${updated}`;
+}
+
+function renderAtlasStats(data) {
+  if (!atlasStatsEl) return;
+  const analyzed = data.quest_report?.status === "analyzed";
+  const questCount = (data.quest_report?.quests || []).filter((quest) => Number(quest.project_count || 0) > 0).length;
+  atlasStatsEl.innerHTML = `
+    <div class="atlas-stat"><strong>${Number(data.project_count || 0)}</strong><span>Projects</span></div>
+    <div class="atlas-stat"><strong>${Number(data.clusters?.length || 0)}</strong><span>Clusters</span></div>
+    <div class="atlas-stat"><strong>${Number(data.links?.length || 0)}</strong><span>Near links</span></div>
+    <div class="atlas-stat"><strong>${analyzed ? questCount : "..."}</strong><span>Quest groups</span></div>
+  `;
+}
+
+function renderAtlasClusters(data) {
+  if (!atlasClustersEl) return;
+  const allActive = !selectedClusterId;
+  atlasClustersEl.innerHTML = "";
+  atlasClustersEl.append(
+    atlasFilterButton({
+      label: "All clusters",
+      meta: `${data.project_count || data.points.length} projects`,
+      active: allActive,
+      onClick: () => {
+        selectedClusterId = "";
+        renderDashboard(data);
+      },
+    }),
+  );
+  for (const cluster of data.clusters || []) {
+    atlasClustersEl.append(
+      atlasFilterButton({
+        label: cluster.label || cluster.id,
+        meta: `${cluster.project_count || 0} projects`,
+        active: selectedClusterId === cluster.id,
+        onClick: () => {
+          selectedClusterId = selectedClusterId === cluster.id ? "" : cluster.id;
+          renderDashboard(data);
+        },
+      }),
+    );
+  }
+}
+
+function renderAtlasQuests(data) {
+  if (!atlasQuestsEl) return;
+  const quests = data.quest_report?.quests || [];
+  const analyzed = data.quest_report?.status === "analyzed";
+  atlasQuestsEl.innerHTML = "";
+  atlasQuestsEl.append(
+    atlasFilterButton({
+      label: "All quests",
+      meta: analyzed ? "No quest filter" : "Refresh to analyze",
+      active: !selectedQuestId,
+      onClick: () => {
+        selectedQuestId = "";
+        renderDashboard(data);
+      },
+    }),
+  );
+  for (const quest of quests) {
+    atlasQuestsEl.append(
+      atlasFilterButton({
+        label: quest.label || quest.id,
+        meta: analyzed ? `${quest.project_count || 0} projects` : "Not analyzed",
+        active: selectedQuestId === quest.id,
+        onClick: () => {
+          selectedQuestId = selectedQuestId === quest.id ? "" : quest.id;
+          renderDashboard(data);
+        },
+      }),
+    );
+  }
+}
+
+function atlasFilterButton({ label, meta, active, onClick }) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `atlas-filter ${active ? "active" : ""}`;
+  button.innerHTML = `<strong>${escapeHtml(label)}</strong><span>${escapeHtml(meta || "")}</span>`;
+  button.addEventListener("click", onClick);
+  return button;
+}
+
+function renderAtlasSvg(data) {
+  if (!atlasSvgEl) return;
+  atlasSvgEl.innerHTML = "";
+  const pointsById = new Map((data.points || []).map((point) => [point.id, point]));
+  const visible = new Set(visibleAtlasPoints(data).map((point) => point.id));
+  const clusterIndex = new Map((data.clusters || []).map((cluster, index) => [cluster.id, index]));
+
+  for (const link of data.links || []) {
+    const source = pointsById.get(link.source);
+    const target = pointsById.get(link.target);
+    if (!source || !target) continue;
+    const line = svgEl("line");
+    line.setAttribute("x1", source.x);
+    line.setAttribute("y1", source.y);
+    line.setAttribute("x2", target.x);
+    line.setAttribute("y2", target.y);
+    line.setAttribute("class", `atlas-link ${visible.has(source.id) && visible.has(target.id) ? "" : "dim"}`);
+    atlasSvgEl.append(line);
+  }
+
+  for (const point of data.points || []) {
+    const circle = svgEl("circle");
+    circle.setAttribute("cx", point.x);
+    circle.setAttribute("cy", point.y);
+    circle.setAttribute("r", atlasPointRadius(point));
+    circle.setAttribute("fill", atlasColor(clusterIndex.get(point.cluster_id) || 0));
+    circle.setAttribute(
+      "class",
+      `atlas-dot ${visible.has(point.id) ? "" : "dim"} ${point.id === selectedProjectId ? "selected" : ""}`,
+    );
+    circle.setAttribute("tabindex", "0");
+    circle.setAttribute("role", "button");
+    circle.setAttribute("aria-label", point.title || point.id);
+    circle.addEventListener("mouseenter", () => renderAtlasDetail(point));
+    circle.addEventListener("focus", () => renderAtlasDetail(point));
+    circle.addEventListener("click", () => {
+      selectedProjectId = point.id;
+      renderDashboard(data);
+    });
+    circle.append(svgTitle(point.title || point.id));
+    atlasSvgEl.append(circle);
+  }
+
+  for (const point of labelAtlasPoints(data)) {
+    const text = svgEl("text");
+    text.setAttribute("x", boundedPercent(point.x + 1.4));
+    text.setAttribute("y", boundedPercent(point.y - 1.1));
+    text.setAttribute("class", "atlas-label");
+    text.textContent = atlasShortTitle(point.title || point.id);
+    atlasSvgEl.append(text);
+  }
+}
+
+function visibleAtlasPoints(data) {
+  return (data.points || []).filter((point) => {
+    const clusterMatch = !selectedClusterId || point.cluster_id === selectedClusterId;
+    const questMatch = !selectedQuestId || (point.quest_ids || []).includes(selectedQuestId);
+    return clusterMatch && questMatch;
+  });
+}
+
+function labelAtlasPoints(data) {
+  const visible = visibleAtlasPoints(data);
+  return [...visible].sort((left, right) => Number(right.likes || 0) - Number(left.likes || 0)).slice(0, 12);
+}
+
+function currentAtlasPoint(data) {
+  return (data.points || []).find((point) => point.id === selectedProjectId) || mostLikedPoint(data.points || []);
+}
+
+function mostLikedPoint(points) {
+  return [...(points || [])].sort((left, right) => Number(right.likes || 0) - Number(left.likes || 0))[0] || null;
+}
+
+function renderAtlasDetail(point) {
+  if (!atlasDetailEl) return;
+  if (!point) {
+    atlasDetailEl.innerHTML = `<p>Select a project dot to inspect its cluster and quest matches.</p>`;
+    return;
+  }
+  const quests = (point.quest_matches || [])
+    .map((match) => {
+      const confidence = (Number(match.confidence) * 100).toFixed(0);
+      return `<span>${escapeHtml(atlasQuestLabel(match.quest))} ${confidence}%</span>`;
+    })
+    .join("");
+  const tags = [...(point.models || []).slice(0, 3), ...(point.tags || []).slice(0, 3)]
+    .map((tag) => `<span>${escapeHtml(tag)}</span>`)
+    .join("");
+  atlasDetailEl.innerHTML = `
+    <h2>${escapeHtml(point.title || "Untitled project")}</h2>
+    ${point.summary ? `<p>${escapeHtml(point.summary)}</p>` : `<p>${escapeHtml(point.id || "")}</p>`}
+    <p>${Number(point.likes || 0)} likes · ${escapeHtml(point.sdk || "unknown sdk")}</p>
+    <p><a href="${escapeAttribute(point.url || "#")}" target="_blank" rel="noreferrer">Open Space</a></p>
+    <div class="atlas-tags">${quests || `<span>Quest analysis pending</span>`}</div>
+    <div class="atlas-tags">${tags}</div>
+  `;
+}
+
+function renderAtlasReport(data) {
+  if (!atlasReportEl) return;
+  const cluster = selectedClusterId
+    ? (data.clusters || []).find((item) => item.id === selectedClusterId)
+    : (data.clusters || [])[0];
+  if (!cluster) {
+    atlasReportEl.innerHTML = `<p>No cluster report is available.</p>`;
+    return;
+  }
+  const projects = (cluster.representative_projects || [])
+    .map(
+      (project) =>
+        `<p><a href="${escapeAttribute(project.url || "#")}" target="_blank" rel="noreferrer">` +
+        `${escapeHtml(project.title || project.id)}</a></p>`,
+    )
+    .join("");
+  atlasReportEl.innerHTML = `
+    <h2>${escapeHtml(cluster.label || cluster.id)}</h2>
+    <p>${Number(cluster.project_count || 0)} projects · ${escapeHtml(
+      (cluster.keywords || []).join(", ") || "mixed signals",
+    )}</p>
+    ${projects}
+  `;
+}
+
+function svgEl(tagName) {
+  return document.createElementNS("http://www.w3.org/2000/svg", tagName);
+}
+
+function svgTitle(text) {
+  const title = svgEl("title");
+  title.textContent = text;
+  return title;
+}
+
+function atlasColor(index) {
+  const palette = [
+    "#67c7b6",
+    "#e3b84c",
+    "#dd4a54",
+    "#83a7ff",
+    "#9bd66f",
+    "#d386e8",
+    "#ff8f5f",
+    "#61d7ef",
+    "#c9c45f",
+    "#f071a8",
+  ];
+  return palette[index % palette.length];
+}
+
+function atlasQuestLabel(questId) {
+  const quest = (dashboardData?.quest_report?.quests || []).find((item) => item.id === questId);
+  return quest?.label || questId;
+}
+
+function atlasPointRadius(point) {
+  return (0.62 + Math.min(0.72, Math.sqrt(Number(point.likes || 0)) * 0.12)).toFixed(3);
+}
+
+function atlasShortTitle(title) {
+  const cleaned = String(title || "").trim();
+  return cleaned.length > 22 ? `${cleaned.slice(0, 20).trim()}...` : cleaned;
+}
 
 async function runTurn(message) {
   if (sessionControlsLocked) return false;

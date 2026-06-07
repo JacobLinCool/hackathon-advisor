@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/the-echo",
+  "slug": "the-echo",
+  "title": "The Echo",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "# The Echo An agentic tree of the lives you didn't live. One fork in a life grows a tree of alternate selves; each echo speaks back in a subtly altered version of your own voice. This Space currently runs on the offline **MockLLM** path — placeholder lives that exercise the full UX (plant a seed, grow branches, walk the tree). The real small-model generation is wired in separately.",
+  "APP_FILE": "from echo.app import build_demo\n\n\"\"\"HF Spaces entrypoint. The real app lives in the `echo` package.\"\"\"\nfrom echo.app import build_demo\n\ndemo = build_demo()\n\nif __name__ == \"__main__\":\n    demo.launch()"
+}

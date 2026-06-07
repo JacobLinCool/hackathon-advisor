@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/GTROX",
+  "slug": "GTROX",
+  "title": "GTROX",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "An example chatbot using [Gradio](https://gradio.app), [`huggingface_hub`](https://huggingface.co/docs/huggingface_hub/v0.22.2/en/index), and the [Hugging Face Inference API](https://huggingface.co/docs/api-inference/index).",
+  "APP_FILE": "from huggingface_hub import InferenceClient\n\nimport gradio as gr\nfrom huggingface_hub import InferenceClient\n\n\ndef respond(\n    message,\n    history: list[dict[str, str]],\n    system_message,\n    max_tokens,\n    temperature,\n    top_p,\n    hf_token: gr.OAuthToken,\n):\n    \"\"\"\n    For more information on `huggingface_hub` Inference API support, please check the docs: https://huggingface.co/docs/huggingface_hub/v0.22.2/en/guides/inference\n    \"\"\"\n    client = InferenceClient(token=hf_token.token, model=\"openai/gpt-oss-20b\")\n\n    messages = [{\"role\": \"system\", \"content\": system_message}]\n\n    messages.extend(history)\n\n    messages.append({\"role\": \"user\", \"content\": message})\n\n    response = \"\"\n\n    for message in client.chat_completion(\n        messages,\n        max_tokens=max_tokens,\n        stream=True,\n        temperature=temperature,\n        top_p=top_p,\n    ):\n        choices = message.choices\n        token = \"\"\n        if len(choices) and choices[0].delta.content:\n            token = choices[0].delta.content\n\n        response += token\n        yield response\n\n\n\"\"\"\nFor information on how to customize the ChatInterface, peruse the gradio docs: https://www.gradio.app/docs/chatinterface\n\"\"\"\nchatbot = gr.ChatInterface(\n    respond,\n    additional_inputs=[\n        gr.Textbox(value=\"You are a friendly Chatbot.\", label=\"System message\"),\n        gr.Slider(minimum=1, maximum=2048, value=512, step=1, label=\"Max new tokens\"),\n        gr.Slider(minimum=0.1, maximum=4.0, value=0.7, step=0.1, label=\"Temperature\"),\n        gr.Slider(\n            minimum=0.1,\n            maximum=1.0,\n            value=0.95,\n            step=0.05,\n            label=\"Top-p (nucleus sampling)\",\n        ),\n    ],\n)\n\nwith gr.Blocks() as demo:\n    with gr.Sidebar():\n        gr.LoginButton()\n    chatbot.render()\n\n\nif __name__ == \"__main__\":\n    demo.launch()"
+}

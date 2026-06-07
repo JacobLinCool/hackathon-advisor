@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/ai-study-buddy",
+  "slug": "ai-study-buddy",
+  "title": "Ai Study Buddy",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from huggingface_hub import InferenceClient\n\nimport gradio as gr\nimport os\nimport spaces\nfrom huggingface_hub import InferenceClient\n\n# -----------------------------\n# 🔑 API KEY FIXED\n# -----------------------------\nclient = InferenceClient(\n    model=\"meta-llama/Llama-3.1-8B-Instruct\",\n    token=os.getenv(\"API_KEY\")   # 👈 FIXED NAME (recommended)\n)\n\n# -----------------------------\n# SYSTEM PROMPT\n# -----------------------------\nSYSTEM_PROMPT = \"\"\"\nYou are AI Study Buddy, created by Areeba Iqbal.\n\nRules:\n- Always explain step-by-step\n- Give examples\n- Be clear and student-friendly\n- If asked who created you: \"I am AI Study Buddy, created by Areeba Iqbal.\"\n\"\"\"\n\n# -----------------------------\n# MODE CONTROL\n# -----------------------------\ndef build_prompt(message, mode):\n    mode_prompts = {\n        \"📚 Study Mode\": \"Explain simply for students with examples.\",\n        \"💻 Coding Mode\": \"Act as a senior programmer. Debug and improve code.\",\n        \"🧮 Math Solver\": \"Solve step-by-step with explanation.\",\n        \"📝 Exam Prep\": \"Give short exam-focused answers.\"\n    }\n\n    return f\"\"\"\n{SYSTEM_PROMPT}\n\nMode: {mode_prompts.get(mode, \"\")}\n\nUser Question:\n{message}\n\"\"\"\n\n# -----------------------------\n# MAIN CHAT FUNCTION\n# -----------------------------\n@spaces.GPU\ndef get_response(message, history, mode):\n\n    messages = [{\"role\": \"system\", \"content\": SYSTEM_PROMPT}]\n\n    for msg in history:\n        messages.append(msg)\n\n    messages.append({\"role\": \"user\", \"content\": build_prompt(message, mode)})\n\n    try:\n        response = client.chat_completion(\n            messages=messages,\n            max_tokens=1024,\n            temperature=0.7\n        )\n\n        return response.choices[0].message.content\n\n    except Exception as e:\n        return f\"❌ Error: {e}\"\n\n\n# -----------------------------\n# QUICK ACTIONS\n# -----------------------------\ndef summarize(text):\n    return client.c ..."
+}

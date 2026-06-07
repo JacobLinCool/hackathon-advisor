@@ -2,14 +2,19 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 import json
+import os
 from pathlib import Path
 from pathlib import PurePosixPath
 import sys
 from typing import Any
+from urllib.parse import quote
 
-from huggingface_hub import HfApi, hf_hub_download
+import requests
+from huggingface_hub import HfApi
+from huggingface_hub.errors import EntryNotFoundError
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -18,6 +23,11 @@ from hackathon_advisor.data import extract_app_file_embedding_text
 
 
 API = "https://huggingface.co/api"
+README_BODY_CHAR_CAP = 24000
+APP_FILE_SOURCE_CHAR_CAP = 24000
+DOWNLOAD_TIMEOUT_SECONDS = (10, 45)
+DOWNLOAD_ATTEMPTS = 2
+DEFAULT_CRAWL_WORKERS = 12
 
 
 def main() -> None:
@@ -41,29 +51,40 @@ def main() -> None:
 
 def crawl_projects(org: str) -> list[dict[str, Any]]:
     api = HfApi(token=False)
-    spaces = api.list_spaces(author=org, full=True, token=False)
-    return [
-        project_from_space(space)
-        for space in spaces
-        if not bool(getattr(space, "private", False))
-    ]
+    spaces = [space for space in api.list_spaces(author=org, full=True, token=False)]
+    public_spaces = [space for space in spaces if not bool(getattr(space, "private", False))]
+    if not public_spaces:
+        return []
+    workers = min(crawl_workers(), len(public_spaces))
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        return list(executor.map(project_from_space, public_spaces))
+
+
+def crawl_workers() -> int:
+    raw = os.environ.get("ADVISOR_CRAWL_WORKERS", "").strip()
+    if not raw:
+        return DEFAULT_CRAWL_WORKERS
+    try:
+        return max(1, int(raw))
+    except ValueError as error:
+        raise RuntimeError(f"ADVISOR_CRAWL_WORKERS must be an integer, got {raw!r}") from error
 
 
 def project_from_space(space: Any) -> dict[str, Any]:
     card = card_data(space)
     space_id = str(space.id)
     siblings = sibling_names(space)
-    readme = download_repo_text(space_id, "README.md") if "README.md" in siblings else ""
+    readme = download_optional_repo_text(space_id, "README.md") if "README.md" in siblings else ""
+    readme_body = strip_frontmatter(readme)[:README_BODY_CHAR_CAP]
     frontmatter = readme_frontmatter(readme)
     app_file = validate_app_file(str(frontmatter.get("app_file") or ""), space_id=space_id)
     app_file_embedding_text = ""
+    app_file_source = ""
     if app_file:
-        if app_file not in siblings:
-            raise RuntimeError(f"{space_id} README frontmatter points to missing app_file: {app_file}")
-        app_file_embedding_text = extract_app_file_embedding_text(
-            app_file,
-            download_repo_text(space_id, app_file),
-        )
+        app_file_source = download_optional_repo_text(space_id, app_file) if app_file in siblings else ""
+        if app_file_source:
+            app_file_source = app_file_source[:APP_FILE_SOURCE_CHAR_CAP]
+            app_file_embedding_text = extract_app_file_embedding_text(app_file, app_file_source)
 
     title = str(card.get("title") or humanize_slug(space_id.rsplit("/", 1)[-1]))
     summary = str(card.get("short_description") or card.get("description") or "")
@@ -85,6 +106,8 @@ def project_from_space(space: Any) -> dict[str, Any]:
         "url": f"https://huggingface.co/spaces/{space_id}",
         "app_file": app_file,
         "app_file_embedding_text": app_file_embedding_text,
+        "readme_body": readme_body,
+        "app_file_source": app_file_source,
     }
 
 
@@ -103,14 +126,37 @@ def sibling_names(space: Any) -> set[str]:
 
 
 def download_repo_text(repo_id: str, filename: str) -> str:
-    path = hf_hub_download(
-        repo_id=repo_id,
-        repo_type="space",
-        filename=filename,
-        token=False,
-        etag_timeout=30,
+    url = repo_file_url(repo_id, filename)
+    last_error: requests.RequestException | None = None
+    for _attempt in range(DOWNLOAD_ATTEMPTS):
+        try:
+            response = requests.get(url, timeout=DOWNLOAD_TIMEOUT_SECONDS)
+            if response.status_code == 404:
+                raise EntryNotFoundError(f"missing file: {repo_id}/{filename}")
+            response.raise_for_status()
+            response.encoding = response.encoding or "utf-8"
+            return response.text
+        except EntryNotFoundError:
+            raise
+        except requests.RequestException as error:
+            last_error = error
+    raise RuntimeError(
+        f"failed to download {repo_id}/{filename} after {DOWNLOAD_ATTEMPTS} attempts: {last_error}"
     )
-    return Path(path).read_text(encoding="utf-8")
+
+
+def download_optional_repo_text(repo_id: str, filename: str) -> str:
+    try:
+        return download_repo_text(repo_id, filename)
+    except EntryNotFoundError:
+        return ""
+
+
+def repo_file_url(repo_id: str, filename: str) -> str:
+    return (
+        "https://huggingface.co/spaces/"
+        f"{quote(repo_id, safe='/')}/resolve/main/{quote(filename, safe='/')}"
+    )
 
 
 def readme_frontmatter(readme: str) -> dict[str, str]:
@@ -134,6 +180,16 @@ def readme_frontmatter(readme: str) -> dict[str, str]:
         if key:
             values[key] = yaml_scalar(raw_value)
     return values if closed else {}
+
+
+def strip_frontmatter(readme: str) -> str:
+    lines = readme.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return readme.strip()
+    for index in range(1, len(lines)):
+        if lines[index].strip() in {"---", "..."}:
+            return "\n".join(lines[index + 1 :]).strip()
+    return readme.strip()
 
 
 def yaml_scalar(raw_value: str) -> str:

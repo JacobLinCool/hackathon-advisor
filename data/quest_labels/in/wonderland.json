@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/wonderland",
+  "slug": "wonderland",
+  "title": "wonderland",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from transformers import AutoModelForCausalLM, AutoTokenizer\n\n\"\"\"\nThousand Token Wood — powered by NVIDIA Nemotron\n────────────────────────────────────────────────\nA tiny text adventure narrated by NVIDIA's Nemotron 3 Nano 4B, running fully\nlocally. The wood can only remember ~1000 tokens; as you wander, its memory\nfills, and when it overflows the oldest things it knew fall away like leaves\nand the wood quietly rewrites itself. The forgetting is the game. The forgetful\nfox is your companion — exactly the kind of NPC this model was built for.\n\nBuild Small Hackathon 2026 · \"An Adventure in Thousand Token Wood\".\nTargets: Nemotron GPU prize · ≤4B tiny-model category · Off the Grid · llama.cpp.\n\"\"\"\n\nimport re\nimport html\nimport torch\nimport gradio as gr\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\n\n# ── Model ────────────────────────────────────────────────────────────────────\n# NVIDIA Nemotron 3 Nano 4B — edge-ready, agentic, reasoning SLM (~4B params).\n#   \"nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16\"   -> default (GPU)\n#   \"nvidia/NVIDIA-Nemotron-3-Nano-4B-FP8\"    -> lighter footprint\n#   \"nvidia/NVIDIA-Nemotron-3-Nano-4B-GGUF\"   -> llama.cpp (Llama Champion badge)\n# Or the larger sibling, still under the 32B cap:\n#   \"nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16\"  (30B total / ~3B active)\nMODEL_ID = \"nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16\"\n\n# The whole point of the track: the wood remembers only ~1000 tokens.\nMEMORY_TOKENS = 1000\n\nprint(f\"Waking the wood ({MODEL_ID})...\")\n# Nemotron-H is a Mamba-Transformer hybrid and ships custom modelling code.\ntokenizer = AutoTokenizer.from_pretrained(MODEL_ID, trust_remote_code=True)\nmodel = AutoModelForCausalLM.from_pretrained(\n    MODEL_ID, torch_dtype=\"auto\", device_map=\"auto\", trust_remote_code=True\n)\nprint(\"The wood is awake.\")\n\n# Optional ZeroGPU acceleration on Spaces; harmless no-op locally.\ntry:\n    import spaces ..."
+}

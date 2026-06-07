@@ -1,0 +1,24 @@
+{
+  "id": "build-small-hackathon/roadb-other-screen",
+  "slug": "roadb-other-screen",
+  "title": "Road B: The Other Screen",
+  "sdk": "gradio",
+  "declared_models": [
+    "unsloth/Qwen3.5-9B-GGUF"
+  ],
+  "tags": [
+    "build-small-hackathon",
+    "custom-frontend",
+    "gguf",
+    "gradio",
+    "gradio-server",
+    "interactive-fiction",
+    "llama-cpp",
+    "modal",
+    "qwen",
+    "small-models"
+  ],
+  "app_file": "app.py",
+  "README": "# Road B: The Other Screen **Talk to a fictional version of yourself who chose differently.** Road B is a small-model interactive fiction experience for the Build Small Hackathon, Chapter Two: **An Adventure in Thousand Token Wood**. You name a fork in your life. The app opens a cinematic **Other Screen** and lets you speak with a fictional alternate self: the version of you who took Road B. It is not prediction, therapy, or advice. It is a strange mirror. ## What the app does Road B turns a life fork into a limited-signal ritual. The user can: - describe a decision point - invoke a fictional Road B self - chat with that alternate self - collect Echo Artifacts - unlock a Final Transmission - download a souvenir card from the road not taken - export a synthetic-style trace of the interaction The core loop is: ```text Name the fork → Tune the Other Screen → Meet Road B → Collect Echo Artifacts → Unlock Final Transmission → Save the Souvenir Card ``` ## Echo Artifacts Road B is not just a chat app. After the first transmission, the user can collect artifacts from the alternate life: - **Cost Ledger** - **Beauty Ledger** - **A Typical Tuesday** - **The Unsent Letter** - **The Moment It Split** After three Echo Artifacts, the **Final Transmission** unlocks. ## Runtime Road B is hosted as a Hugging Face Gradio Space. The Hugging Face Space handles: - custom cinematic UI - Gradio app shell - Road B session state - Echo Artifacts game loop - souvenir card rendering - trace export - p ...",
+  "APP_FILE": "from __future__ import annotations\nfrom functools import lru_cache\nfrom pathlib import Path\nfrom typing import Any, Dict, List, Optional\nfrom gradio import Server  # type: ignore[attr-defined]\nfrom fastapi.responses import HTMLResponse, JSONResponse\nfrom fastapi.staticfiles import StaticFiles\nfrom llama_cpp import Llama\n\n\"\"\"Road B: The Other Screen - hackathon-ready Gradio Server app.\n\nCustom frontend: index.html\nModel runtime: Qwen GGUF through llama.cpp via llama-cpp-python\nNo mock fallback: if the model/runtime cannot load, the app returns a visible error.\n\"\"\"\n\nfrom __future__ import annotations\n\nimport ctypes\nimport datetime as dt\nimport glob\nimport html\nimport json\nimport os\nimport re\nimport requests\nimport site\nimport threading\nimport uuid\nfrom functools import lru_cache\nfrom pathlib import Path\nfrom typing import Any, Dict, List, Optional\n\ntry:\n    import gradio as gr\nexcept Exception:  # pragma: no cover\n    gr = None  # type: ignore[assignment]\n\ntry:\n    from gradio import Server  # type: ignore[attr-defined]\nexcept Exception:  # pragma: no cover\n    Server = None  # type: ignore[assignment]\n\ntry:\n    from fastapi.responses import HTMLResponse, JSONResponse\n    from fastapi.staticfiles import StaticFiles\nexcept Exception:  # pragma: no cover\n    HTMLResponse = None  # type: ignore[assignment]\n    JSONResponse = None  # type: ignore[assignment]\n    StaticFiles = None  # type: ignore[assignment]\n\n\n# -----------------------------------------------------------------------------\n# CUDA library preparation for pip-installed NVIDIA runtime packages\n# -----------------------------------------------------------------------------\n\n\ndef _candidate_site_dirs() -> List[Path]:\n    dirs: List[Path] = []\n    try:\n        dirs.extend(Path(p) for p in site.getsitepackages())\n    except Exception:\n        pass\n    try:\n        dirs.append(Path(site.getusersitepackages()))\n    e ..."
+}

@@ -1,0 +1,20 @@
+{
+  "id": "build-small-hackathon/compliment-forest",
+  "slug": "compliment-forest",
+  "title": "The Compliment Forest",
+  "sdk": "gradio",
+  "declared_models": [
+    "build-small-hackathon/compliment-forest-minicpm5-1b",
+    "build-small-hackathon/compliment-forest-flux-lora"
+  ],
+  "tags": [
+    "build-small-hackathon",
+    "gradio",
+    "llama.cpp",
+    "local-first",
+    "watercolor"
+  ],
+  "app_file": "app.py",
+  "README": "# The Compliment Forest Type a name and a situation, then walk through a progressive watercolor path. Each clearing pairs a creature with grounded encouragement, a reflection, and a copyable tiny spell. The live Space uses the deterministic local demo backend so it remains fast and available on CPU hardware. The same application supports the published MiniCPM5-1B GGUF through a local `llama.cpp` server and FLUX.1-dev with the published watercolor LoRA by setting `CF_TEXT_BACKEND=llama_cpp` and `CF_IMAGE_BACKEND=flux`. No hosted inference API is called at runtime. ## Published artifacts - Text model: `build-small-hackathon/compliment-forest-minicpm5-1b` - Text adapter: `build-small-hackathon/compliment-forest-minicpm5-1b-lora` - Text SFT data: `build-small-hackathon/compliment-forest-sft` - Watercolor LoRA: `build-small-hackathon/compliment-forest-flux-lora` - Watercolor data: `build-small-hackathon/compliment-forest-watercolor` - Linked-model traces: `build-small-hackathon/compliment-forest-traces` This is whimsical encouragement, not therapy or a substitute for professional support. Crisis and acute-risk inputs are routed to human support instead of generating a forest.",
+  "APP_FILE": "from pathlib import Path\nfrom compliment_forest.server import create_app\n\nimport sys\nfrom pathlib import Path\n\nsys.path.insert(0, str(Path(__file__).resolve().parent / \"src\"))\n\nfrom compliment_forest.server import create_app\n\napp = create_app()\ndemo = app\n\nif __name__ == \"__main__\":\n    import uvicorn\n\n    uvicorn.run(app, host=\"0.0.0.0\", port=7860)"
+}

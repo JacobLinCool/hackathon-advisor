@@ -1,0 +1,19 @@
+{
+  "id": "build-small-hackathon/Kasualdad_LFED",
+  "slug": "Kasualdad_LFED",
+  "title": "Kasualdad LFED",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "duckdb",
+    "education",
+    "gguf",
+    "gradio",
+    "llama-cpp",
+    "local-first",
+    "text-to-sql"
+  ],
+  "app_file": "app.py",
+  "README": "# 🏫 Kasualdad LFED **Local-First Education Data** — ask questions about your district in plain English, get answers instantly. All inference runs on your machine. No data ever leaves. > 🏆 Built for the **HF Build Small Hackathon** (Chapter One: Backyard AI) --- ## 🏅 Hackathon Badges | Badge | Status | How | |---|---|---| | **Off the Grid** | ✅ | All inference via llama.cpp + local GGUF. No API calls. No cloud. | | **Well-Tuned** | ✅ | Fine-tuned Qwen2.5-Coder-7B on 1,200+ synthetic NL→SQL pairs via Unsloth QLoRA on Modal A10G. | | **Llama Champion** | ✅ | llama.cpp as the sole inference backend. Q4_K_M quantization. Streaming token generation. | | **Off-Brand** | ✅ | Custom design system (Linear/Vercel inspired), WCAG AA, Inter + JetBrains Mono, documented below. | --- ## 🎯 What It Does A school district admin (principal, superintendent, department head) types a question: > *\"What percentage of students at Lincoln Elementary were chronically absent in 2023-2024?\"* Kasualdad LFED: 1. Sends the question + schema context to a local LLM (llama.cpp) 2. Streams the generated SQL back in real-time 3. Validates the SQL against the actual schema (column names, safety) 4. Executes it on an in-memory DuckDB database 5. Returns the results as a table All local. No API keys. No data exfiltration. --- ## 🏗 Architecture ```mermaid flowchart TD U[👤 School Admin] -->|natural language| UI[Gradio UI] UI -->|question + schema| LLM[model_inference.py] LLM -->|llama.cpp| GGUF[Qwen2.5-Coder-7B<br/> ...",
+  "APP_FILE": "from model_inference import load_model, generate_sql\nfrom data_engine import create_session, execute_safe, QueryTimeoutError\nfrom pathlib import Path\nfrom data.export_parquet import export_parquet\n\n\"\"\"\napp.py — Kasualdad LFED: Local-First Education Data Analytics.\n\nThin Gradio controller. All logic lives in:\n  - prompts.py         (system prompt, schema docs, few-shot examples)\n  - model_inference.py (llama.cpp wrapper, SQL generation + streaming)\n  - data_engine.py     (DuckDB lifecycle, schema seeding, execution guard)\n\"\"\"\n\nimport gradio as gr\nimport spaces\n\nfrom model_inference import load_model, generate_sql\nfrom data_engine import create_session, execute_safe, QueryTimeoutError\n\n# ── Startup ───────────────────────────────────────────────────────────\n\nprint(\"🚀 Starting Kasualdad LFED...\")\n\n# Ensure Parquet seed files exist (generate on first boot, persist in /data/)\nfrom pathlib import Path\n_parquet_dirs = [Path(\"/data\"), Path(__file__).parent / \"data\"]\n_pq_files = [\"enrollment.parquet\", \"attendance.parquet\"]\n_pq_found = any(\n    all((base / f).exists() for f in _pq_files)\n    for base in _parquet_dirs\n)\nif not _pq_found:\n    print(\"📦 Generating seed Parquet files (first boot)...\")\n    from data.export_parquet import export_parquet\n    _pq_out = _parquet_dirs[0] if _parquet_dirs[0].exists() else _parquet_dirs[1]\n    export_parquet(_pq_out)\n\nprint(\"🦙 Loading model...\")\nllm = load_model()\nprint(\"✅ Ready.\")\n\n# ── Example queries ────────────────────────────────────────────────────\n\nEXAMPLE_QUERIES = [\n    \"How many students were chronically absent in 2023-2024?\",\n    \"Show total enrollment per school for 2024-2025, sorted highest first.\",\n    \"What is the average absence count per school in 2023-2024?\",\n    \"Show the enrollment trend across all school years.\",\n    \"Which grade level has the highest enrollment in 2024-2025?\",\n    \"What percentage of students at Linco ..."
+}

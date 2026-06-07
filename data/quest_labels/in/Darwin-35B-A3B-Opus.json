@@ -1,0 +1,15 @@
+{
+  "id": "build-small-hackathon/Darwin-35B-A3B-Opus",
+  "slug": "Darwin-35B-A3B-Opus",
+  "title": "Darwin 35B A3B Opus",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "mcp-server",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "This model is introduced in [Darwin Family](https://arxiv.org/abs/2605.14386).",
+  "APP_FILE": "from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, TextIteratorStreamer\nfrom threading import Thread\n\nimport os\nimport spaces\nimport torch\nimport gradio as gr\nfrom transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, TextIteratorStreamer\nfrom threading import Thread\n\n# Persist HF Hub cache on the mounted bucket storage so the 67GB model\n# only downloads once and stays cached between ZeroGPU calls.\nos.environ.setdefault(\"HF_HOME\", \"/data/hf_home\")\nos.environ.setdefault(\"HF_HUB_CACHE\", \"/data/hf_cache\")\n\nMODEL_ID = \"FINAL-Bench/Darwin-35B-A3B-Opus\"\nHF_TOKEN = os.environ.get(\"HF_TOKEN\")\n\nBNB = BitsAndBytesConfig(\n    load_in_4bit=True,\n    bnb_4bit_quant_type=\"nf4\",\n    bnb_4bit_use_double_quant=True,\n    bnb_4bit_compute_dtype=torch.bfloat16,\n    # Allow accelerate to place buffers on CPU rather than hard-failing load.\n    # On an A10G this usually keeps 100% of weights on GPU.\n    llm_int8_enable_fp32_cpu_offload=True,\n)\n\n_model_cache = {}\n\ndef _load():\n    if \"model\" not in _model_cache:\n        tok = AutoTokenizer.from_pretrained(\n            MODEL_ID,\n            trust_remote_code=True,\n            token=HF_TOKEN,\n            cache_dir=os.environ[\"HF_HUB_CACHE\"],\n        )\n        if tok.pad_token is None:\n            tok.pad_token = tok.eos_token\n\n        if torch.cuda.is_available():\n            torch.cuda.empty_cache()\n\n        mod = AutoModelForCausalLM.from_pretrained(\n            MODEL_ID,\n            trust_remote_code=True,\n            token=HF_TOKEN,\n            quantization_config=BNB,\n            device_map=\"auto\",\n            # Calm the MoE memory estimator on A10G 24 GB\n            max_memory={0: \"22GiB\", \"cpu\": \"200GiB\"},\n            cache_dir=os.environ[\"HF_HUB_CACHE\"],\n            low_cpu_mem_usage=True,\n        )\n        _model_cache[\"model\"] = mod\n        _model_cache[\"tokenizer\"] = tok\n    retu ..."
+}

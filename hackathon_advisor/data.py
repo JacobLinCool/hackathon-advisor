@@ -54,6 +54,8 @@ class Project:
     url: str
     app_file: str = ""
     app_file_embedding_text: str = ""
+    readme_body: str = ""
+    app_file_source: str = ""
 
     @classmethod
     def from_dict(cls, data: dict) -> "Project":
@@ -73,6 +75,8 @@ class Project:
             url=str(data.get("url") or f"https://huggingface.co/spaces/{data['id']}"),
             app_file=str(data.get("app_file") or ""),
             app_file_embedding_text=str(data.get("app_file_embedding_text") or ""),
+            readme_body=str(data.get("readme_body") or ""),
+            app_file_source=str(data.get("app_file_source") or data.get("app_source") or ""),
         )
 
     @property
@@ -87,6 +91,7 @@ class Project:
                 f"title: {self.title}",
                 f"slug: {self.slug.replace('-', ' ').replace('_', ' ')}",
                 f"summary: {self.summary}",
+                f"readme:\n{self.readme_body}" if self.readme_body else "",
                 f"tags: {' '.join(self.tags)}",
                 f"models: {' '.join(self.models)}",
                 f"datasets: {' '.join(self.datasets)}",
@@ -135,6 +140,15 @@ class Project:
             "app_file_embedding_text": self.app_file_embedding_text,
         }
 
+    def to_refresh_snapshot_dict(self) -> dict:
+        payload = self.to_snapshot_dict()
+        payload.update(
+            {
+                "readme_body": self.readme_body,
+                "app_file_source": self.app_file_source,
+            }
+        )
+        return payload
 
 @dataclass(frozen=True)
 class SearchHit:
@@ -350,6 +364,9 @@ class ProjectIndex:
 
     def vector_for(self, project_id: str) -> tuple[float, ...] | None:
         return self._vector_by_id.get(project_id)
+
+    def project_vectors(self) -> tuple[tuple[float, ...], ...]:
+        return tuple(self._vectors)
 
     def embed_query(self, text: str) -> tuple[float, ...]:
         return tuple(normalize_vector(self._embed_query(text)))

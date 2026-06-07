@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/Yui-home-assistant",
+  "slug": "Yui-home-assistant",
+  "title": "Yui Home Assisstant",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "A voice → text app using [Gradio](https://gradio.app) and a local [Whisper](https://huggingface.co/openai/whisper-small) model for speech recognition. Records or uploads audio and transcribes it — runs fully locally, no API token required.",
+  "APP_FILE": "from functools import lru_cache\nfrom transformers import pipeline\n\nfrom functools import lru_cache\n\nimport gradio as gr\nfrom transformers import pipeline\n\n# Whisper speech -> text. Pick a size in the dropdown (label -> model id).\nWHISPER_MODELS = {\n    \"small (244M, fast)\": \"openai/whisper-small\",\n    \"medium (769M)\": \"openai/whisper-medium\",\n    \"large-v3-turbo (809M)\": \"openai/whisper-large-v3-turbo\",\n}\nDEFAULT_MODEL = \"small (244M, fast)\"\n\n\n@lru_cache(maxsize=len(WHISPER_MODELS))\ndef get_asr(model_id):\n    \"\"\"Lazy-load (and cache) a Whisper pipeline per model id.\"\"\"\n    return pipeline(\"automatic-speech-recognition\", model=model_id)\n\n\ndef transcribe(audio_path, model_label):\n    if not audio_path:\n        return \"\"\n    return get_asr(WHISPER_MODELS[model_label])(audio_path)[\"text\"].strip()\n\n\nwith gr.Blocks() as demo:\n    gr.Markdown(\"# 🎤 Voice → Text\\nRecord or upload audio to transcribe.\")\n    model = gr.Dropdown(\n        choices=list(WHISPER_MODELS.keys()),\n        value=DEFAULT_MODEL,\n        label=\"Whisper model\",\n        info=\"First use of each model downloads it (medium/turbo are larger).\",\n    )\n    audio = gr.Audio(sources=[\"microphone\", \"upload\"], type=\"filepath\", label=\"Audio\")\n    text = gr.Textbox(label=\"Transcription\", lines=4)\n\n    # Auto-transcribe when a recording stops; the button covers uploaded files.\n    audio.stop_recording(transcribe, inputs=[audio, model], outputs=text)\n    gr.Button(\"Transcribe\", variant=\"primary\").click(\n        transcribe, inputs=[audio, model], outputs=text\n    )\n\n\nif __name__ == \"__main__\":\n    demo.launch()"
+}

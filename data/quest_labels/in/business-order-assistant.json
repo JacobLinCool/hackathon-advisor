@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/business-order-assistant",
+  "slug": "business-order-assistant",
+  "title": "Business Order Assistant",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "\"\"\"\nCatalogChat — Gradio frontend\nHackathon: Gradio Backyard AI Hackathon (June 2026)\nStack: Gradio ChatInterface + Modal backend (Whisper + Qwen2.5-7B)\n\"\"\"\n\nimport os\nimport io\nimport base64\nimport html\nimport uuid\nimport requests\nimport pandas as pd\nimport gradio as gr\n\n# ── Modal endpoints (set as HF Space Secrets) ────────────────────────────────\nBUILD_INDEX_URL = os.environ.get(\"MODAL_BUILD_INDEX_URL\", \"https://sopeadegboyega--catalog-assistant-build-index.modal.run\")\nCHAT_QUERY_URL  = os.environ.get(\"MODAL_CHAT_QUERY_URL\", \"https://sopeadegboyega--catalog-assistant-chat-query.modal.run\")\nTRANSCRIBE_URL  = os.environ.get(\"MODAL_TRANSCRIBE_URL\", \"\")\n\n# ── Custom CSS — terminal/amber aesthetic ─────────────────────────────────────\nCUSTOM_CSS = \"\"\"\n@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;700;800&display=swap');\n\n/* ── Reset & base ── */\n*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }\n\nbody, .gradio-container {\n    background: #0D0D0D !important;\n    color: #E8E0D0 !important;\n    font-family: 'JetBrains Mono', monospace !important;\n}\n\n/* ── App title bar ── */\n#app-title {\n    background: #0D0D0D;\n    border-bottom: 1px solid #F5A623;\n    padding: 14px 24px;\n    display: flex;\n    align-items: center;\n    gap: 12px;\n}\n#app-title h1 {\n    font-family: 'Syne', sans-serif;\n    font-weight: 800;\n    font-size: 1.5rem;\n    color: #F5A623;\n    letter-spacing: -0.02em;\n}\n#app-title .subtitle {\n    font-size: 0.7rem;\n    color: #6B6456;\n    letter-spacing: 0.12em;\n    text-transform: uppercase;\n}\n.badge {\n    background: #1A1A0F;\n    border: 1px solid #F5A623;\n    color: #F5A623;\n    font-size: 0.6rem;\n    padding: 2px 8px;\n    border-radius: 2px;\n    letter-spacing: 0.1em;\n    font-weight: 700;\n}\n\n/* ── Sidebar ── */\n#sidebar {\n    background: #111111 !important;\n    border-right: ..."
+}

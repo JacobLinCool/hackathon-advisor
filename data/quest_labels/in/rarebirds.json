@@ -1,0 +1,18 @@
+{
+  "id": "build-small-hackathon/rarebirds",
+  "slug": "rarebirds",
+  "title": "rarebirds",
+  "sdk": "gradio",
+  "declared_models": [
+    "google/gemma-3-27b-it"
+  ],
+  "tags": [
+    "ads-b",
+    "aircraft",
+    "gemma",
+    "gradio"
+  ],
+  "app_file": "app.py",
+  "README": "# rarebirds rarebirds is a two-track project: 1. A Gradio/Gemma workspace for experimenting with sub-32B rarity classifiers. 2. An iPhone app that tells a user when rare aircraft are flying near them and sends push notifications. The product should treat the model and the mobile app as separate concerns, but Gemma is part of the alert pipeline: it should quickly classify whether a live aircraft looks rare from the aircraft state, instead of forcing every sighting through slow database searches. The backend still owns geospatial matching, cooldowns, and APNs delivery. ## Repository Layout ```text backend/ Server-side aircraft polling, rare-aircraft matching, and APNs fanout. data/ Rule lists and seed data used by the backend. docs/ Architecture notes and decisions. ios/ Native SwiftUI iPhone app workspace notes. model/ Gemma 4 tuning and inference workspace. ``` ## Product Shape The first version should answer one question quickly: \"Is something rare near me right now?\" Core flows: - User grants location permission and notification permission. - User sets an alert radius, aircraft categories, and quiet hours. - Backend polls or streams aircraft positions for active user regions. - Backend asks Gemma to score whether candidate aircraft are rare, with deterministic rules as guardrails. - Backend sends an APNs notification when a new match crosses the user's threshold. - App shows a current nearby list, aircraft details, and recent alert history. ## Current Data Source Assumption ...",
+  "APP_FILE": "from __future__ import annotations\nfrom scripts.gradio_rarity_tester import (\n\n#!/usr/bin/env python3\nfrom __future__ import annotations\n\nfrom scripts.gradio_rarity_tester import (\n    APP_CSS,\n    APP_THEME,\n    DEFAULT_ADAPTER_DIR,\n    DEFAULT_LOAD_IN_4BIT,\n    DEFAULT_MAX_SEQ_LENGTH,\n    DEFAULT_MODEL_ID,\n    build_app,\n)\n\n\napp = build_app(\n    model_id=DEFAULT_MODEL_ID,\n    adapter_dir=DEFAULT_ADAPTER_DIR,\n    load_in_4bit=DEFAULT_LOAD_IN_4BIT,\n    max_seq_length=DEFAULT_MAX_SEQ_LENGTH,\n)\n\n\nif __name__ == \"__main__\":\n    app.launch(theme=APP_THEME, css=APP_CSS)"
+}

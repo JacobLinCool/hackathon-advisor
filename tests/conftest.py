@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import os
+
 from tests.helpers import test_query_embedder
 
 
 def pytest_configure() -> None:
+    os.environ["ADVISOR_MODEL_BACKEND"] = "rules"
     import app
 
     app.index.set_query_embedder(test_query_embedder)

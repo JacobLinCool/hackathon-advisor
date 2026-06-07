@@ -1,0 +1,25 @@
+{
+  "id": "build-small-hackathon/Tone-Bridge",
+  "slug": "Tone-Bridge",
+  "title": "ToneBridge",
+  "sdk": "gradio",
+  "declared_models": [
+    "Qwen/Qwen3-14B",
+    "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice"
+  ],
+  "tags": [
+    "build-small-hackathon",
+    "chinese",
+    "gradio-server",
+    "grammar-correction",
+    "language-learning",
+    "mandarin",
+    "off-brand",
+    "pinyin",
+    "text-to-speech",
+    "zerogpu"
+  ],
+  "app_file": "app.py",
+  "README": "# ToneBridge — a gentle Mandarin sentence coach > *Build natural Mandarin sentences, one small correction at a time.* Built for the Hugging Face **Build Small Hackathon 2026** --- ## The Problem Beginner Mandarin learners often know what they want to say, but not whether the sentence sounds natural, polite, or appropriate for the social context. Classic translators tend to rewrite too much. Grammar tools often explain too much. A beginner needs something narrower: keep my meaning, fix only what is needed, show the pinyin, and tell me why in plain English. **ToneBridge is built for that moment.** You choose a context, choose a tone, write or speak one Chinese sentence, and get a small, practical correction designed for learning rather than translation. ## What it does ToneBridge returns: - one corrected Mandarin sentence; - pinyin with tone marks under Chinese text; - a short error type; - a concise explanation in English; - a practical tip for next time; - a natural Mandarin reading voice with a follow-along reading view. The correction prompt is intentionally conservative: if the sentence is already correct and natural, the corrected sentence should remain unchanged. ## How it works 1. The learner selects a context: **Friends**, **Family**, **Work**, or **WeChat**. 2. The learner selects the intended tone. 3. They type a Chinese sentence, or use browser speech recognition. 4. Qwen corrects the sentence while preserving the learner's meaning and length. 5. The frontend adds p ...",
+  "APP_FILE": "from typing import Optional\nfrom fastapi.responses import HTMLResponse\nfrom pypinyin import Style, lazy_pinyin\nfrom transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig\nfrom qwen_tts import Qwen3TTSModel\n\nimport gc\nimport base64\nimport io\nimport os\nimport re\nfrom typing import Optional\n\nimport gradio as gr\nimport numpy as np\nimport torch\nfrom fastapi.responses import HTMLResponse\nfrom pypinyin import Style, lazy_pinyin\nfrom transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig\n\ntry:\n    import spaces\nexcept Exception:\n    class _SpacesFallback:\n        @staticmethod\n        def GPU(*args, **kwargs):\n            def decorator(fn):\n                return fn\n            return decorator\n\n    spaces = _SpacesFallback()\n\n\nDEFAULT_MODEL_ID = \"Qwen/Qwen3-14B\"\nMODEL_ID = os.getenv(\"MODEL_ID\", DEFAULT_MODEL_ID).strip() or DEFAULT_MODEL_ID\nDEFAULT_TTS_MODEL_ID = \"Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice\"\nTTS_MODEL_ID = os.getenv(\"TTS_MODEL_ID\", DEFAULT_TTS_MODEL_ID).strip() or DEFAULT_TTS_MODEL_ID\nENABLE_SERVER_TTS = os.getenv(\"ENABLE_SERVER_TTS\", \"true\").strip().lower() in {\"1\", \"true\", \"yes\", \"y\"}\nTTS_MAX_CHARS = int(os.getenv(\"TTS_MAX_CHARS\", \"180\"))\nMAX_INPUT_CHARS = int(os.getenv(\"MAX_INPUT_CHARS\", \"1200\"))\nMAX_NEW_TOKENS = int(os.getenv(\"MAX_NEW_TOKENS\", \"220\"))\nLOAD_IN_4BIT = os.getenv(\"LOAD_IN_4BIT\", \"true\").strip().lower() in {\"1\", \"true\", \"yes\", \"y\"}\nPRELOAD_MODEL = os.getenv(\"PRELOAD_MODEL\", \"true\").strip().lower() in {\"1\", \"true\", \"yes\", \"y\"}\n\ntokenizer = None\nmodel = None\nload_error: Optional[str] = None\ntts_model = None\ntts_load_error: Optional[str] = None\napp = gr.Server()\n\n\nSYSTEM_PROMPT = \"\"\"You are a Mandarin Chinese teacher for beginner learners.\n\nYour task is to correct ONE student Chinese sentence according to the selected context and tone.\nYour default behavior is conservative minimal correction.\n\nDo not create a ri ..."
+}

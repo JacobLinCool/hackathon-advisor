@@ -1,0 +1,24 @@
+{
+  "id": "build-small-hackathon/Backyard-Demo-Builder",
+  "slug": "Backyard-Demo-Builder",
+  "title": "Backyard Demo Builder",
+  "sdk": "gradio",
+  "declared_models": [
+    "unsloth/gemma-4-12B-it-qat-GGUF",
+    "Qwen/Qwen2.5-7B-Instruct",
+    "nvidia/Nemotron-3.5-Content-Safety"
+  ],
+  "tags": [
+    "agents",
+    "ai-agents",
+    "backyard-ai",
+    "build-small-hackathon",
+    "demo-builder",
+    "gradio",
+    "real-estate",
+    "small-language-model"
+  ],
+  "app_file": "app.py",
+  "README": "# Backyard Demo Builder ## Chapter 1: Backyard AI *Build Small Hackathon 2026 — Chapter 1 Submission* `agent-swarm-workbench` now presents as **Backyard Demo Builder**: a Gradio app that turns one real person's workflow into a small runnable demo package before anyone pays to build full software. First backyard case: my mom, a real-estate agent. She needs a cheap way to test a customer follow-up reminder workflow before committing time and money to a full app. --- ## Watch the Demo Builder Work ``` You: \"Build a real-estate follow-up CRM demo for my mom.\" Builder: Generates a Gradio mini-app, handoff spec, field notes, and checks Result: app.py, README.md, handoff_spec.md, field_notes.md Mom: Tests the workflow, then we scrap or scale. ``` Every Run produces a **downloadable demo package** and Validation report: files you can inspect, unzip, run, and test with the real person. --- ## Build Small Hackathon — Submission Notes | Requirement | How We Meet It | |---|---| | **Small model (≤ 32B)** | Provider catalog fetches models at runtime and only allows models whose ID/name proves ≤32B | | **Gradio app** | Custom dark-themed Gradio UI mounted on FastAPI | | **HF Space** | `app.py` + `requirements.txt` — one-command deploy | | **Demo video** | *(placeholder — [link to demo])* | | **Social post** | *(placeholder — [link to post])* | ### Bonus Badges Claimed | Badge | Why | |---|---| | **🎨 Off-Brand** | Fully custom CSS dark theme — Archivo + IBM Plex Mono, acid green CTAs, paper/ ...",
+  "APP_FILE": "from __future__ import annotations\nfrom arena.api import app as fastapi_app\nfrom arena.api import service\nfrom arena.gradio_app import RunOutputs, build_app, create_run_gpu as _create_run_gpu\n\n\"\"\"Unified ASGI entrypoint for API and Gradio UI.\"\"\"\n\nfrom __future__ import annotations\n\nimport os\n\nimport gradio as gr\nimport uvicorn\n\ntry:\n    import spaces\nexcept Exception:\n    class _SpacesShim:\n        def GPU(self, fn=None, **kwargs):\n            del kwargs\n\n            def decorator(inner):\n                return inner\n\n            return decorator(fn) if fn else decorator\n\n    spaces = _SpacesShim()\n\n\nfrom arena.api import app as fastapi_app\nfrom arena.api import service\nfrom arena.gradio_app import RunOutputs, build_app, create_run_gpu as _create_run_gpu\n\n\n@spaces.GPU(duration=120)\ndef create_run_gpu(\n    prompt: str,\n    criteria_text: str,\n    user_tests_text: str,\n    provider: str = \"openrouter\",\n    model: str = \"\",\n    api_key: str = \"\",\n    base_url: str = \"\",\n) -> RunOutputs:\n    return _create_run_gpu(\n        prompt,\n        criteria_text,\n        user_tests_text,\n        provider,\n        model,\n        api_key,\n        base_url,\n    )\n\n\n@spaces.GPU\ndef zerogpu_ready_marker() -> str:\n    return \"ready\"\n\n\ndemo = build_app(service, create_run_handler=create_run_gpu)\n\n\ndef create_app():\n    \"\"\"Create one FastAPI ASGI app with Gradio mounted at the root.\"\"\"\n\n    return gr.mount_gradio_app(fastapi_app, demo, path=\"/\")\n\n\napp = create_app()\n\n\ndef server_config() -> dict[str, int | str]:\n    host = os.getenv(\"GRADIO_SERVER_NAME\", os.getenv(\"HOST\", \"0.0.0.0\"))\n    port = int(os.getenv(\"GRADIO_SERVER_PORT\") or os.getenv(\"PORT\") or \"7860\")\n    return {\"host\": host, \"port\": port}\n\n\ndef gradio_launch_config() -> dict[str, bool | int | str]:\n    config = server_config()\n    port = int(os.getenv(\"GRADIO_SERVER_PORT\") or os.getenv(\"PORT\") or \"7860\")\n    return {\"server_nam ..."
+}

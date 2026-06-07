@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/quran-stt",
+  "slug": "quran-stt",
+  "title": "Quran Stt",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from huggingface_hub import hf_hub_download\n\nimport os\nimport sys\nimport urllib.parse\nimport gradio as gr\nimport nemo.collections.asr as nemo_asr\nimport torchaudio\n\n# ----------------------------------------------------\n# 1. MODEL INITIALIZATION (Runs once at startup on CPU)\n# ----------------------------------------------------\nprint(\"=\"*60)\nprint(\"Initializing FastConformer Quranic ASR Model on CPU...\")\nprint(\"=\"*60)\nsys.stdout.flush()\n\ntry:\n    from huggingface_hub import hf_hub_download\n\n    print(\"[STARTUP] Downloading model layer file from HuggingFace Hub...\")\n    sys.stdout.flush()\n    nemo_file = hf_hub_download(\n        repo_id=\"mohammed/fastconformer-quran-ar\",\n        filename=\"phase3_full/phase3_full_wer0.0014.nemo\"\n    )\n    print(f\"[STARTUP] Model file located at: {nemo_file}\")\n\n    # Load the .nemo file directly into CPU space\n    model = nemo_asr.models.ASRModel.restore_from(restore_path=nemo_file)\n    print(\"[STARTUP] Success: Model loaded completely into CPU memory!\")\n    sys.stdout.flush()\nexcept Exception as e:\n    print(f\"[CRITICAL ERROR] Failed to initialize model: {e}\")\n    import traceback\n    traceback.print_exc()\n    sys.stdout.flush()\n    model = None\n\n# ----------------------------------------------------\n# 2. SAFE TEXT EXTRACTION UTILITY\n# ----------------------------------------------------\ndef deep_extract_text(obj):\n    \"\"\"\n    Recursively drills down into any nested tuple, list, or custom NeMo \n    Hypothesis object to guarantee the extraction of a pure Python string.\n    \"\"\"\n    if isinstance(obj, str):\n        return obj\n        \n    if isinstance(obj, (list, tuple)):\n        for item in obj:\n            extracted = deep_extract_text(item)\n            if extracted:\n                return extracted\n                \n    # If it's a NeMo Hypothesis object, check its internal fields dynamically\n    if obj is not None:\n        # Try findi ..."
+}

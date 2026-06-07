@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/thousand-token-wood",
+  "slug": "thousand-token-wood",
+  "title": "Thousand Token Wood",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "# Thousand Token Wood Project shell for a Hugging Face / Gradio Build Small Hackathon entry. Track: An Adventure in Thousand Token Wood ## Challenge Notes - Gradio app hosted as a Hugging Face Space. - Total model parameters must be <= 32B. - Submission package: Space link, short demo video, and social post. ## Local Development ```bash python -m venv .venv source .venv/bin/activate pip install -r requirements.txt python app.py ``` Then open `http://localhost:7860`.",
+  "APP_FILE": "from pathlib import Path\nfrom fastapi.responses import HTMLResponse\nfrom fastapi.staticfiles import StaticFiles\nfrom gradio import Server\n\nfrom pathlib import Path\n\nfrom fastapi.responses import HTMLResponse\nfrom fastapi.staticfiles import StaticFiles\nfrom gradio import Server\n\n\nROOT = Path(__file__).parent\n\napp = Server()\napp.mount(\"/static\", StaticFiles(directory=ROOT / \"static\"), name=\"static\")\n\n\n@app.get(\"/\", response_class=HTMLResponse)\nasync def homepage() -> str:\n    return (ROOT / \"static\" / \"index.html\").read_text(encoding=\"utf-8\")\n\n\n@app.get(\"/health\")\nasync def health() -> dict[str, str]:\n    return {\"status\": \"ok\"}\n\n\nif __name__ == \"__main__\":\n    app.launch()"
+}

@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/octopus-ai",
+  "slug": "octopus-ai",
+  "title": "Octopus AI — Stress Test the Octopus",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "# Octopus AI — Stress Test the Octopus Can you break a self-monitoring modular AI? Octopus separates AI into a structural brain and specialized arms. Each arm trains independently. A topology monitor watches system health in real-time. Disable arms, inject noise, and watch the system detect damage, reroute, and recover. **Live inference** powered by Mistral 7B + 4 specialized arms trained with Structurally Adaptive Learning (SAL). Built by [Cognitive Engineering](https://cognitive-engineering.dev) | [appliedai.ch](https://appliedai.ch)",
+  "APP_FILE": "from __future__ import annotations\nfrom simulation import (\n\n\"\"\"Gradio app for \"Stress Test the Octopus\" — premium mission-control dashboard.\n\nDark, minimal, professional (Vercel / Datadog / GitHub Actions aesthetic).\nBackend logic is untouched: every value comes from ``DemoState`` /\n``plan_generation`` in ``simulation.py``. This file is purely the Gradio layout\n+ visual presentation — panels are ``gr.HTML`` blocks re-rendered from state,\nwith CSS-only animations.\n\nRun:  python hackathon/app.py   →  http://localhost:7860\n\"\"\"\n\nfrom __future__ import annotations\n\nimport argparse\nimport datetime\nimport html\nimport math\nimport random\nimport re\nimport time\n\nimport gradio as gr\n\nimport demo_data\nfrom simulation import (\n    ARMS,\n    ARM_LABELS,\n    FeedLine,\n    DemoState,\n    detect_mode,\n    plan_generation,\n)\n\n# ---------------------------------------------------------------------------\n# Palette (appliedai.ch, mission-control dark)\n# ---------------------------------------------------------------------------\nBG = \"#0f0f14\"\nCARD = \"#1a1b26\"\nBORDER = \"#2a2b36\"\nFG = \"#f8f8fb\"\nFG2 = \"#8888a0\"\nTEAL = \"#0f6e56\"\nTEAL_HI = \"#1bb88f\"\nPURPLE = \"#534ab7\"\nPURPLE_HI = \"#8b82f0\"\nYELLOW = \"#e5a100\"\nRED = \"#e5364a\"\nGREEN = \"#22c55e\"\n\n# Per-arm display metadata\nARM_NAME = {  # uppercase node names (brain stage)\n    \"code_generation\": \"CODE_GEN\", \"testing\": \"TESTING\",\n    \"code_review\": \"CODE_REVIEW\", \"cicd\": \"CI/CD\",\n}\nARM_NICE = {  # button-friendly names\n    \"code_generation\": \"Code Gen\", \"testing\": \"Testing\",\n    \"code_review\": \"Code Review\", \"cicd\": \"CI/CD\",\n}\nARM_CAP = {\n    \"code_generation\": \"Code Synthesis\", \"testing\": \"Test Authoring\",\n    \"code_review\": \"Review &amp; Lint\", \"cicd\": \"Pipelines &amp; Docker\",\n}\nARM_ICON = {  # brain-node icons\n    \"code_generation\": \"&lt;/&gt;\", \"testing\": \"🧪\",\n    \"code_review\": \"🔍\", \"cicd\": \"⚙\",\n}\nROW_ICON = {  # active-arms list icons\n    \"c ..."
+}

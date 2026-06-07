@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/SlideAI",
+  "slug": "SlideAI",
+  "title": "SlideAI",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "# SlideAI — AI Presentation Creator Turn any topic into a polished, download-ready PPTX presentation in seconds. Built with Gradio + Qwen2.5-7B-Instruct + python-pptx. ## creator space link : SlideAI - a Hugging Face Space by PHOENIXREBORNAGAIN https://share.google/8peVYW3BKwsONJzip ## 🔗 Project Links & Demo * **Live Demo Video:** [Watch the Slide AI Demo on YouTube](https://youtu.be/PIFE6yBj6hU?si=CpKViBtPBGjDkjNQ) * **LinkedIn Post:** [View the Project Announcement on LinkedIn](https://www.linkedin.com/posts/chahat-mehra-4a44a829b_small-huggingface-ugcPost-7468994896218062848-XLN3/?utm_source=share&utm_medium=member_android&rcm=ACoAAEiCgrwBIP-D5Jeg-MwzG1jMzpMXrylPlfM)",
+  "APP_FILE": "from slide_generator import generate_presentation\nfrom pptx_builder import build_pptx\n\nimport os\nimport tempfile\nimport traceback\nimport gradio as gr\n\nfrom slide_generator import generate_presentation\nfrom pptx_builder import build_pptx\n\nSTYLES = [\"Professional\", \"Creative\", \"Academic\", \"Startup\"]\n\nCSS = \"\"\"\n* { box-sizing: border-box; }\nbody, .gradio-container {\n    background: #f0f7f4 !important;\n    font-family: 'Inter', system-ui, sans-serif !important;\n}\nfooter { display: none !important; }\n.header-block {\n    background: linear-gradient(135deg, #1b6ca8 0%, #19a88a 100%);\n    border-radius: 16px; padding: 32px 36px 28px; margin-bottom: 24px;\n}\nbutton.primary {\n    background: linear-gradient(135deg, #1b6ca8, #19a88a) !important;\n    color: #fff !important; border: none !important;\n    border-radius: 12px !important; font-size: 17px !important;\n    font-weight: 700 !important; padding: 16px 0 !important;\n    width: 100% !important; cursor: pointer !important;\n    box-shadow: 0 4px 16px rgba(25,168,138,0.3) !important;\n}\nbutton.primary:hover { opacity: .87 !important; }\ntextarea, input[type=\"text\"] {\n    background: #f5fbf9 !important; border: 1.5px solid #b2ddd1 !important;\n    border-radius: 10px !important; color: #1a3a3a !important; font-size: 14px !important;\n}\ninput[type=\"range\"] { accent-color: #19a88a !important; }\n.status-ok {\n    background: #e6f7f2; border: 1px solid #a8dfd0; border-radius: 10px;\n    padding: 12px 18px; font-size: 14px; color: #1a5a4a; margin-bottom: 8px;\n}\n.status-wait {\n    background: #f0f7ff; border: 1px solid #b2cfe8; border-radius: 10px;\n    padding: 12px 18px; font-size: 14px; color: #1a3a6a; margin-bottom: 8px;\n}\n.preview-md, .preview-md p, .preview-md li,\n.preview-md h1, .preview-md h2, .preview-md h3 { color: #0d1b2a !important; }\n.preview-md {\n    background: #f5fbf9 !important; border: 1px solid #c8e8df !important;\n    border ..."
+}

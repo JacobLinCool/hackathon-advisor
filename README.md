@@ -22,17 +22,18 @@ tags:
 # Hackathon Advisor
 
 **Hackathon Advisor** is a text-first project advisor for the Build Small Hackathon. The user-facing experience is
-**The Unwritten Almanac**: a journal-style workspace that compares your idea against real Spaces in the
-`build-small-hackathon` organization, finds under-explored territory, scores the idea, and drafts a practical build plan.
+an atlas-first dashboard plus **The Unwritten Almanac**: the first screen maps real Spaces in the
+`build-small-hackathon` organization, while the advisor workspace compares your idea against that map, finds
+under-explored territory, scores the idea, and drafts a practical build plan.
 
 The current milestone is a deployed ZeroGPU + MiniCPM5 LoRA advisor:
 
 - Local snapshot of public `build-small-hackathon` Spaces.
 - Modal-built EmbeddingGemma GGUF retrieval index, with runtime query embeddings computed through llama.cpp.
+- Full-screen t-SNE project atlas with clusters, nearest-neighbor links, quest coverage, and live refresh state.
 - Nemotron Speech Streaming voice input through NVIDIA NeMo ASR on ZeroGPU.
 - Jargon correction for hackathon/model terms.
-- MiniCPM5 tool-call planning with a published PEFT LoRA adapter, plus deterministic local rules for tests and CPU-only
-  development.
+- MiniCPM5 tool-call planning with a published PEFT LoRA adapter.
 - One-turn advisor loop with overlap citations, whitespace suggestions, scoring, and plans.
 - Custom `gradio.Server` frontend focused on the builder's idea workflow, with submission evidence kept in API exports.
 
@@ -44,10 +45,19 @@ See [DESIGN.md](DESIGN.md) for the full product and model plan.
 python3.11 -m venv .venv
 . .venv/bin/activate
 pip install -r requirements.txt
+mkdir -p .cache/advisor-dashboard
+ADVISOR_CACHE_DIR=.cache/advisor-dashboard \
+ADVISOR_MODEL_BACKEND=minicpm-transformers \
+ADVISOR_MODEL_ID=openbmb/MiniCPM5-1B \
+ADVISOR_ADAPTER_ID=build-small-hackathon/hackathon-advisor-minicpm5-lora \
+ADVISOR_ADAPTER_REVISION=25de69bcde397e1bcdd852923b56a42f10222650 \
+ADVISOR_QUEST_ANALYZER_BACKEND=minicpm-transformers \
 python app.py
 ```
 
-Then open <http://127.0.0.1:7860>.
+Then open <http://127.0.0.1:7860>. The atlas refresh button runs locally with the same artifact swap path used in
+deployment. It writes refreshed runs under `.cache/advisor-dashboard/runs/` and atomically updates
+`.cache/advisor-dashboard/latest.json`.
 
 ## Refresh The Project Snapshot
 
@@ -63,6 +73,25 @@ The crawler snapshots every public Space in the org and, when README frontmatter
 app file as the highest-signal project evidence for embedding. The canonical index is built on Modal with
 `ggml-org/embeddinggemma-300m-qat-q8_0-GGUF` through llama.cpp; runtime search embeds the user query with the same GGUF
 model and performs local cosine search over the checked-in vectors.
+
+## Live Project Atlas
+
+`/api/dashboard` exposes the first-screen atlas payload: t-SNE coordinates, KMeans clusters, nearest-neighbor links,
+quest coverage, provenance, and refresh status. The browser renders this as the default full-screen view; `#advisor`
+opens the existing idea workflow.
+
+`POST /api/dashboard/refresh` starts one background refresh job. The job snapshots public Spaces, rebuilds the GGUF
+embedding index, runs strict JSON MiniCPM quest analysis, creates the atlas, persists the validated artifacts, and only
+then swaps the live app to the new dashboard. `GET /api/dashboard/refresh` polls status.
+
+Live refresh requires a writable dashboard cache directory at `ADVISOR_CACHE_DIR`. On Hugging Face Spaces this should be
+a mounted Storage Bucket; locally it can be a normal directory such as `.cache/advisor-dashboard`. The job writes
+`runs/{run_id}/projects.json`, `project_index.json`, `dashboard.json`, and `manifest.json`, then atomically updates
+`latest.json`. If the cache directory is missing, not writable, or quest analysis fails validation, refresh fails and the
+current validated dashboard stays active.
+
+Set `ADVISOR_QUEST_ANALYZER_BACKEND=minicpm-transformers` for both local and deployed refresh runs. The local dashboard
+uses the same MiniCPM analyzer as the deployed Space; test doubles are only used inside pytest.
 
 ## Trace Artifact
 
@@ -188,18 +217,28 @@ ADVISOR_MODEL_BACKEND=minicpm-transformers
 ADVISOR_MODEL_ID=openbmb/MiniCPM5-1B
 ADVISOR_ADAPTER_ID=build-small-hackathon/hackathon-advisor-minicpm5-lora
 ADVISOR_ADAPTER_REVISION=25de69bcde397e1bcdd852923b56a42f10222650
+ADVISOR_QUEST_ANALYZER_BACKEND=minicpm-transformers
+ADVISOR_QUEST_ADAPTER_ID=artifacts/quest-lora
+ADVISOR_CACHE_DIR=/data/advisor-cache
 ADVISOR_EMBEDDING_MODEL_REPO=ggml-org/embeddinggemma-300m-qat-q8_0-GGUF
 ADVISOR_EMBEDDING_MODEL_FILE=embeddinggemma-300m-qat-Q8_0.gguf
 ADVISOR_ASR_MODEL_ID=nvidia/nemotron-speech-streaming-en-0.6b
 ```
 
 `agent_turn` wraps the engine call with `spaces.GPU` when `ADVISOR_ZERO_GPU=1`, so model loading and generation run on
-the ZeroGPU allocation. The retrieval query embedder downloads the GGUF model through `huggingface_hub` unless
+the ZeroGPU allocation. MiniCPM loading follows the official demo shape: tokenizer uses
+`AutoTokenizer.from_pretrained(..., trust_remote_code=True)`, CUDA/ZeroGPU model loading uses
+`AutoModelForCausalLM.from_pretrained(..., torch_dtype=torch.bfloat16, trust_remote_code=True).to("cuda")`, and prompts
+are rendered with `apply_chat_template(..., tokenize=False, add_generation_prompt=True, enable_thinking=False)` before
+tokenization. Generation follows the demo policy: temperature `> 0` uses `temperature=0.9`, `top_p=0.95`, and
+`do_sample=True`; temperature `0` uses `do_sample=False`. The advisor tool planner uses temperature `0` for stable XML
+tool calls, and dashboard quest analysis also uses temperature `0` so the MiniCPM LoRA emits strict JSON deterministically.
+
+The retrieval query embedder downloads the GGUF model through `huggingface_hub` unless
 `ADVISOR_EMBEDDING_MODEL_PATH` points to a local file. `/api/transcribe` uses the same ZeroGPU wrapper for Nemotron ASR.
-On macOS local runs with `ADVISOR_MODEL_BACKEND=minicpm-transformers`, the app automatically runs llama.cpp query
-embedding in a worker process so the MiniCPM PyTorch runtime and llama.cpp do not load conflicting OpenMP runtimes in
-the same Python process.
-Local tests and CPU-only development still default to `ADVISOR_MODEL_BACKEND=rules`.
+On macOS local runs, the app automatically runs llama.cpp query embedding in a worker process so the MiniCPM PyTorch
+runtime and llama.cpp do not load conflicting OpenMP runtimes in the same Python process. Dashboard refresh also builds
+the GGUF embedding index in a subprocess before returning to the app process for MiniCPM quest analysis.
 
 ## Test
 

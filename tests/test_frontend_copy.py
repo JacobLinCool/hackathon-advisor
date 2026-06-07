@@ -6,6 +6,13 @@ def test_main_interface_copy_is_builder_facing() -> None:
     app_js = Path("static/app.js").read_text(encoding="utf-8")
     combined = f"{html}\n{app_js}"
 
+    assert "Live project atlas" in html
+    assert "Refresh map" in html
+    assert "Open advisor" in html
+    assert 'id="advisor-view"' in html
+    assert "/api/dashboard" in app_js
+    assert "/api/dashboard/refresh" in app_js
+    assert "renderAtlasSvg" in app_js
     assert "Directions to test" in html
     assert "Closest project echoes" in html
     assert "Press Plan to draft build steps for the selected idea." in app_js

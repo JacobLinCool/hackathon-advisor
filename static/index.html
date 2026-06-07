@@ -46,7 +46,59 @@
     </svg>
 
     <div class="desk-glow"></div>
-    <main class="almanac">
+    <main id="atlas-view" class="atlas-shell" aria-label="Live project atlas">
+      <section class="atlas-stage">
+        <header class="atlas-topbar">
+          <div>
+            <p class="atlas-kicker">Live project atlas</p>
+            <h1>Idea Map</h1>
+          </div>
+          <div class="atlas-actions">
+            <span id="atlas-status" class="atlas-status" aria-live="polite">Loading atlas.</span>
+            <button id="refresh-dashboard" class="btn btn-ghost" type="button" title="Refresh the project atlas">
+              <svg class="icon"><use href="#icon-reset"></use></svg>
+              Refresh map
+            </button>
+            <button id="open-advisor" class="btn btn-ink" type="button" title="Open the idea advisor">
+              <svg class="icon"><use href="#icon-quill"></use></svg>
+              Open advisor
+            </button>
+          </div>
+        </header>
+
+        <section class="atlas-layout">
+          <aside class="atlas-panel atlas-left" aria-label="Atlas filters">
+            <div class="atlas-stat-grid" id="atlas-stats"></div>
+            <section class="atlas-section">
+              <div class="eyebrow">Clusters</div>
+              <div id="atlas-clusters" class="atlas-list"></div>
+            </section>
+            <section class="atlas-section">
+              <div class="eyebrow">Quests</div>
+              <div id="atlas-quests" class="atlas-list"></div>
+            </section>
+          </aside>
+
+          <section class="atlas-map-wrap" aria-label="Embedding project map">
+            <svg id="atlas-svg" class="atlas-svg" viewBox="0 0 100 100" role="img" aria-label="Project embedding map"></svg>
+            <div id="atlas-refresh-progress" class="atlas-refresh-progress" hidden></div>
+          </section>
+
+          <aside class="atlas-panel atlas-right" aria-label="Project details">
+            <section class="atlas-section">
+              <div class="eyebrow">Selected project</div>
+              <div id="atlas-detail" class="atlas-detail"></div>
+            </section>
+            <section class="atlas-section">
+              <div class="eyebrow">Cluster report</div>
+              <div id="atlas-report" class="atlas-report"></div>
+            </section>
+          </aside>
+        </section>
+      </section>
+    </main>
+
+    <main id="advisor-view" class="almanac advisor-shell" hidden>
       <section class="sheet" aria-label="The Unwritten Almanac">
         <header class="masthead">
           <div class="masthead-l">
@@ -79,7 +131,10 @@
               <div class="sub">Originality map and build plan for your next idea</div>
             </div>
           </div>
-          <div id="provenance" class="provenance" aria-live="polite">Opening the current map.</div>
+          <div class="masthead-r">
+            <div id="provenance" class="provenance" aria-live="polite">Opening the current map.</div>
+            <button id="open-atlas" class="btn btn-ghost" type="button" title="Return to the atlas">Atlas</button>
+          </div>
         </header>
 
         <nav class="mobile-nav" aria-label="Sections">

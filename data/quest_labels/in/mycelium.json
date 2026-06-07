@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/mycelium",
+  "slug": "mycelium",
+  "title": "Mycelium",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "# Mycelium — Personal Knowledge Agent Mycelium is a local-first, AI-powered knowledge companion that helps you capture, connect, and resurface what matters. ## What it does - **Capture** anything: notes, links, images — all processed by an LLM into structured summaries with intent classification and tags - **Surface** relevant captures at the right time based on recency, intent (learn / act / reference), and semantic similarity - **Connect** captures automatically using embedding-based similarity — see what ideas are related before you forget - **Browse** your entire knowledge base with full-text search and intent/type filters ## How it works 1. You capture a note, URL, or image 2. NVIDIA Nemotron-Mini (4B) extracts the core insight, suggests tags, and classifies intent 3. A sentence-transformer embeds the summary into a vector 4. Related captures are found via cosine similarity — building a knowledge graph automatically 5. The surface engine resurfaces captures you should revisit, weighted by intent and recency ## Tech - **Backend**: FastAPI + SQLite (persistent at `/data/mind.db`) - **LLM**: `nvidia/Nemotron-Mini-4B-Instruct` via HF Transformers + ZeroGPU - **Vision**: `Qwen/Qwen2.5-VL-7B-Instruct` for image capture - **Embeddings**: `sentence-transformers/all-MiniLM-L6-v2` - **Frontend**: React + TypeScript + Tailwind CSS (served by FastAPI, Gradio at `/gradio`) ## Built with Built for the [Build Small Hackathon](https://huggingface.co/build-small-hackathon).",
+  "APP_FILE": "from main import app\n\nimport uvicorn\nfrom main import app\n\nuvicorn.run(app, host=\"0.0.0.0\", port=7860)"
+}

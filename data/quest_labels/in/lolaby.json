@@ -1,0 +1,27 @@
+{
+  "id": "build-small-hackathon/lolaby",
+  "slug": "lolaby",
+  "title": "Lolaby",
+  "sdk": "gradio",
+  "declared_models": [
+    "build-small-hackathon/lolaby-llama-3b",
+    "openbmb/MiniCPM-V-4_6",
+    "hexgrad/Kokoro-82M"
+  ],
+  "tags": [
+    "agentic",
+    "backyard-ai",
+    "build-small-hackathon",
+    "children",
+    "fine-tuned",
+    "gradio",
+    "llama-cpp",
+    "lullaby",
+    "on-device",
+    "small-models",
+    "text-to-audio"
+  ],
+  "app_file": "app.py",
+  "README": "# Lolaby — AI-powered lullabies > *A tiny AI that watches your child's drawings and sings them a personalised lullaby.* Built for the [Hugging Face **Build Small Hackathon 2026**](https://huggingface.co/build-small-hackathon) · **Backyard AI** track 🏡 **Try it:** [the live Space](https://huggingface.co/spaces/build-small-hackathon/lolaby) · **Demo video:** [60-second walkthrough](placeholder_demo_video_url) · **Model:** [`lolaby-llama-3b` on the Hub](https://huggingface.co/build-small-hackathon/lolaby-llama-3b) · **Field notes:** [the build journal](placeholder_blog_url) --- ## The Problem My partner's sister is a kindergarten teacher, who runs nap time for fifteen 4-year-olds on a daily basis. Every child wants the same thing at the start of nap: *\"sing me a song with my name in it.\"* She'd love to give each child their own song, drawn from what they actually love that week (a stuffed fox, a new puppy, the rainbow). She doesn't have time, musical expertise nor a tool. **Lolaby is the tool.** The child shows Lola what they love — either by doodling on screen, or by handing the teacher a paper drawing for her to snap a photo of. The teacher types their name. A small, on-device AI watches the drawing, writes them a lullaby about it, and sings it back — in about a minute. Everything runs locally. No cloud LLM, no per-song API cost, no children's drawings or names ever leaving the device. ## How it works ![](https://postimg.cc/G44grHt7) **The drawing is optional.** No canvas draw ...",
+  "APP_FILE": "from pathlib import Path\nfrom llama_cpp import Llama\nfrom synths.guitar import GuitarSynth, ACOUSTIC_PRESET, SR\nfrom synths.piano import PianoSynth\nfrom synths.harp import HarpSynth\nfrom synths.xylophone import XylophoneSynth\nfrom synths.ocarina import WhistleSynth\nfrom synths.musicbox import MusicBoxSynth\nfrom synths.voice import speak_lyrics, SR_TARGET\nfrom utils import trace as lola_trace\nfrom utils.safety import screen_inputs\nfrom synths.voice import _load_kokoro\n\n\"\"\"\nLullaby Llama — personalized bedtime music, generated on-device.\n\nThree-layer audio:\n  1. Rhythm layer  — user-selected instrument plays the chord progression.\n  2. Melody layer  — user-selected instrument plays a melodic line over the chords.\n  3. Voice layer   — Kokoro reads the lyrics, soft preset, slow pacing.\n\nThe user picks both layers with image buttons in the UI.\n\nAesthetic: children's drawing — crayon textures, wobbly hand-drawn borders.\n\"\"\"\n\nimport base64\nimport glob\nimport os\nimport random\nimport re\nimport tempfile\nimport time\nimport uuid\nfrom pathlib import Path\n\nimport gradio as gr\nimport numpy as np\nimport soundfile as sf\nfrom llama_cpp import Llama\n\nfrom synths.guitar import GuitarSynth, ACOUSTIC_PRESET, SR\nfrom synths.piano import PianoSynth\nfrom synths.harp import HarpSynth\nfrom synths.xylophone import XylophoneSynth\nfrom synths.ocarina import WhistleSynth\nfrom synths.musicbox import MusicBoxSynth\nfrom synths.voice import speak_lyrics, SR_TARGET\nfrom utils import trace as lola_trace\ntry:\n    from utils.safety import screen_inputs\nexcept ImportError:\n    # safety.py absent — degrade to a no-op screen rather than crash.\n    def screen_inputs(loves, fears):\n        return (True, \"\", [])\n\n# Vision module (drawing → \"loves\" phrase). Falls back to stroke analysis\n# internally if MiniCPM-V can't load, so the drawing input always produces\n# SOMETHING for the lullaby to be about.\ntry:\n    imp ..."
+}

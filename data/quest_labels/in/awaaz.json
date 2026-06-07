@@ -1,0 +1,17 @@
+{
+  "id": "build-small-hackathon/awaaz",
+  "slug": "awaaz",
+  "title": "Apni Awaaz",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "backyard-ai",
+    "dubbing",
+    "hindi",
+    "translation",
+    "tts"
+  ],
+  "app_file": "app.py",
+  "README": "# 🎙️ Apni Awaaz **Dub English video into the Hindi people actually speak.** Most Hindi dubs use शुद्ध हिंदी — stiff, Sanskritized language no one speaks at home. Apni Awaaz translates into everyday Hindustani — the natural mix your family actually uses. | Official dub | Apni Awaaz | |---|---| | \"मुझे इस विषय पर विचार करने दीजिए\" | \"सोचने दे एक second\" | | \"यह अत्यंत मूल्यवान है\" | \"बहुत महँगा है यार\" | ## Pipeline 1. **Whisper medium** — transcribe English with timestamps 2. **Qwen 2.5 7B** — translate to colloquial Hindi (the magic layer) 3. **Edge TTS** — generate natural Hindi speech 4. **ffmpeg** — stitch and merge back onto video Total: ~8B params (well under the 32B cap) Built for the [Build Small Hackathon](https://huggingface.co/build-small-hackathon) · Backyard AI track",
+  "APP_FILE": "from pathlib import Path\nfrom transformers import (\nfrom pydub import AudioSegment\n\n\"\"\"\nApni Awaaz 🎙️ — Dub English video into the Hindi people actually speak.\nBuilt for the Build Small Hackathon (June 2026).\n\"\"\"\n\nimport gradio as gr\nimport spaces\nimport torch\nimport edge_tts\nimport asyncio\nimport subprocess\nimport tempfile\nimport os\nfrom pathlib import Path\nfrom transformers import (\n    AutoModelForCausalLM,\n    AutoTokenizer,\n    pipeline,\n    BitsAndBytesConfig,\n)\n\n# ╔══════════════════════════════════════════════════════════════╗\n# ║  THE PROMPT — this is the soul of the entire project        ║\n# ╚══════════════════════════════════════════════════════════════╝\n\nSYSTEM_PROMPT = \"\"\"You are a dubbing translator. You translate English dialogue into the Hindi that real people actually speak at home in North India — not the stiff, Sanskritized Hindi of Doordarshan or official dubs.\n\nRULES:\n1. Use everyday Hindustani — the natural Hindi-Urdu mix people really speak.\n2. NEVER use Sanskritized/शुद्ध words when a simpler one exists:\n   - \"प्राप्त करना\" → \"मिलना\" / \"पाना\"\n   - \"आवश्यक\" → \"ज़रूरी\"\n   - \"अत्यंत\" → \"बहुत\" / \"काफ़ी\"\n   - \"उपयोग\" → \"इस्तेमाल\"\n   - \"विचार करना\" → \"सोचना\"\n   - \"संपन्न करना\" → \"करना\" / \"निपटाना\"\n   - \"प्रतीक्षा\" → \"इंतज़ार\"\n   - \"शीघ्र\" → \"जल्दी\"\n   - \"अनुमति\" → \"इजाज़त\"\n   - \"कृपया\" → drop it or say \"please\"\n   - \"अवश्य\" → \"ज़रूर\"\n   - \"उचित\" → \"सही\" / \"ठीक\"\n3. Keep English words Indians naturally keep: phone, office, meeting, tension, problem, time, chance, try, plan, sure, okay, sorry, thanks, bus, train, college, hospital, doctor, ticket, report, file.\n4. Match the speaker's register. Casual stays casual, serious stays serious — but never sound like a newsreader.\n5. Use natural fillers where they fit: \"यार\", \"अरे\", \"बस\", \"ना\", \"वो\", \"मतलब\", \"basically\".\n6. Natural contractions: \"कर लेंगे\" not \"कर लिया जाएगा\", \"हो जाएगा\" not \"संपन्न हो जाएगा\".\n7 ..."
+}

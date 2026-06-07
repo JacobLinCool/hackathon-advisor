@@ -1,0 +1,23 @@
+{
+  "type": "lora_training_recipe",
+  "base_model": "openbmb/MiniCPM5-1B",
+  "adapter_task": "hackathon_advisor_quest_classification",
+  "method": "LoRA SFT (completion-only loss)",
+  "example_count": 146,
+  "epochs": 6.0,
+  "rank": 16,
+  "alpha": 32,
+  "dropout": 0.05,
+  "learning_rate": 0.0002,
+  "max_seq_length": 2560,
+  "target_modules": [
+    "down_proj",
+    "gate_proj",
+    "k_proj",
+    "o_proj",
+    "q_proj",
+    "up_proj",
+    "v_proj"
+  ],
+  "gpu": "A10G"
+}

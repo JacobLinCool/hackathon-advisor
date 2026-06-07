@@ -1,0 +1,2460 @@
+{
+  "count": 108,
+  "results": [
+    {
+      "slug": "dental-soap",
+      "matches": [
+        {
+          "quest": "Backyard AI",
+          "confidence": 0.96,
+          "evidence": "builder's own case took three months and two specialties to untangle",
+          "source": "readme"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.97,
+          "evidence": "4B open model inside the Space; Qwen3-4B-Instruct-2507",
+          "source": "readme"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.9,
+          "evidence": "from transformers import AutoModelForCausalLM, AutoTokenizer; no cloud client",
+          "source": "app_file"
+        },
+        {
+          "quest": "Sharing is Caring",
+          "confidence": 0.85,
+          "evidence": "from pdf_export import build_pdf",
+          "source": "app_file"
+        },
+        {
+          "quest": "Field Notes",
+          "confidence": 0.78,
+          "evidence": "Why This Exists (A Real Case) write-up of the build motivation",
+          "source": "readme"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.82,
+          "evidence": "header_html, footer_html, rail_html, render_handoff_html custom HTML",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "Kept all 6; evidence verified verbatim. Off the Grid valid: APP_FILE only local transformers, no cloud client; README's 'frontier cloud model' was the builder's PAST manual workflow, not the deployed app. Tiny Titan genuine 4B Qwen3. Tightened Off-Grid/Tiny-Titan quotes. Field Notes lowered to 0.78 (narrative, not devlog). Dropped a Best Agent add (only imports, no proven loop)."
+    },
+    {
+      "slug": "pakistan-notice-helper",
+      "matches": [
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.92,
+          "evidence": "from llama_cpp import Llama; MiniCPM-V-4_6 GGUF weights",
+          "source": "app_file"
+        },
+        {
+          "quest": "Llama Champion",
+          "confidence": 0.98,
+          "evidence": "from llama_cpp import Llama",
+          "source": "app_file"
+        },
+        {
+          "quest": "OpenBMB",
+          "confidence": 0.98,
+          "evidence": "DEFAULT_MODEL_REPO = \"openbmb/MiniCPM-V-4.6-gguf\"",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.93,
+          "evidence": "custom mobile-first frontend served by gradio.Server",
+          "source": "readme"
+        },
+        {
+          "quest": "Backyard AI",
+          "confidence": 0.78,
+          "evidence": "Backyard AI project; people receive convincing payment notices",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "Kept Off the Grid, Llama Champion, OpenBMB (all literal in APP_FILE: llama_cpp import, GGUF weights, openbmb repo, no cloud API). Kept Off-Brand (custom gradio.Server, no default UI). Kept Backyard AI lowered to 0.78 (self-declared, real scam problem, but general 'people' not one named persona). DROPPED Tiny Titan: MiniCPM-V is ~8B-class; '4.6' is version not params."
+    },
+    {
+      "slug": "Kintsugi-Garden",
+      "matches": [
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.95,
+          "evidence": "lightweight instruction model (microsoft/Phi-4-mini-instruct)",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.78,
+          "evidence": "transformers imported lazily inside load_model(); no cloud API clients",
+          "source": "app_file"
+        },
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.82,
+          "evidence": "deterministic mandala generator (PIL) that visualizes the symbols",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Tiny Titan (Phi-4-mini ~3.8B, literal quote). KEPT Off the Grid (local transformers, no cloud client visible; conf lowered, file truncates). KEPT Thousand Token Wood (mandala/dream art). DROPPED Off-Brand: tabs=default Gradio, no custom CSS/HTML. DROPPED Backyard AI: generic, no named person. DROPPED Field Notes: docstring is architecture desc, not a build write-up."
+    },
+    {
+      "slug": "lolaby",
+      "matches": [
+        {
+          "quest": "Backyard AI",
+          "confidence": 0.97,
+          "evidence": "kindergarten teacher runs nap time for fifteen 4-year-olds",
+          "source": "readme"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.95,
+          "evidence": "Everything runs locally. No cloud LLM, no per-song API cost",
+          "source": "readme"
+        },
+        {
+          "quest": "Llama Champion",
+          "confidence": 0.97,
+          "evidence": "from llama_cpp import Llama",
+          "source": "app_file"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.9,
+          "evidence": "a small, on-device AI; lolaby-llama-3b (3B), Kokoro-82M",
+          "source": "readme"
+        },
+        {
+          "quest": "OpenBMB",
+          "confidence": 0.9,
+          "evidence": "MiniCPM-V can't load (openbmb/MiniCPM-V-4_6)",
+          "source": "app_file"
+        },
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.85,
+          "evidence": "watches your child's drawings and sings them a personalised lullaby",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Backyard AI, Off the Grid (no cloud client in app_file), Llama Champion (verbatim import), OpenBMB (MiniCPM-V in app_file), Tiny Titan (3B/82M <=4B). FIXED OpenBMB/Tiny Titan/Backyard evidence to findable text. DROPPED Well-Tuned: cited README never says fine-tune/LoRA/SFT, only repo name+tag. ADDED Thousand Token Wood: creative lullaby framing."
+    },
+    {
+      "slug": "exam-panic-rescue",
+      "matches": [
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.9,
+          "evidence": "custom CSS :root variables, radial-gradient backgrounds, custom font-family",
+          "source": "app_file"
+        },
+        {
+          "quest": "Field Notes",
+          "confidence": 0.8,
+          "evidence": "build notes drafted in docs/codex-build-trace.md and docs/demo-script.md",
+          "source": "readme"
+        },
+        {
+          "quest": "Backyard AI",
+          "confidence": 0.82,
+          "evidence": "one stressed student, one exam, one time box, one final sheet",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "Off-Brand KEPT, evidence FIXED: gr.Blocks not in truncated APP_FILE; retied to present custom CSS (:root vars, gradients, font-family). Field Notes KEPT (README links drafted codex-build-trace.md + demo-script.md), confidence trimmed (in-progress notes). Backyard AI KEPT (verbatim quote, concrete student persona). No Off the Grid: no API but no visible local model, declared_models empty. No add."
+    },
+    {
+      "slug": "AI-agent-Evaluation-pipeline",
+      "matches": [],
+      "signal_profile": "none",
+      "audit": "Dropped Best Agent: project EVALUATES agent traces; not itself agentic. \"Span tool-call accuracy\" is a scoring metric, \"Tool Calling demo trace\" is sample input. Off the Grid contradicted: README \"works offline\" but APP_FILE uses \"the cloud InferenceClient\". No model named so Tiny Titan/Nemotron fail; charts displayed not exportable; README is a feature list. No match survives."
+    },
+    {
+      "slug": "global-leaders",
+      "matches": [
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.96,
+          "evidence": "political-strategy game where a small language model runs the world",
+          "source": "readme"
+        },
+        {
+          "quest": "Nemotron",
+          "confidence": 0.9,
+          "evidence": "Backend: Ollama Cloud (Nemotron) if OLLAMA_API_KEY is set",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Thousand Token Wood (verbatim README premise). KEPT Nemotron, FIXED evidence to app_file docstring 'Ollama Cloud (Nemotron)' (labeler cited README badge as app_file). DROPPED Off-Brand: SFX/STANCE_DOT are game content, no gr.HTML/Blocks css/theme visible. DROPPED Field Notes: README describes mechanics, not a build write-up. No Off the Grid (uses Ollama Cloud) or Tiny Titan (32B)."
+    },
+    {
+      "slug": "pocket-weather-theater",
+      "matches": [
+        {
+          "quest": "Well-Tuned",
+          "confidence": 0.96,
+          "evidence": "TUNED_ADAPTER_ID ...smollm2-135m-lora; from peft import PeftModel",
+          "source": "app_file"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.97,
+          "evidence": "MODEL_ID HuggingFaceTB/SmolLM2-135M-Instruct (135M)",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.93,
+          "evidence": "local transformers load, no openai/anthropic/gemini imports",
+          "source": "app_file"
+        },
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.95,
+          "evidence": "joyful Gradio toy... impossible weather... miniature stage plays",
+          "source": "readme"
+        },
+        {
+          "quest": "Sharing is Caring",
+          "confidence": 0.85,
+          "evidence": "one-click download pack, downloadable postcard image, Share Card",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "Kept Well-Tuned (published LoRA repo + PeftModel import), Tiny Titan (SmolLM2-135M, under 4B), Off the Grid (local transformers, no cloud API imports), Thousand Token Wood (joyful stage-play framing), Sharing is Caring (download pack/postcard/Share Card). Dropped Off-Brand: cited evidence is generated media outputs, not custom frontend; no gr.HTML/Blocks(css=) verifiable in APP_FILE. Profile both."
+    },
+    {
+      "slug": "Trollsona",
+      "matches": [
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.97,
+          "evidence": "Track: An Adventure in Thousand Token Wood; playful troll alter ego; goblin meter",
+          "source": "readme"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.93,
+          "evidence": "compact model derived from Qwen/Qwen2.5-3B-Instruct; lightweight Qwen 0.5B fallback",
+          "source": "readme"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.85,
+          "evidence": "Local Hugging Face Transformers generation path for the primary AI runtime",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Thousand Token Wood (track+goblin meter), Tiny Titan (3B/0.5B Qwen <=4B), Off the Grid (local transformers, no cloud API; conf lowered as model off-by-default). DROPPED Well-Tuned: derived/compact/qkvfp16=quantization not fine-tune, no LoRA/PEFT/SFT. DROPPED Field Notes: features/fallback list is ordinary README. APP_FILE corroborates both axes."
+    },
+    {
+      "slug": "gitopadesh",
+      "matches": [
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.9,
+          "evidence": "Lord Krishna himself responds in first person citing exact Chapter and Verse",
+          "source": "readme"
+        },
+        {
+          "quest": "Sharing is Caring",
+          "confidence": 0.8,
+          "evidence": "Your Shloka Card, Download and Share",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.6,
+          "evidence": "multilingual TRANSLATIONS UI, Battlefield Map, PIL shloka card",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Thousand Token Wood (Krishna first-person verse persona). KEPT Sharing (Shloka Card download string plus PIL card). KEPT Off-Brand at 0.6, evidence retied to findable strings. DROPPED Field Notes (prompt blurb, not a devlog). DROPPED Backyard AI (targets every seeker, generic not named). No Tiny Titan (Qwen 7B); no Off the Grid (HF hosted, not local)."
+    },
+    {
+      "slug": "roadb-other-screen",
+      "matches": [
+        {
+          "quest": "Llama Champion",
+          "confidence": 0.97,
+          "evidence": "from llama_cpp import Llama",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.85,
+          "evidence": "Qwen GGUF through llama.cpp via llama-cpp-python",
+          "source": "app_file"
+        },
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.93,
+          "evidence": "interactive fiction experience... cinematic Other Screen... strange mirror",
+          "source": "readme"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.9,
+          "evidence": "from gradio import Server; custom frontend: index.html",
+          "source": "app_file"
+        },
+        {
+          "quest": "Sharing is Caring",
+          "confidence": 0.88,
+          "evidence": "download a souvenir card... export a synthetic-style trace",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT all 5; evidence verified in source. Off the Grid conf trimmed: GGUF/llama-cpp local, no cloud API in visible app_file (truncated). TTW evidence tightened to findable README quote. NOT added Tiny Titan (Qwen3.5-9B = 9B, over 4B) or Modal (tag only, absent from README/app_file text)."
+    },
+    {
+      "slug": "dreamwall-mc",
+      "matches": [
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.92,
+          "evidence": "hatch a NeuroPet from a prompt, carve creature's memory",
+          "source": "readme"
+        },
+        {
+          "quest": "Sharing is Caring",
+          "confidence": 0.45,
+          "evidence": "every prompt becomes part of a public server museum",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "readme_only",
+      "audit": "Kept Thousand Token Wood (playful Minecraft creature/art game). Kept Sharing is Caring at 0.45 (public museum of artifacts, but no export/push_to_hub in truncated APP_FILE). Dropped Off the Grid: no local model load (MODEL_ID is a hashlib fingerprint, declared_models empty); rested on API absence plus hedged README. Dropped Field Notes: \"Why This Is Different\" is positioning, not a build write-up."
+    },
+    {
+      "slug": "persona-atlas",
+      "matches": [
+        {
+          "quest": "Best Agent",
+          "confidence": 0.93,
+          "evidence": "agent runs web searches, pulls portrait, assembles profile",
+          "source": "readme"
+        },
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.85,
+          "evidence": "Put Socrates, Churchill, and Sam Altman in the same room",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Best Agent: real autonomous loop (web search, assemble dossier); DDGS confirms. KEPT Thousand Token Wood: playful 'same room' AI experiment. DROPPED Sharing is Caring: portrait stored with run is internal, not user export. DROPPED Off-Brand: matplotlib/UMAP/html.escape are generic, not custom CSS/gr.HTML; only plain import gradio. Not added: Off the Grid (remote HF novita), Tiny Titan (26B)."
+    },
+    {
+      "slug": "ContextForge",
+      "matches": [
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.85,
+          "evidence": "from transformers import AutoModelForCausalLM, AutoTokenizer; no cloud imports",
+          "source": "app_file"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.85,
+          "evidence": "DEFAULT_MODEL_ID = \"Qwen/Qwen2.5-0.5B-Instruct\"",
+          "source": "app_file"
+        },
+        {
+          "quest": "Backyard AI",
+          "confidence": 0.68,
+          "evidence": "Backyard AI Fit - Built for real builders using AI coding agents",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Off the Grid: transformers/Qwen load, no cloud imports. KEPT Tiny Titan: default Qwen2.5-0.5B; 32B is optional high tier. KEPT Backyard AI, conf lowered (builder persona, not one named person). DROPPED Best Agent: AGENTIC_LOOP is a prompt-template tag and the seven modules are a fixed sequential pipeline, not autonomous tool-use; evidence wrongly attributed to readme."
+    },
+    {
+      "slug": "lovegpt",
+      "matches": [
+        {
+          "quest": "Llama Champion",
+          "confidence": 0.78,
+          "evidence": "llama-server -hf ysn-rfd/Phi-4-mini-instruct-GGUF:Q4_0",
+          "source": "readme"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.75,
+          "evidence": "local Phi-4-mini-instruct GGUF runtime",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "readme_only",
+      "audit": "Fields truncated; judged visible text. KEPT Llama Champion (README llama-server pulls Phi-4-mini GGUF; lower conf, runtime is optional). KEPT Tiny Titan (Phi-4-mini ~3.8B). DROPPED Off-Brand: Flutter separate, Space is default Gradio adapter, no gr.HTML/css= visible. DROPPED Well-Tuned: vague training-pipeline line only. DROPPED Sharing: encrypted key-locked JSONL, not shareable."
+    },
+    {
+      "slug": "her",
+      "matches": [
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.95,
+          "evidence": "Gradio Server mode, FastAPI server, React app calls custom routes",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "KEPT Off-Brand: APP_FILE shows Gradio Server mode, FastAPI server, React app on bespoke /api routes; tightened evidence. DROPPED Backyard AI: README is a general dev tool for coding-agent sessions, not a specific named person the quest needs. No new matches: deterministic analyzer not agentic; no clear export or local-model load in truncated text. profile -> app_only."
+    },
+    {
+      "slug": "ux-crime-scene",
+      "matches": [
+        {
+          "quest": "Modal",
+          "confidence": 0.97,
+          "evidence": "Qwen2.5-VL-32B-Instruct on Modal (vLLM, A100-80GB)",
+          "source": "readme"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.9,
+          "evidence": "STATIC_CSS reads styles.css; --asset CSS var overrides",
+          "source": "app_file"
+        },
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.92,
+          "evidence": "hard-boiled, film-noir detective; detective thriller",
+          "source": "readme"
+        },
+        {
+          "quest": "Sharing is Caring",
+          "confidence": 0.85,
+          "evidence": "every investigation gets a unique, shareable link",
+          "source": "readme"
+        },
+        {
+          "quest": "Best Agent",
+          "confidence": 0.78,
+          "evidence": "imports investigate_agentic from detective",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT all 5; cited segments verified present. Off-Brand trimmed to 0.90 (real STATIC_CSS + base64 --asset CSS overrides). Sharing 0.85. Best Agent 0.78 (only investigate_agentic import visible, loop body off-segment). DROPPED: Tiny Titan (32B not <=4B), Off the Grid (remote Modal vLLM, not local), Field Notes (truncated tech table, no write-up)."
+    },
+    {
+      "slug": "Tone-Bridge",
+      "matches": [
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.8,
+          "evidence": "app = gr.Server()",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.85,
+          "evidence": "AutoModelForCausalLM from transformers; no cloud API imports",
+          "source": "app_file"
+        },
+        {
+          "quest": "Field Notes",
+          "confidence": 0.6,
+          "evidence": "README has Problem / What it does / How it works write-up",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Off-Brand (gr.Server() in app_file; 0.95->0.8). KEPT Off the Grid (local Qwen, 4bit, no cloud API; ->0.85). KEPT Field Notes (Problem/What/How write-up; ->0.6). DROPPED Backyard AI: broad learner audience, not a named person. DROPPED Tiny Titan: core model is Qwen3-14B; 0.6B is only auxiliary TTS."
+    },
+    {
+      "slug": "family-care-network",
+      "matches": [
+        {
+          "quest": "Backyard AI",
+          "confidence": 0.96,
+          "evidence": "Specific real user: a Ghanaian family coordinator checking on elders",
+          "source": "readme"
+        },
+        {
+          "quest": "Well-Tuned",
+          "confidence": 0.9,
+          "evidence": "\"Adwuma Pa Akan Whisper fine-tune\", \"fine_tuned\" ASR choice",
+          "source": "app_file"
+        },
+        {
+          "quest": "Field Notes",
+          "confidence": 0.7,
+          "evidence": "See CODEX_BUILD_LOG.md and HACKATHON_TODO.md documenting build",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Backyard AI, Well-Tuned (literal fine_tuned ASR choice), Field Notes (build-log docs). DROPPED Modal: app imports local services.modal_client, not import modal; README never cites Modal. DROPPED Best Agent: \"agentic\" is marketing for rule-based relay, no tool/function-call loop. DROPPED Off-Brand: \"custom Gradio UI\" is only a badge target; app is default gr tables."
+    },
+    {
+      "slug": "Case-Lantern",
+      "matches": [
+        {
+          "quest": "Llama Champion",
+          "confidence": 0.99,
+          "evidence": "from llama_cpp import Llama",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.95,
+          "evidence": "Backend: llama-cpp-python (GGUF, runs on free CPU Spaces); no cloud API",
+          "source": "app_file"
+        },
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.92,
+          "evidence": "fictional medical mystery game; Thousand Token Wood track",
+          "source": "readme"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.85,
+          "evidence": "Dark glassmorphism theme, custom CSS",
+          "source": "readme"
+        },
+        {
+          "quest": "Well-Tuned",
+          "confidence": 0.7,
+          "evidence": "Uses fine-tuned model published on HF (Qwen3.5-Medical-GSPO)",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Llama Champion (literal import) and Off the Grid (app docstring llama-cpp-python GGUF, no cloud client). KEPT Thousand Token Wood, Off-Brand, Well-Tuned from README. DROPPED Tiny Titan: README says ~4.66B params, exceeds the <=4B threshold (only constraint cited is under 32B). No missed quests: no tool-calling, no export artifact, README is a badge sheet not a devlog."
+    },
+    {
+      "slug": "planpalette",
+      "matches": [
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.72,
+          "evidence": "diffusers AutoPipelineForText2Image; no proprietary API imports",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "KEPT Off the Grid: diffusers AutoPipelineForText2Image in APP_FILE, open-weight SDXL run locally, no cloud API. DROPPED Backyard AI: 'visualization artists' is a generic profession, no named person. DROPPED Field Notes: README is a feature doc, not a build write-up. DROPPED Sharing is Caring: 'Final PNG output' is a displayed render, no export button. Only app_file yields a signal."
+    },
+    {
+      "slug": "cloud-parade-cabinet",
+      "matches": [
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.97,
+          "evidence": "kinetic Gradio toy where a hosted small model invents a tiny impossible parade",
+          "source": "readme"
+        },
+        {
+          "quest": "OpenBMB",
+          "confidence": 0.97,
+          "evidence": "OPENBMB_MODEL = ... openbmb/MiniCPM4-8B",
+          "source": "app_file"
+        },
+        {
+          "quest": "Nemotron",
+          "confidence": 0.97,
+          "evidence": "NVIDIA_MODEL = ... nvidia/llama-3.1-nemotron-nano-8b-v1",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Thousand Token Wood (toy/art framing), OpenBMB (openbmb/MiniCPM4-8B), Nemotron (nvidia nemotron-nano-8b). DROPPED Sharing is Caring: only script filenames cited, no download/export or push_to_hub shown. Off the Grid absent: readme 'Cloud API allowed', app uses InferenceClient+NVIDIA. Tiny Titan absent: 7B/8B. Modal tag has no import modal in text."
+    },
+    {
+      "slug": "neilA",
+      "matches": [
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.9,
+          "evidence": "that \"it finally understood me\" moment is the payoff",
+          "source": "readme"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.65,
+          "evidence": "LocalBrain/make_brain; model loaded at MODULE level, no proprietary API imports",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.55,
+          "evidence": "css/theme on Blocks() so custom styling applies whichever version",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "Kept Thousand Token Wood (verbatim payoff quote; playful alien game). Kept Off the Grid, tightened to LocalBrain/make_brain at module level, no openai/anthropic imports; lowered to 0.65 (brain/model truncated). Kept Off-Brand at 0.55: only css/theme-on-Blocks() comment visible, no concrete css= arg. DROPPED Field Notes: Architecture+SPEC link is product docs, not a build write-up/devlog."
+    },
+    {
+      "slug": "First-Principle-AI",
+      "matches": [
+        {
+          "quest": "Llama Champion",
+          "confidence": 0.96,
+          "evidence": "GGUF model through the official llama.cpp llama-server release",
+          "source": "readme"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.8,
+          "evidence": "hf_hub_download of model-Q8_0.gguf, run via local llama-server, no cloud client",
+          "source": "app_file"
+        },
+        {
+          "quest": "Field Notes",
+          "confidence": 0.55,
+          "evidence": "Runtime Notes: model repo, file, runtime, hardware target, llama.cpp settings",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "Both fields truncated; audited visible text only. KEPT Llama Champion (README: GGUF via official llama.cpp llama-server); fixed source to readme. FIXED Off the Grid: cited phrase was README; app_file shows hf_hub_download of model-Q8_0.gguf, no cloud client, kept on app_file at 0.8. ADDED Field Notes (Runtime Notes). No size named, no Tiny Titan; no custom CSS, no Off-Brand."
+    },
+    {
+      "slug": "legawa",
+      "matches": [
+        {
+          "quest": "Best Agent",
+          "confidence": 0.95,
+          "evidence": "Asisten multi-agen ... analis_ruu, peneliti, penyusun, surat",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Best Agent: README multi-agen + four named agents; APP_FILE imports analis_ruu/peneliti/penyusun/surat with tools + query-expansion search. DROPPED Backyard AI: targets legislators as a profession, not one named person. DROPPED Off the Grid: default is HF Inference API (cloud); llama.cpp only optional. No Tiny Titan (9B/30B/8B all >4B)."
+    },
+    {
+      "slug": "come-and-compare",
+      "matches": [],
+      "signal_profile": "none",
+      "audit": "Dropped both. Backyard AI: README targets \"millions of shoppers in India,\" mass-market not one named person. Field Notes: those are pitch headers, not a build write-up. No new match: Tiny Titan ineligible (Qwen2.5-7B); Off the Grid fails (HF InferenceClient API, no local load); Best Agent/Off-Brand unevidenced in truncated text."
+    },
+    {
+      "slug": "hackathon-advisor",
+      "matches": [
+        {
+          "quest": "Well-Tuned",
+          "confidence": 0.97,
+          "evidence": "published PEFT LoRA adapter for MiniCPM5",
+          "source": "readme"
+        },
+        {
+          "quest": "Llama Champion",
+          "confidence": 0.95,
+          "evidence": "runtime query embeddings computed through llama.cpp",
+          "source": "readme"
+        },
+        {
+          "quest": "Nemotron",
+          "confidence": 0.95,
+          "evidence": "Nemotron Speech Streaming via NVIDIA NeMo ASR",
+          "source": "readme"
+        },
+        {
+          "quest": "Best Agent",
+          "confidence": 0.9,
+          "evidence": "AdvisorEngine tool-call planning, resolve_tool_call, tool_schemas",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.92,
+          "evidence": "local MiniCPM5 transformers plus llama.cpp GGUF, no cloud API",
+          "source": "app_file"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.95,
+          "evidence": "runs openbmb/MiniCPM5-1B, a 1B model",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "All 6 proposals verified as genuine. KEPT Well-Tuned, Llama Champion, Nemotron, Best Agent. Added strong misses Off the Grid (fully local; only openai ref is local whisper, not cloud API) and Tiny Titan (MiniCPM5-1B). DROPPED Off-Brand and Modal only for the 6-item cap; both still valid. OpenBMB also valid but cut by cap."
+    },
+    {
+      "slug": "wpl-discovery",
+      "matches": [
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.55,
+          "evidence": "Gradio 6 with Worcestershire County Council brand colours",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "readme_only",
+      "audit": "Kept Off-Brand: README cites custom council brand colours over default Gradio. Dropped Backyard AI: track label, serves a whole county not a named person. Dropped Best Agent: query_tool is keyword/RAG routing, not tool-calling/loop. Dropped Field Notes: brief how-it-works blurb, no real write-up. No Off the Grid (Anthropic+HF cloud), no Tiny Titan (Qwen 32B)."
+    },
+    {
+      "slug": "The-Shrine",
+      "matches": [
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.95,
+          "evidence": "Build something delightful that wouldn't exist without AI",
+          "source": "readme"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.85,
+          "evidence": "Custom Canvas + vanilla JS (60+ monologue phrases, 5 phases)",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "readme_only",
+      "audit": "Kept Thousand Token Wood (README states track verbatim; delightful AI art). Kept Off-Brand (README: Custom Canvas + vanilla JS); lowered conf since canvas code absent from truncated app.py. Denied Off the Grid: README self-claims it but APP_FILE calls DashScope + OpenRouter cloud APIs. No Well-Tuned (badge-only) or Tiny Titan (Qwen2.5-7B)."
+    },
+    {
+      "slug": "octopus-ai",
+      "matches": [
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.9,
+          "evidence": "mission-control dark palette, gr.HTML blocks, CSS-only animations",
+          "source": "app_file"
+        },
+        {
+          "quest": "Well-Tuned",
+          "confidence": 0.55,
+          "evidence": "4 specialized arms trained with Structurally Adaptive Learning (SAL)",
+          "source": "readme"
+        },
+        {
+          "quest": "Best Agent",
+          "confidence": 0.45,
+          "evidence": "structural brain and arms detect damage, reroute, and recover",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "Kept Off-Brand: real custom dark palette, gr.HTML panels, CSS animations in APP_FILE. Kept Well-Tuned: README claims arms trained via SAL; conf lowered (no script). Kept Best Agent, tightened/lowered: brain routes arms, reroute/recover. DROPPED Thousand Token Wood: engineering demo, not art/whimsy. No Off the Grid: 7B open-weight but no local-load signal. No cloud API."
+    },
+    {
+      "slug": "VoiceGate",
+      "matches": [
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.8,
+          "evidence": "all models loaded from local COMFY_DIR paths; ComfyUI on 127.0.0.1; no cloud API client",
+          "source": "app_file"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.88,
+          "evidence": "Qwen3-ASR-1.7B and Qwen3-ForcedAligner-0.6B model paths",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "Kept Off the Grid: models all from local COMFY_DIR paths, ComfyUI on 127.0.0.1, no openai/anthropic/gemini/cohere import; tightened evidence, confidence 0.8. Kept Tiny Titan: Qwen3-ASR-1.7B and 0.6B appear verbatim, both <=4B. Dropped potential OpenBMB: voxcpm/VoxCPM2 path present but no openbmb/ namespace or MiniCPM signal. No Off-Brand/Agent/Backyard evidence (UI truncated; generic README)."
+    },
+    {
+      "slug": "AI-Puppet-Theater",
+      "matches": [
+        {
+          "quest": "OpenBMB",
+          "confidence": 0.97,
+          "evidence": "OpenBMB model id: openbmb/MiniCPM5-1B",
+          "source": "app_file"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.95,
+          "evidence": "openbmb/MiniCPM5-1B names a 1B model",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.94,
+          "evidence": "CUSTOM_CSS overrides .gradio-container background",
+          "source": "app_file"
+        },
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.9,
+          "evidence": "short interactive puppet shows from a user premise",
+          "source": "readme"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.6,
+          "evidence": "BACKEND_CHOICES deterministic/openbmb, no cloud imports",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "Kept OpenBMB, Tiny Titan, Off-Brand, Thousand Token Wood, Off the Grid; all evidence present in cited segments. Dropped Best Agent: named functions are imported show-builder helpers, no visible tool-calling, planner, or multi-step loop in truncated source. Lowered Off the Grid to 0.6 (model unloaded, deterministic fallback, no cloud client visible). signal_profile stays both."
+    },
+    {
+      "slug": "LocalDuo",
+      "matches": [
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.93,
+          "evidence": "model_id = \"Qwen/Qwen3.5-2B\"",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.8,
+          "evidence": "AutoModelForImageTextToText loads Qwen via transformers; no cloud API imports",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "Read full 1903-char APP_FILE. KEPT Tiny Titan: active model_id Qwen/Qwen3.5-2B is 2B (9B commented out). KEPT Off the Grid: local transformers load, no openai/anthropic/genai/cohere imports. DROPPED Best Agent: code only imports playwright/BeautifulSoup/TTS plus stop flags; scripted browsing is not function-calling or a planner loop. README is templated HF stub, so app_only."
+    },
+    {
+      "slug": "PocketWorld-Studio",
+      "matches": [
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.62,
+          "evidence": "WORLD_THEMES cozy_fantasy, sci_fi_station, haunted_mystery with npc/item/landmark keys",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "KEPT Thousand Token Wood (tightened evidence, 0.75->0.62): playful multi-world studio with NPCs/items/landmarks is in APP_FILE, but no AI/LLM visible (static Kenney CC0 tile renderer, declared_models empty). README is HF boilerplate. Did NOT add Off-Brand (no gr.HTML/css visible) or Sharing (no download/gr.File). No model signals for other quests."
+    },
+    {
+      "slug": "voice-sales-logger",
+      "matches": [
+        {
+          "quest": "Backyard AI",
+          "confidence": 0.9,
+          "evidence": "Voice-driven sales logger for a produce vendor",
+          "source": "readme"
+        },
+        {
+          "quest": "Modal",
+          "confidence": 0.8,
+          "evidence": "if not ON_SPACE: import modal",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.58,
+          "evidence": "transformers AutoModelForCausalLM + nemo.collections.asr; no cloud API",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.45,
+          "evidence": "from gradio_wizardcapture import WizardCapture (vendored component)",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Backyard AI: README verbatim, real produce-vendor task (0.92>0.9). KEPT Modal: import present but gated by ON_SPACE (0.88>0.8). KEPT Off the Grid: transformers+NeMo loaded, no openai/anthropic/genai/cohere visible; trimmed 0.65>0.58 (APP_FILE truncated). ADDED Off-Brand low-conf: vendored WizardCapture component. DROPPED Nemotron candidate: generic NeMo RNNT, no named nvidia/Parakeet repo."
+    },
+    {
+      "slug": "wan2-2-fp8da-aoti-14B-fast",
+      "matches": [
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.75,
+          "evidence": "diffusers WanImageToVideoPipeline + torchao loaded locally, no cloud API imports",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.6,
+          "evidence": "get_timestamp_js custom JS querySelector('#generated-video video')",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "KEPT Off the Grid: APP_FILE loads diffusers Wan i2v pipeline + torchao locally; no openai/anthropic/genai/cohere visible. Lowered 0.82->0.75 (file truncated). KEPT Off-Brand: custom get_timestamp_js JS present, beyond default Gradio. README templated HF link, no Field Notes. 'mcp-server' tag alone weak for Best Agent. Empty models + 14B title => no Tiny Titan."
+    },
+    {
+      "slug": "nutrilens",
+      "matches": [
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.92,
+          "evidence": "CUSTOM_CSS with .nutrilens-report, .summary-card, .tip-card classes",
+          "source": "app_file"
+        },
+        {
+          "quest": "Best Agent",
+          "confidence": 0.72,
+          "evidence": "identifies each ingredient, looks up USDA, finds PubMed studies",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEEP Off-Brand: real CUSTOM_CSS classes in app_file. KEEP Best Agent (0.82->0.72): multi-step tools (VLM, USDA, PubMed lookups), fixed pipeline. DROP Backyard AI: targets \"anyone,\" no named person. DROP Field Notes: motivation/usage only, no build write-up. Not Off the Grid (HF cloud client) nor Tiny Titan (Qwen3.6-27B)."
+    },
+    {
+      "slug": "business-order-assistant",
+      "matches": [
+        {
+          "quest": "Modal",
+          "confidence": 0.9,
+          "evidence": "defaults to ...chat-query.modal.run endpoints called via requests",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.95,
+          "evidence": "CUSTOM_CSS terminal/amber, JetBrains Mono, #app-title and #sidebar",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "README is templated boilerplate, so app_only stands. KEPT Modal: real *.modal.run endpoints invoked via requests; no `import modal`, lowered to 0.90. KEPT Off-Brand: genuine CUSTOM_CSS, JetBrains Mono, amber/dark, bespoke #app-title/#sidebar. Tightened both evidence quotes. Skipped Tiny Titan (Qwen2.5-7B >4B), Off the Grid (model on Modal, not local), Field Notes, Best Agent."
+    },
+    {
+      "slug": "Kasualdad_LFED",
+      "matches": [
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.95,
+          "evidence": "All inference via llama.cpp + local GGUF. No API calls. No cloud.",
+          "source": "readme"
+        },
+        {
+          "quest": "Llama Champion",
+          "confidence": 0.95,
+          "evidence": "llama.cpp as the sole inference backend. Q4_K_M quantization.",
+          "source": "readme"
+        },
+        {
+          "quest": "Well-Tuned",
+          "confidence": 0.93,
+          "evidence": "Fine-tuned Qwen2.5-Coder-7B on 1,200+ synthetic NL→SQL pairs via Unsloth QLoRA",
+          "source": "readme"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.75,
+          "evidence": "Custom design system (Linear/Vercel inspired), WCAG AA, Inter + JetBrains Mono",
+          "source": "readme"
+        },
+        {
+          "quest": "Backyard AI",
+          "confidence": 0.85,
+          "evidence": "school district admin (principal, superintendent, department head) types a question",
+          "source": "readme"
+        },
+        {
+          "quest": "Modal",
+          "confidence": 0.7,
+          "evidence": "Fine-tuned ... via Unsloth QLoRA on Modal A10G",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "All 6 quotes verified in README badge table / What It Does. APP_FILE confirms llama.cpp (docstring), DuckDB, gradio+spaces; NO openai/anthropic/google/cohere, so Off the Grid stands. Tiny Titan correctly absent (7B). Lowered Off-Brand to 0.75 (badge self-claim, no CSS in truncated app.py) and Modal to 0.70 (single training mention)."
+    },
+    {
+      "slug": "thousand-token-wood-sim",
+      "matches": [
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.99,
+          "evidence": "Five woodland creatures... trade goods for pebbles, gossip, scheme, and panic",
+          "source": "readme"
+        },
+        {
+          "quest": "Well-Tuned",
+          "confidence": 0.97,
+          "evidence": "ttw-trader-0.5b (fine-tuned)... distilled from a 3B teacher",
+          "source": "readme"
+        },
+        {
+          "quest": "OpenBMB",
+          "confidence": 0.96,
+          "evidence": "Bramble (squirrel) | MiniCPM3-4B | OpenBMB",
+          "source": "readme"
+        },
+        {
+          "quest": "Nemotron",
+          "confidence": 0.96,
+          "evidence": "Fenn (fox) | Nemotron-Mini-4B | NVIDIA",
+          "source": "readme"
+        },
+        {
+          "quest": "Modal",
+          "confidence": 0.95,
+          "evidence": "served with vLLM on Modal; modal deploy serve.py",
+          "source": "readme"
+        },
+        {
+          "quest": "Field Notes",
+          "confidence": 0.9,
+          "evidence": "Field notes: Hugging Face article | Medium",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "All 6 first-pass matches verified; KEPT 5 (TTW, Well-Tuned, OpenBMB, Nemotron, Field Notes) with tightened quotes. DROPPED Sharing is Caring (valid but lower-value) to ADD Modal, clearer and also in APP_FILE (ModalLLM, modal deploy serve.py). Off the Grid not awarded: Modal cloud, not local. Tiny Titan plausible but cast has gpt-oss-20b; capped at 6."
+    },
+    {
+      "slug": "memrl-canvas",
+      "matches": [
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.76,
+          "evidence": "transformers AutoModelForCausalLM load, no cloud API client",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.5,
+          "evidence": "mounts StaticFiles and FileResponse for a custom frontend",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "KEEP Off the Grid: transformers AutoModelForCausalLM present, no cloud client visible; conf trimmed (no model name, truncated). FIX Off-Brand: bare gradio Server import weak; re-anchored to StaticFiles/FileResponse frontend. DROP Best Agent: episodic_memory/q_value is a seeded SQLite lookup, no loop/tool-call visible, so RL agent loop is speculative. README is HF boilerplate."
+    },
+    {
+      "slug": "roast-my-repo",
+      "matches": [
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.93,
+          "evidence": "custom terminal CSS, JetBrains Mono, scanline overlay effect",
+          "source": "app_file"
+        },
+        {
+          "quest": "OpenBMB",
+          "confidence": 0.95,
+          "evidence": "MiniCPM4-8B (openbmb/MiniCPM4-8B) (OpenBMB)",
+          "source": "readme"
+        },
+        {
+          "quest": "Modal",
+          "confidence": 0.95,
+          "evidence": "MiniCPM4-8B via vLLM on Modal, Modal A10G GPU",
+          "source": "readme"
+        },
+        {
+          "quest": "Backyard AI",
+          "confidence": 0.7,
+          "evidence": "final-year CS students wanting honest feedback on GitHub portfolio before jobs",
+          "source": "readme"
+        },
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.55,
+          "evidence": "brutal, funny critique; tells you what your friends won't",
+          "source": "readme"
+        },
+        {
+          "quest": "Sharing is Caring",
+          "confidence": 0.5,
+          "evidence": "Generated README you can copy and use immediately",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "All 5 verified. KEEP Off-Brand (app_file CSS present), OpenBMB, Modal (exact readme). Backyard AI lowered to 0.7 (broad persona, not one named person). Thousand Token Wood kept 0.55 (roast whimsy real but core is a utility). ADDED Sharing is Caring 0.5 (copyable generated README). Confirmed NO Tiny Titan (8B) and NO Off the Grid (Modal cloud + OpenAI endpoint + Groq)."
+    },
+    {
+      "slug": "tiny-dispatch-coach",
+      "matches": [],
+      "signal_profile": "none",
+      "audit": "Dropped Backyard AI: label-echo for a generic segment (delivery teams), not a named person. Off the Grid not awarded: shipped app is a deterministic offline planner with NO model loaded; MiniCPM/Llama-via-llama.cpp is only a future swap, declared_models empty, no runtime/cloud API. Llama Champion/Tiny Titan/OpenBMB rest on that conditional mention. No frontend/agent/finetune signals."
+    },
+    {
+      "slug": "dm-order-desk",
+      "matches": [
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.9,
+          "evidence": "AutoModelForCausalLM.from_pretrained(MODEL_ID), local transformers",
+          "source": "app_file"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.97,
+          "evidence": "Model: Qwen/Qwen2.5-1.5B-Instruct, about 1.5B",
+          "source": "readme"
+        },
+        {
+          "quest": "Backyard AI",
+          "confidence": 0.62,
+          "evidence": "designed for home bakers, farmers market vendors, WhatsApp sellers",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "Both fields truncated. KEPT Off the Grid: local transformers/torch loads Qwen2.5-1.5B, no cloud client visible; trimmed conf. KEPT Tiny Titan: README names Qwen2.5-1.5B (~1.5B), verbatim. KEPT Backyard AI at 0.62: targets persona categories not one named person (Maya/Sam are customers). No fine-tune, custom UI, export, llama.cpp, Modal, OpenBMB, Nemotron, or agent loop evident."
+    },
+    {
+      "slug": "neighbourhood-guide",
+      "matches": [
+        {
+          "quest": "Llama Champion",
+          "confidence": 0.95,
+          "evidence": "from llama_cpp import Llama; LLAMA_CPP_FILE *Q4_K_M.gguf",
+          "source": "app_file"
+        },
+        {
+          "quest": "Backyard AI",
+          "confidence": 0.85,
+          "evidence": "Backyard AI track: solve a real problem for someone you know",
+          "source": "readme"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.85,
+          "evidence": "Tiny Aya 3.35B, MagpieTTS 357M, Cohere Transcribe 2B",
+          "source": "readme"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.75,
+          "evidence": "llama_cpp GGUF + LM Studio local server, no cloud SDK",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Llama Champion (literal import + *Q4_K_M.gguf). KEPT Backyard AI, trimmed 0.85 (group not named person). KEPT Tiny Titan: 3 models all <=4B (3.35B max). KEPT Off the Grid 0.75: llama.cpp/GGUF + local LM Studio; no cloud SDK (Cohere is open-weight). DROPPED Off-Brand: Catpuccin theme is a docstring comment, not real CSS code."
+    },
+    {
+      "slug": "wonderland",
+      "matches": [
+        {
+          "quest": "Nemotron",
+          "confidence": 0.97,
+          "evidence": "MODEL_ID = \"nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16\"",
+          "source": "app_file"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.94,
+          "evidence": "Nemotron 3 Nano 4B (~4B params)",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.9,
+          "evidence": "running fully locally; AutoModelForCausalLM, no cloud API",
+          "source": "app_file"
+        },
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.93,
+          "evidence": "A tiny text adventure; the forgetting is the game",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "KEPT 4. Nemotron: exact nvidia/...Nemotron MODEL_ID. Tiny Titan: active model is real 4B Nano (ignored aspirational 30B comment). Off the Grid: local transformers, no cloud API. TTW: text-adventure framing. Did NOT add Llama Champion (GGUF only an aspirational comment; real load is BF16 transformers, no llama_cpp), Best Agent ('agentic' marketing), Field Notes (README boilerplate). app_only."
+    },
+    {
+      "slug": "awaaz",
+      "matches": [
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.78,
+          "evidence": "transformers AutoModelForCausalLM load, no openai/anthropic client",
+          "source": "app_file"
+        },
+        {
+          "quest": "Backyard AI",
+          "confidence": 0.85,
+          "evidence": "dub into the natural Hindi mix your family actually uses",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Off the Grid: app_file loads transformers AutoModelForCausalLM, no cloud LLM client visible (Edge TTS is free TTS); conf lowered since APP_FILE truncated. KEPT Backyard AI: README frames concrete household problem; re-anchored off bare track-tag line. DROPPED Field Notes: short pipeline list is a blurb, not a substantial build write-up. No Tiny Titan (Qwen 7B, over 4B)."
+    },
+    {
+      "slug": "karim-lab",
+      "matches": [],
+      "signal_profile": "none",
+      "audit": "Dropped Backyard AI: quote is real but persona is \"a lawyer\" (generic profession, not a named person/household task), so the bar fails; in doubt, drop. No other quest holds: app is deterministic regex with NO model (\"does not call a hosted LLM yet\"), so Off the Grid fails. llama.cpp/Modal/Field Notes only PLANNED. declared_models empty (no Tiny Titan). Plain gradio, no theming/agent loop."
+    },
+    {
+      "slug": "trace-field-notes",
+      "matches": [
+        {
+          "quest": "OpenBMB",
+          "confidence": 0.95,
+          "evidence": "openbmb/MiniCPM5-1B pass by default",
+          "source": "readme"
+        },
+        {
+          "quest": "Nemotron",
+          "confidence": 0.95,
+          "evidence": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16 for deeper analysis",
+          "source": "readme"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.9,
+          "evidence": "quick openbmb/MiniCPM5-1B pass by default",
+          "source": "readme"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.93,
+          "evidence": "custom React field-notebook UI served by gradio.Server",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "All 4 verified as literal README quotes, KEPT. Tiny Titan trimmed to 0.9 (MiniCPM5-1B=1B, but a 30B is also used; default pass is the 1B). Dropped adds: Field Notes (name is a false-friend; README is architecture not a devlog), Best Agent (analyzes traces, no agent loop itself), Sharing is Caring (no export found), Off the Grid (ZeroGPU; openai/ ambiguous)."
+    },
+    {
+      "slug": "Structured-Data-Rescuer",
+      "matches": [
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.9,
+          "evidence": "custom_css with .hero-container, .primary-btn, .feedback-card styles",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "KEPT Off-Brand: substantial custom_css block (.hero-container, .primary-btn, .feedback-card) beyond default Gradio; findable in app_file. DROPPED Off the Grid (remote InferenceClient, not local), Tiny Titan (Llama-3.1-8B >4B), Llama Champion (no llama.cpp/GGUF), Sharing is Caring (csv/tempfile hint but no download button visible, truncated). README is boilerplate, so app_only."
+    },
+    {
+      "slug": "Council-of-Tiny-Minds",
+      "matches": [
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.82,
+          "evidence": "transformers Auto* loaded via from_pretrained; no cloud API imports",
+          "source": "app_file"
+        },
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.85,
+          "evidence": "personas: Mister Wink, Goblin Clerk, Oracle Beta, The Skeptic",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "Kept both. Off the Grid: transformers loaded via from_pretrained, no openai/anthropic/google/cohere imports. Thousand Token Wood: four playful personas present verbatim. Did NOT add Tiny Titan despite \"Tiny Minds\" title - default MODEL_ID is Qwen/Qwen3.5-9B (9B>4B), a name-trap. No Best Agent: no tool/orchestration visible (app truncated). README is a templated stub."
+    },
+    {
+      "slug": "blind-quill",
+      "matches": [
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.96,
+          "evidence": "bespoke literary frontend \"The Invisible Bindery\", lives in web/, served by gradio.Server",
+          "source": "readme"
+        },
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.92,
+          "evidence": "hidden-canon story grafting game; idea stitched into the story",
+          "source": "readme"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.9,
+          "evidence": "Qwen/Qwen3.5-2B",
+          "source": "readme"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.76,
+          "evidence": "slow local (CPU/MPS) runs show real progress",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Off-Brand (custom React frontend in web/ via gradio.Server). KEPT Thousand Token Wood (story-grafting game). KEPT Tiny Titan (Qwen3.5-2B=2B). FIXED Off the Grid: evidence trimmed to app_file-only CPU/MPS line; no cloud API in APP_FILE; conf lowered (Qwen is README). DROPPED Field Notes: module list, not a build write-up."
+    },
+    {
+      "slug": "receipt_scanner",
+      "matches": [
+        {
+          "quest": "OpenBMB",
+          "confidence": 0.98,
+          "evidence": "MODEL_ID = \"openbmb/MiniCPM-V-4.6\"",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.85,
+          "evidence": "transformers AutoModelForImageTextToText loads openbmb/MiniCPM-V-4.6; no cloud API imports",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "KEPT OpenBMB: MODEL_ID=\"openbmb/MiniCPM-V-4.6\" is verbatim. KEPT Off the Grid (0.92->0.85): local transformers load, no openai/anthropic/gemini/cohere imports; lowered since APP_FILE is truncated. README is templated HF stub, so app_only. No missed quests: no custom theme, empty README, single prompt (no agent loop), MiniCPM-V-4.6 ~8B not Tiny Titan."
+    },
+    {
+      "slug": "smol-town",
+      "matches": [
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.95,
+          "evidence": "town of tiny AI minds gossiping, feuding, falling in love",
+          "source": "readme"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.93,
+          "evidence": "No cloud APIs. No giant model. Every mind runs locally",
+          "source": "readme"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.85,
+          "evidence": ".gradio-container{background:#1c1714;} custom .feed CSS",
+          "source": "app_file"
+        },
+        {
+          "quest": "Best Agent",
+          "confidence": 0.5,
+          "evidence": "Each is its own small-model agent that improvises",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Thousand Token Wood (whimsy; source->readme). KEPT Off the Grid: no proprietary cloud client; OLLAMA is local, ZeroGPU in-process. KEPT Off-Brand: custom CSS/portrait theming. DROPPED Tiny Titan: declared_models empty; only model named is qwen3:14b (>4B); <=4B badge is marketing, MiniCPM \"later\". KEPT Best Agent 0.5: multi-agent loop, no visible tool calls."
+    },
+    {
+      "slug": "oneiros",
+      "matches": [
+        {
+          "quest": "Llama Champion",
+          "confidence": 0.96,
+          "evidence": "Qwen2.5-7B-Instruct (GGUF) via llama-cpp-python",
+          "source": "readme"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.91,
+          "evidence": "tanpa API LLM pihak ketiga (no third-party LLM API)",
+          "source": "readme"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.84,
+          "evidence": "imports CSS_ONEIROS and tema_oneiros (custom theme)",
+          "source": "app_file"
+        },
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.82,
+          "evidence": "track An Adventure in Thousand Token Wood; dreams to SVG",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "Kept Llama Champion (import llama_cpp + GGUF wheel). Kept Off the Grid: no cloud LLM client; 'on our servers' = local model on Space. Kept Off-Brand (CSS_ONEIROS+tema_oneiros imports). Kept Thousand Token Wood (track verbatim, dream-to-SVG). DROPPED Field Notes: Day1/Day2 status table + deploy links are ops docs, not a build write-up/devlog. No Tiny Titan (7B>4B)."
+    },
+    {
+      "slug": "oracle-ternary-flame",
+      "matches": [
+        {
+          "quest": "Well-Tuned",
+          "confidence": 0.97,
+          "evidence": "PeftModel.from_pretrained loads keypa/oracle-gemma4-12b-lora adapter",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.95,
+          "evidence": "large bespoke CSS, gr.HTML headers, demo.launch(css=CSS)",
+          "source": "app_file"
+        },
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.85,
+          "evidence": "Oracle of the Ternary Flame, cryptic cosmic prose, never break character",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.7,
+          "evidence": "local transformers + peft load, no proprietary cloud API imports",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "Verified against full app_source in corpus (input APP_FILE truncated). KEPT all three: LoRA via PeftModel, oracle persona, local transformers/peft with no cloud API. Off the Grid 0.65->0.7. ADDED Off-Brand (heavy custom CSS, gr.HTML, css=CSS). Did NOT add Tiny Titan (Gemma 4 12B). No agentic/sharing/Modal/Nemotron/llama.cpp. README boilerplate, so app_only."
+    },
+    {
+      "slug": "Retail-Insight-AI",
+      "matches": [
+        {
+          "quest": "Backyard AI",
+          "confidence": 0.7,
+          "evidence": "local shopkeepers ko enterprise-level operational insights deta hai",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "readme_only",
+      "audit": "Dropped Off the Grid: app loads NO model (only gradio/pandas/os); insights are rule-based string templates, so the no-cloud claim is absence of AI, not a local model load. Kept Backyard AI: README is in the Backyard AI Track with a concrete persona+task (local shopkeepers, ops insights), evidence verbatim. Lowered conf to 0.7 (persona is a category). readme_only: APP_FILE has no quest signal."
+    },
+    {
+      "slug": "family-care-asr-eval",
+      "matches": [
+        {
+          "quest": "Well-Tuned",
+          "confidence": 0.88,
+          "evidence": "published Akan fine-tune for the Well-Tuned badge",
+          "source": "readme"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.83,
+          "evidence": "transformers AutoProcessor/Wav2Vec2ForCTC loaded locally, no cloud API",
+          "source": "app_file"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.92,
+          "evidence": "parameter_count 1B and 0.2B, all small models",
+          "source": "app_file"
+        },
+        {
+          "quest": "Backyard AI",
+          "confidence": 0.8,
+          "evidence": "tests real Twi, Fante, Ghanaian English family recordings",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Well-Tuned (verbatim README fine-tune line; model used in registry), Off the Grid (only local transformers from_pretrained; no openai/anthropic/gemini/cohere; trimmed for truncation), Tiny Titan (1B/0.2B <=4B), Backyard AI (family-caregiving recordings task). DROPPED Field Notes: README is test protocol + voting how-to, not a build write-up/lessons-learned; borderline so dropped."
+    },
+    {
+      "slug": "Backyard-Demo-Builder",
+      "matches": [
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.78,
+          "evidence": "Fully custom CSS dark theme — Archivo + IBM Plex Mono, acid green CTAs",
+          "source": "readme"
+        },
+        {
+          "quest": "Backyard AI",
+          "confidence": 0.93,
+          "evidence": "my mom, a real-estate agent; cheap way to test follow-up reminder workflow",
+          "source": "readme"
+        },
+        {
+          "quest": "Sharing is Caring",
+          "confidence": 0.85,
+          "evidence": "downloadable demo package: files you can inspect, unzip, run, and test",
+          "source": "readme"
+        },
+        {
+          "quest": "Best Agent",
+          "confidence": 0.5,
+          "evidence": "agent-swarm-workbench generates app, spec, field notes, and checks",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "readme_only",
+      "audit": "Kept Off-Brand, Backyard AI, Sharing is Caring (all in README). DROPPED Nemotron: only in declared_models, not README/APP_FILE; app_file cite wrong. DROPPED Field Notes: cited notes are a generated output, not a build write-up. Best Agent kept low: name+tags only. Not added: Off the Grid (openrouter cloud default), Tiny Titan (7B/12B too big)."
+    },
+    {
+      "slug": "code-shrink-token-decimator",
+      "matches": [
+        {
+          "quest": "Field Notes",
+          "confidence": 0.5,
+          "evidence": "README writes up the Bottleneck (LLM Context Inflation) and the Engine (AST framework)",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "readme_only",
+      "audit": "KEPT Field Notes, tightened evidence: README is a genuine custom write-up (problem/engine/features), not templated, but pitch-flavored with a TikTok demo not a devlog, so lowered to 0.5. Did NOT add Off the Grid: 'runs on local lightweight models' is marketing; APP_FILE has only ast/re/gradio, no model load. No Tiny Titan (no model). Profile stays readme_only."
+    },
+    {
+      "slug": "briefing-32",
+      "matches": [
+        {
+          "quest": "Backyard AI",
+          "confidence": 0.95,
+          "evidence": "personal cron that already runs every two hours on the maker's laptop",
+          "source": "readme"
+        },
+        {
+          "quest": "Field Notes",
+          "confidence": 0.7,
+          "evidence": "honest story... split the single 70B scoring pass into two cheaper passes",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "readme_only",
+      "audit": "KEPT Backyard AI: README frames track + a real personal 2-hourly news cron; verbatim. KEPT Field Notes (0.82->0.7): 'honest story' block is a real build write-up on the 70B->two-pass-32B tradeoff. DROPPED Best Agent: linear fetch->filter->rank->render scoring passes, no tools/planning/loop. Not Off the Grid (Qwen3-32B via HF Inference Providers cloud) or Tiny Titan (32B)."
+    },
+    {
+      "slug": "pawmap",
+      "matches": [
+        {
+          "quest": "Nemotron",
+          "confidence": 0.85,
+          "evidence": "Nemotron Omni via NVIDIA NIM (tem precedência)",
+          "source": "readme"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.92,
+          "evidence": "Custom frontend via gradio.Server",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Nemotron: README cites Nemotron Omni via NVIDIA NIM as primary path; 0.9->0.85 (config only). KEPT Off-Brand: docstring + code use gradio.Server, FastAPI mounts, HTMLResponse. DROPPED Backyard AI: evidence is just the track label + anyone; public map, no named persona. No adds: cloud APIs kill Off the Grid; serverless not llama.cpp; 11B not Tiny."
+    },
+    {
+      "slug": "GRM-2.6-Opus",
+      "matches": [
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.85,
+          "evidence": "loads OrionLLM/GRM-2.6-Opus via AutoModelForCausalLM, no cloud API imports",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "KEPT Off the Grid: APP_FILE loads OrionLLM/GRM-2.6-Opus via AutoModelForCausalLM+BitsAndBytesConfig; only transformers/gradio/spaces/torch imports, no cloud client. DROPPED Best Agent (PLACEHOLDER 'terminal-agent' just describes prompts; plain chat, no tools), Tiny Titan (no <=4B name), Off-Brand (no verifiable custom UI), Field Notes (notes too terse). app_only."
+    },
+    {
+      "slug": "CodeFlow",
+      "matches": [
+        {
+          "quest": "Llama Champion",
+          "confidence": 0.97,
+          "evidence": "from llama_cpp import Llama",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.88,
+          "evidence": "llama_cpp Llama + hf_hub_download GGUF; no openai/anthropic clients",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.7,
+          "evidence": "HTMLResponse serve the custom frontend from a route",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "All 3 verified in full APP_FILE, KEPT. Llama Champion: import present. Off the Grid: local llama.cpp + hf_hub_download GGUF, no cloud API clients; 0.9->0.88. Off-Brand: gradio Server + FastAPI HTMLResponse route + 'custom gradio look'; 0.82->0.7 (HTML truncated). Not added: Tiny Titan (only future 'Qwen 30b'), Best Agent, Field Notes (bare HF template). README has no signals -> app_only."
+    },
+    {
+      "slug": "borderless",
+      "matches": [
+        {
+          "quest": "Best Agent",
+          "confidence": 0.95,
+          "evidence": "The model plans multi-step research and calls tools",
+          "source": "readme"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.85,
+          "evidence": "app_css read from app.css; globe_head_html injected into head",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Best Agent: README says model plans multi-step research and calls tools (0.97->0.95). KEPT Off-Brand: APP_FILE injects custom app.css + globe_head_html into head. DROPPED Field Notes: product how-it-works text, not a build devlog/lessons. DROPPED Backyard AI: generic \"you\", no named person. Off the Grid not added: 27B open-weight but APP_FILE shows only UI, no load or cloud API."
+    },
+    {
+      "slug": "quran-stt",
+      "matches": [
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.83,
+          "evidence": "NeMo ASR model restore_from .nemo on CPU; no cloud API",
+          "source": "app_file"
+        },
+        {
+          "quest": "Well-Tuned",
+          "confidence": 0.6,
+          "evidence": "loads fastconformer-quran-ar phase3_full_wer0.0014 (fine-tuned)",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "KEPT Off the Grid: APP_FILE loads NeMo ASR via restore_from on CPU, no cloud client; tightened evidence, 0.83 (truncated). DROPPED Backyard AI: no named person/persona, general tool, README is boilerplate. ADDED Well-Tuned: phase3-fine-tuned FastConformer. Skipped Nemotron (repo mohammed/, not nvidia/) and Tiny Titan (no size). app_only: README empty."
+    },
+    {
+      "slug": "dream-museum",
+      "matches": [
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.96,
+          "evidence": "Thousand Token Wood track; Draw a dream, Watch it materialize",
+          "source": "readme"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.85,
+          "evidence": "gr.HTML with custom <style>, hidden footer, redirect to /museum",
+          "source": "app_file"
+        },
+        {
+          "quest": "Sharing is Caring",
+          "confidence": 0.8,
+          "evidence": "Save it to the public museum or keep it private; GALLERY_DATASET",
+          "source": "readme"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.55,
+          "evidence": "Open-weight SDXL + ControlNet declared; no proprietary cloud API",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "Kept Thousand Token Wood, Off-Brand (gr.HTML+custom style in APP_FILE), Sharing is Caring (museum save+dataset). FIXED Off the Grid: cited SDXL+ControlNet is README text, not app_file; loader unseen; moved source to readme, lowered conf. No cloud API anywhere. Dropped Tiny Titan: ~5B diffusion stack, not small-LLM."
+    },
+    {
+      "slug": "one-for-all",
+      "matches": [
+        {
+          "quest": "Well-Tuned",
+          "confidence": 0.96,
+          "evidence": "distills 5 teacher LLMs into Qwen2.5-0.5B student via distillation",
+          "source": "readme"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.95,
+          "evidence": "single Qwen2.5-0.5B student",
+          "source": "readme"
+        },
+        {
+          "quest": "OpenBMB",
+          "confidence": 0.8,
+          "evidence": "MiniCPM-2B listed among teacher models",
+          "source": "readme"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.78,
+          "evidence": "custom HTML panel with background:#0d1117 inline styles",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.62,
+          "evidence": "load_student loads open-weight Qwen, no cloud API imports",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "Kept Well-Tuned, Tiny Titan (0.5B), Off-Brand (#0d1117 custom HTML verified). OpenBMB to 0.8: MiniCPM-2B is only a teacher, not runtime. Off the Grid to 0.62: loads open-weight Qwen, no cloud client, but APP_FILE truncated so no-cloud claim unverifiable. Dropped Thousand Token Wood: poetic tab names on a technical eval dashboard, not a playful experience."
+    },
+    {
+      "slug": "the-i3-ghost-matrix-v5",
+      "matches": [
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.9,
+          "evidence": "Track 2: Thousand Token Wood - Delightfully Weird",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "readme_only",
+      "audit": "KEPT Thousand Token Wood: whimsical 'ghost trapped in old i3' agent, glitched overheat dialogue, verbatim Track 2 label. DROPPED Off the Grid: README says rule-based heuristics, no LLM; declared_models empty; APP_FILE only imports gradio + hardcoded strings. Off the Grid needs a local model load, not absence of AI. No other signals."
+    },
+    {
+      "slug": "the-pixelforge-klein",
+      "matches": [],
+      "signal_profile": "none",
+      "audit": "Confirmed empty. declared_models=[]; README is bare HF config template (no Field Notes). APP_FILE is pure PIL procedural pixel-art seeded by hash+random, no model loaded (drops Off the Grid, Tiny Titan, OpenBMB, Nemotron, Well-Tuned, Llama). Plain gradio import, no custom CSS/HTML (not Off-Brand). Whimsical but no AI, fails Thousand Token Wood. No export, persona, agent, or Modal."
+    },
+    {
+      "slug": "backyard-raccoon-deterrent",
+      "matches": [
+        {
+          "quest": "Backyard AI",
+          "confidence": 0.97,
+          "evidence": "defending my actual backyard since April",
+          "source": "readme"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.95,
+          "evidence": "fully offline: Raspberry Pi + Mac Mini, $0 cloud",
+          "source": "readme"
+        },
+        {
+          "quest": "Well-Tuned",
+          "confidence": 0.92,
+          "evidence": "Fine-tuned YOLOv8n raccoon detector",
+          "source": "app_file"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.9,
+          "evidence": "A 3-million-parameter YOLO spots them",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "Kept Backyard AI (real personal raccoon problem), Off the Grid (offline ONNX YOLO, no cloud API in app), Well-Tuned (app docstring \"Fine-tuned YOLOv8n\"), Tiny Titan (~3M params, under 4B). Dropped Field Notes: cited USDA/story text justifies the problem, not a build write-up/devlog; one-line pipeline sketch isn't substantial. both: app shows fine-tune, readme shows offline/params/persona."
+    },
+    {
+      "slug": "patient-virtuel-dentiste",
+      "matches": [
+        {
+          "quest": "Backyard AI",
+          "confidence": 0.92,
+          "evidence": "built for a real learner training at a Swiss clinic",
+          "source": "readme"
+        },
+        {
+          "quest": "Modal",
+          "confidence": 0.92,
+          "evidence": "Qwen via Modal (A100 GPU); Whisper via Modal (A10G GPU)",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "readme_only",
+      "audit": "Backyard AI KEPT: README literally names a real persona (hygienist training at a Swiss clinic); 0.97->0.92. Modal KEPT: README cites Modal A100/A10G endpoints + MODAL_ENDPOINT_* env vars; app.py lacks import modal but endpoint/README signals hold, readme source correct; 0.97->0.92. None added: Qwen 27B blocks Tiny Titan; cloud Modal blocks Off the Grid; app.py is plain Gradio."
+    },
+    {
+      "slug": "ducks-happen",
+      "matches": [
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.96,
+          "evidence": "Ducks accumulate. There is no end state. Pure chaos. Maximum duck.",
+          "source": "readme"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.7,
+          "evidence": "from diffusers import FluxPipeline",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "Kept Thousand Token Wood: README cites the track and is playful generative-art whimsy; tightened evidence to exact README ordering. Added Off the Grid: APP_FILE loads FLUX.1-schnell locally via diffusers FluxPipeline + torch, no cloud API client present. Rejected Tiny Titan (FLUX ~12B, not small) and Off-Brand/Sharing (no custom CSS/export visible in truncated app)."
+    },
+    {
+      "slug": "Sprout-And-Spoon",
+      "matches": [
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.9,
+          "evidence": "HF_MODEL = \"Qwen/Qwen2.5-Coder-3B-Instruct",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "KEPT Tiny Titan: Qwen2.5-Coder-3B is genuinely <=4B, literally in APP_FILE; tightened evidence. NOT Off the Grid: despite the misleading call_local_model name, inference is remote (InferenceClient + HF_API_TOKEN + ':nscale' cloud provider). README is templated boilerplate (no Field Notes); plain gradio import (no Off-Brand); single LLM call (no Best Agent)."
+    },
+    {
+      "slug": "innerspace",
+      "matches": [
+        {
+          "quest": "Well-Tuned",
+          "confidence": 0.97,
+          "evidence": "Fine-tuned Model: build-small-hackathon/inner-space-1b-sft-cbt",
+          "source": "readme"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.92,
+          "evidence": "journal text is not sent to an external inference API",
+          "source": "readme"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.95,
+          "evidence": "fine-tuned 1.2B parameter language model",
+          "source": "readme"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.78,
+          "evidence": "css=CUSTOM_CSS and theme=get_theme() on launch",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "Kept Well-Tuned (README links inner-space-1b-sft-cbt; SFT), Off the Grid (no external inference API; no cloud client in APP_FILE), Tiny Titan (1.2B<=4B), Off-Brand (CUSTOM_CSS+get_theme() in app_file, lowered to 0.78 as CSS body is imported/unseen). Dropped Backyard AI: generic journaling tool for \"the writer\"/\"someone\", no named person/persona."
+    },
+    {
+      "slug": "repair-guy",
+      "matches": [
+        {
+          "quest": "Nemotron",
+          "confidence": 0.97,
+          "evidence": "MODEL_ID = \"nvidia/NVIDIA-Nemotron-Parse-v1.2\"",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "Kept Nemotron: APP_FILE sets MODEL_ID to nvidia/NVIDIA-Nemotron-Parse-v1.2, an nvidia/...nemotron... repo; exact signal, source correct, 0.97 ok. README is templated HF config boilerplate, so app_only. Did not add Off the Grid: framed as a ZeroGPU/cuda Space, not local-first. No other evidence in truncated text."
+    },
+    {
+      "slug": "SlideAI",
+      "matches": [
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.92,
+          "evidence": "CSS with linear-gradient, border-radius: 16px, custom button theming",
+          "source": "app_file"
+        },
+        {
+          "quest": "Sharing is Caring",
+          "confidence": 0.9,
+          "evidence": "polished, download-ready PPTX presentation",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Off-Brand: APP_FILE has real custom CSS (linear-gradient, border-radius:16px, button theming). KEPT Sharing: README says download-ready PPTX. DROPPED Off the Grid: README only names Qwen2.5-7B; inference lives in slide_generator.py (absent from APP_FILE), so no visible local load proves local-first. Tiny Titan rejected (7B>4B). No Field Notes (links, no write-up)."
+    },
+    {
+      "slug": "Mediassist",
+      "matches": [
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.93,
+          "evidence": "AutoModelForCausalLM.from_pretrained, no cloud API imports",
+          "source": "app_file"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.97,
+          "evidence": "model_id = \"TinyLlama/TinyLlama-1.1B-Chat-v1.0\"",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "KEPT Off the Grid: local transformers AutoModelForCausalLM load, no openai/anthropic/gemini/cohere imports. KEPT Tiny Titan: TinyLlama-1.1B (<=4B, literally tiny). DROPPED Backyard AI: \"rural Pakistan communities\" is a broad population in a system prompt, not a specific named person; README is templated boilerplate, so no README signals. signal_profile=app_only."
+    },
+    {
+      "slug": "metabolic-forensics",
+      "matches": [
+        {
+          "quest": "Backyard AI",
+          "confidence": 0.85,
+          "evidence": "Point it at your own wearable history (CGM glucose, HRV, recovery, sleep RHR)",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "readme_only",
+      "audit": "KEPT Backyard AI: concrete N-of-1 problem (own CGM/HRV/sleep), quote present. DROPPED Off the Grid + Llama Champion: both rest on aspirational \"plug in at the marked points\"; APP_FILE is a skeleton (numpy/pandas/gradio, LLM stubbed, no llama_cpp/GGUF/Llama), no model runs. DROPPED Field Notes: README is a pitch/rationale, not build notes. No cloud API."
+    },
+    {
+      "slug": "guitar-singalong",
+      "matches": [
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.6,
+          "evidence": "beautiful acoustic guitar cover to sing along with",
+          "source": "readme"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.5,
+          "evidence": "imports local MelodyExtractor/GuitarGenerator; no cloud API imports",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "Kept Thousand Token Wood: README quote present; AI guitar cover is creative. Trimmed evidence, lowered confidence. Kept Off the Grid: APP_FILE imports only local utils + spaces/gradio/torch, no cloud client; demucs/musicgen tags imply open-weight. Confidence lowered, model loading in unseen utils. Skipped Sharing (Gradio default) and Tiny Titan (no model)."
+    },
+    {
+      "slug": "bridge-troll",
+      "matches": [
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.92,
+          "evidence": "hidden NATURES, win/loss reveal card, mossy troll heaves himself upright on bridge",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.72,
+          "evidence": "_meter_html builds custom HTML with classes resolve-wrap, resolve-bar, resolve-fill",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "README is pure Spaces config boilerplate, so app_only. KEPT Thousand Token Wood: docstring/INTRO show a whimsical generative troll game. KEPT Off-Brand, trimmed 0.8->0.72: _meter_html emits bespoke HTML with custom classes, but CSS/theme wiring is truncated. Did not add Off the Grid: get_backend/MOCK/ZeroGPU only hint local; no concrete load and declared_models empty."
+    },
+    {
+      "slug": "what-changed",
+      "matches": [
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.95,
+          "evidence": "running entirely via llama.cpp. Nothing leaves the device",
+          "source": "readme"
+        },
+        {
+          "quest": "Well-Tuned",
+          "confidence": 0.9,
+          "evidence": "a fine-tuned 1B model zeon01/what-changed-1b",
+          "source": "readme"
+        },
+        {
+          "quest": "Llama Champion",
+          "confidence": 0.97,
+          "evidence": "LlamaCppBackend, MiniCPM5-1B.Q8_0.gguf, llama.cpp threads",
+          "source": "app_file"
+        },
+        {
+          "quest": "Backyard AI",
+          "confidence": 0.95,
+          "evidence": "caregiver's notes about a parent with Parkinson's into a doctor report",
+          "source": "readme"
+        },
+        {
+          "quest": "OpenBMB",
+          "confidence": 0.85,
+          "evidence": "MiniCPM5-1B.Q8_0.gguf in HF_FILE",
+          "source": "app_file"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.97,
+          "evidence": "A 1.08B model is enough",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "Kept all 6; no cloud API in APP_FILE so Off the Grid stands. Well-Tuned to 0.9 (published repo, no train script). OpenBMB 0.85: MiniCPM5 GGUF under zeon01 fork. Tiny Titan 1.08B<=4B. Dropped Field Notes (product copy), Sharing is Caring (no export button), Off-Brand/Best Agent (plain gr tabs, deterministic)."
+    },
+    {
+      "slug": "team_lunch_app_v1",
+      "matches": [
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.85,
+          "evidence": "pipeline text-generation Qwen2.5-1.5B-Instruct, device=cpu, no cloud API",
+          "source": "app_file"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.95,
+          "evidence": "model=\"Qwen/Qwen2.5-1.5B-Instruct\"",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "KEPT Off the Grid: local transformers pipeline loads Qwen2.5-1.5B on cpu, no cloud client in APP_FILE. KEPT Tiny Titan: 1.5B is <=4B, literal quote present. DROPPED Backyard AI: generic team/group ordering tool, not a specific named person/persona; README is templated boilerplate; KSh menu is flavor. No adds. signal_profile=app_only; README carries no signal."
+    },
+    {
+      "slug": "dream-customs",
+      "matches": [
+        {
+          "quest": "OpenBMB",
+          "confidence": 0.97,
+          "evidence": "openbmb/MiniCPM5-1B and openbmb/MiniCPM-V-4.6 declared models",
+          "source": "readme"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.93,
+          "evidence": "openbmb/MiniCPM5-1B for dream negotiation and pact generation",
+          "source": "readme"
+        },
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.88,
+          "evidence": "playful alliance with last night's dream; Today's Pact card",
+          "source": "readme"
+        },
+        {
+          "quest": "Field Notes",
+          "confidence": 0.6,
+          "evidence": "Local smoke notes from this Mac mini: what loaded/failed",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "readme_only",
+      "audit": "KEPT OpenBMB, Tiny Titan (MiniCPM5-1B is 1B), Thousand Token Wood (whimsical dream-pact). DROPPED Backyard AI: no named person, generic users + playful task is whimsy not a personal problem. ADDED Field Notes: real devlog \"Local smoke notes from this Mac mini\". Not Off the Grid: README defaults to demo backend, Ollama optional. APP_FILE is a thin launcher with no signals."
+    },
+    {
+      "slug": "ai-study-buddy",
+      "matches": [],
+      "signal_profile": "none",
+      "audit": "Dropped Backyard AI: \"Areeba Iqbal\" is the bot's author identity, not a named end-user with a concrete task; it's a generic student chat. APP_FILE uses InferenceClient (cloud) for Llama-3.1-8B, so Off the Grid and Llama Champion fail; Tiny Titan fails (8B>4B). README is only the templated config line. No quest qualifies."
+    },
+    {
+      "slug": "Darwin-35B-A3B-Opus",
+      "matches": [
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.7,
+          "evidence": "AutoModelForCausalLM.from_pretrained(MODEL_ID...); no cloud API imports",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "KEPT Off the Grid: APP_FILE loads Darwin-35B via transformers AutoModelForCausalLM 4-bit on ZeroGPU; no openai/anthropic/gemini/cohere present. Tightened evidence; lowered conf (APP_FILE truncated). NOT Tiny Titan: 35B total (A3B=3B active) fails >4B rule. No Well-Tuned/Off-Brand/Best Agent (mcp tag is boilerplate, no tool loop)/Field Notes (one-line README). README has no signal -> app_only."
+    },
+    {
+      "slug": "surgical-tissue-segmentation",
+      "matches": [
+        {
+          "quest": "Well-Tuned",
+          "confidence": 0.85,
+          "evidence": "A fine-tuned YOLOv8 model detects and segments anatomical structures",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "readme_only",
+      "audit": "Kept Well-Tuned: README quote 'A fine-tuned YOLOv8 model' present; trimmed conf to 0.85 (claim only, no training script/adapter). Dropped Backyard AI: 'junior medical residents' is a broad professional audience, not a specific named person. Skipped Off the Grid/Tiny Titan: no APP_FILE confirms Llama 3.1 local vs cloud or its size. No app file, so readme_only."
+    },
+    {
+      "slug": "mythograph-atelier",
+      "matches": [
+        {
+          "quest": "Llama Champion",
+          "confidence": 0.95,
+          "evidence": "Text inference runs through `llama.cpp`",
+          "source": "readme"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.9,
+          "evidence": "No cloud inference APIs are required",
+          "source": "readme"
+        },
+        {
+          "quest": "Nemotron",
+          "confidence": 0.93,
+          "evidence": "Nemotron-3-Nano-4B for text",
+          "source": "readme"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.9,
+          "evidence": "Nemotron-3-Nano-4B for text and FLUX.2 Klein 4B",
+          "source": "readme"
+        },
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.85,
+          "evidence": "Track: An Adventure in Thousand Token Wood",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "readme_only",
+      "audit": "APP_FILE is a thin import+launch stub, no model/API code; all signals from README. KEPT Llama Champion, Off the Grid (no cloud API, llama.cpp/ZeroGPU), Nemotron, Tiny Titan (both models 4B/Nano by name), Thousand Token Wood (named track + art framing). DROPPED Off-Brand: only a self-declared badge-path claim, no actual custom CSS/HTML/JS shown."
+    },
+    {
+      "slug": "InContext",
+      "matches": [
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.9,
+          "evidence": "AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=...)",
+          "source": "app_file"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.97,
+          "evidence": "model_name = \"Qwen/Qwen2.5-0.5B-Instruct\"",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "Off the Grid KEPT: local transformers from_pretrained, no openai/anthropic/google/cohere/api_key found (README only boilerplate URL); evidence tightened, conf 0.92->0.9. Tiny Titan KEPT: Qwen2.5-0.5B genuinely <=4B, exact quote. README is HF boilerplate so app_only. No Off-Brand: inline div isn't gr.Blocks/css; file truncates before UI. No LoRA/llama.cpp/Modal/agent."
+    },
+    {
+      "slug": "NEXUS-Visual-Weaver",
+      "matches": [
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.8,
+          "evidence": "Flux2KleinPipeline.from_pretrained, no cloud API client",
+          "source": "app_file"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.95,
+          "evidence": "FLUX.2-klein-4B, 4B params, fastest small model",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "KEPT Off the Grid (0.85->0.8): local diffusers load of open-weight FLUX.2-klein (Apache-2.0), no openai/anthropic/gemini/cohere client. KEPT Tiny Titan: model named 4B, '4B params, fastest small model' (<=4B). DROPPED Off-Brand: 'css = ...' is the truncation point with no visible custom CSS/HTML; standard FLUX/SD Gradio demo boilerplate. signal_profile app_only: README is templated config link."
+    },
+    {
+      "slug": "case0",
+      "matches": [
+        {
+          "quest": "Llama Champion",
+          "confidence": 0.97,
+          "evidence": "llama.cpp (`llama-cpp-python`) — no server, no GPU",
+          "source": "readme"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.93,
+          "evidence": "single small local model; no server, no remote endpoint",
+          "source": "readme"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.97,
+          "evidence": "Qwen2.5-1.5B-Instruct (GGUF)",
+          "source": "readme"
+        },
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.88,
+          "evidence": "brand-new murder mystery, written and acted by a 1.5B model",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "readme_only",
+      "audit": "No APP_FILE; all signals from README, so readme_only confirmed. Kept all 4: Llama Champion (llama-cpp-python + GGUF), Tiny Titan (Qwen2.5-1.5B ≤4B), Thousand Token Wood (AI-authored murder game). Off the Grid kept (local CPU/GGUF, no remote endpoint; no app file to contradict) but confidence trimmed as unverifiable. Evidence tightened. No match added."
+    },
+    {
+      "slug": "rarebirds",
+      "matches": [
+        {
+          "quest": "Well-Tuned",
+          "confidence": 0.82,
+          "evidence": "adapter_dir=DEFAULT_ADAPTER_DIR",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.78,
+          "evidence": "app.launch(theme=APP_THEME, css=APP_CSS)",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.6,
+          "evidence": "build_app load_in_4bit, no cloud imports",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "Kept Well-Tuned (adapter_dir + 'Gemma tuning workspace'=LoRA; tightened to app_file quote). Kept Off-Brand (css+theme literally present). Kept Off the Grid 0.6 (local 4bit/adapter load, no cloud imports). Dropped Backyard AI: generic 'a user', no named persona. Dropped Field Notes: product spec/repo layout, not a build write-up. No Tiny Titan (gemma-3-27b=27B)."
+    },
+    {
+      "slug": "attention-firewall",
+      "matches": [],
+      "signal_profile": "none",
+      "audit": "Confirmed empty. Deployment skeleton MVP: declared_models empty; README says it \"does not perform model inference... llama.cpp execution.\" APP_FILE only imports gradio, returns deterministic placeholder via gr.ChatInterface. No model load, no cloud API, no agent/tool loop, no export, no custom CSS/HTML/theme. llama.cpp named only as NOT-done. Textbox kwargs are default config, not Off-Brand."
+    },
+    {
+      "slug": "Advent_of_a_World_of_Flowering_Trees",
+      "matches": [
+        {
+          "quest": "Llama Champion",
+          "confidence": 0.98,
+          "evidence": "from llama_cpp import Llama; loads .gguf via Llama(",
+          "source": "app_file"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.9,
+          "evidence": "runs GGUF locally via llama_cpp, no cloud API client",
+          "source": "app_file"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.85,
+          "evidence": "MODEL_REPO_ID = \"CohereLabs/tiny-aya-global-GGUF\"",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "Kept all 3. Llama Champion: literal llama_cpp import, Llama( ctor, q4_k_m.gguf. Off the Grid: GGUF run locally; no cohere/openai client (Cohere model is open-weight, run via llama_cpp). Tiny Titan: name \"tiny-aya\". README templated, no signal -> app_only. Skipped Off-Brand (default Blocks) and Thousand Token Wood (title only)."
+    },
+    {
+      "slug": "GTROX",
+      "matches": [],
+      "signal_profile": "none",
+      "audit": "Default Gradio chatbot template. APP_FILE uses HF InferenceClient (cloud) with openai/gpt-oss-20b: not local (no Off the Grid), 20B excludes Tiny Titan. gr.Blocks/Sidebar/LoginButton are stock boilerplate, not custom theming (no Off-Brand). Plain chat_completion loop, no tools (no Best Agent). One-line template README. Empty match set confirmed."
+    },
+    {
+      "slug": "mini-fam",
+      "matches": [
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.88,
+          "evidence": "runs entirely on your own computer; ollama run qwen3:30b",
+          "source": "app_file"
+        },
+        {
+          "quest": "Backyard AI",
+          "confidence": 0.7,
+          "evidence": "a local AI family assistant; Your family's assistant",
+          "source": "app_file"
+        },
+        {
+          "quest": "Best Agent",
+          "confidence": 0.78,
+          "evidence": "agent.run_agent; full model conversation (incl. tool calls)",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "README is only templated config text, so app_only stands. KEEP Off the Grid: \"runs entirely on your own computer\" + Ollama qwen3:30b, no cloud client. KEEP Best Agent: agent.run_agent loop, \"incl. tool calls\". KEEP Backyard AI at 0.7 (household reminders/notes, real utility, no named person). No Tiny Titan (qwen3 is 30B), no Off-Brand (plain Blocks), no Llama Champion (Ollama, not llama.cpp)."
+    },
+    {
+      "slug": "deepzrj-thousand-token-wood",
+      "matches": [],
+      "signal_profile": "none",
+      "audit": "Confirmed empty. APP_FILE is a templated Gradio test scaffold: trail_response only string-interpolates inputs, no model load/inference, declared_models empty. README is HF boilerplate. 'Thousand Token Wood' is just the Space name, not a built creative experience. Plain gr.Blocks/Markdown = generic Gradio (no Off-Brand); 'Build log v0.1.0' is a stub, not Field Notes."
+    },
+    {
+      "slug": "Yui-home-assistant",
+      "matches": [
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.93,
+          "evidence": "runs fully locally, no API token required",
+          "source": "readme"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.85,
+          "evidence": "small (244M, fast): openai/whisper-small",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "both",
+      "audit": "KEPT Off the Grid: README says fully local, no token; APP_FILE only transformers pipeline, no cloud client (whisper-small is open-weight HF repo). KEPT Tiny Titan: whisper-small is 244M (<=4B). DROPPED Backyard AI: no named person/task, generic transcription boilerplate. No missed quests: default Blocks, no agent/export/write-up."
+    },
+    {
+      "slug": "Family-Bill-Assistant",
+      "matches": [
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.95,
+          "evidence": "custom_css from ui/style.css; demo.launch(theme=my_theme, css=custom_css)",
+          "source": "app_file"
+        },
+        {
+          "quest": "Best Agent",
+          "confidence": 0.65,
+          "evidence": "process_workflow from agent.brain; route everything to the Core Boss",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "KEPT Off-Brand: custom CSS file + gr.themes.Default + css=/theme= launch args, beyond default styling. KEPT Best Agent, 0.75->0.65: 'Core Boss' router (process_workflow) orchestrates a vision tool + text; orchestration in unshown imports. DROPPED Backyard AI: generic household tool, no named person; README is templated boilerplate. No adds. app_only since README has no signal."
+    },
+    {
+      "slug": "mycelium",
+      "matches": [
+        {
+          "quest": "Nemotron",
+          "confidence": 0.97,
+          "evidence": "nvidia/Nemotron-Mini-4B-Instruct via HF Transformers + ZeroGPU",
+          "source": "readme"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.83,
+          "evidence": "NVIDIA Nemotron-Mini (4B) extracts the core insight",
+          "source": "readme"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.9,
+          "evidence": "React + TypeScript + Tailwind CSS (served by FastAPI)",
+          "source": "readme"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.6,
+          "evidence": "local-first, AI-powered knowledge companion; HF Transformers + ZeroGPU",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "readme_only",
+      "audit": "KEEP Nemotron (exact repo nvidia/Nemotron-Mini-4B). KEEP Tiny Titan (4B named; conf trimmed, 7B Qwen-VL also used). KEEP Off-Brand (React+TS+Tailwind). KEEP Off the Grid, tightened quote, lower conf: APP_FILE is a trivial uvicorn bootstrap importing unshown 'main', no-cloud-API unverified but none appears. DROP Backyard AI: generic 'you' PKM, no named person."
+    },
+    {
+      "slug": "compliment-forest",
+      "matches": [
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.9,
+          "evidence": "No hosted inference API is called at runtime",
+          "source": "readme"
+        },
+        {
+          "quest": "Well-Tuned",
+          "confidence": 0.95,
+          "evidence": "Text adapter LoRA; Text SFT data; Watercolor LoRA published",
+          "source": "readme"
+        },
+        {
+          "quest": "Llama Champion",
+          "confidence": 0.92,
+          "evidence": "MiniCPM5-1B GGUF through a local llama.cpp server",
+          "source": "readme"
+        },
+        {
+          "quest": "OpenBMB",
+          "confidence": 0.95,
+          "evidence": "published MiniCPM5-1B; declared minicpm5-1b model",
+          "source": "readme"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.95,
+          "evidence": "MiniCPM5-1B GGUF — 1B parameter model",
+          "source": "readme"
+        },
+        {
+          "quest": "Sharing is Caring",
+          "confidence": 0.85,
+          "evidence": "copyable tiny spell; Linked-model traces published",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "readme_only",
+      "audit": "All six matches verified against README; quotes present. APP_FILE is a thin uvicorn/create_app launcher, no cloud API client; Off the Grid kept (confidence trimmed, quote README-only). Tiny Titan valid (1B); OpenBMB valid (MiniCPM). A 7th match, Thousand Token Wood (watercolor path), dropped only for the 6-cap. signal_profile readme_only."
+    },
+    {
+      "slug": "gemma-task-agent-trace",
+      "matches": [],
+      "signal_profile": "none",
+      "audit": "Confirmed empty/none. Fabricated stub: only `import gradio as gr` plus a mock f-string echo, name-stuffing \"local Gemma-2B\" and \"Thousand Token Wood\" in simulated strings. No model load, no transformers/llama.cpp/tools, so Off the Grid/Tiny Titan/Best Agent dropped. Default Blocks/Textbox, no custom CSS, so Off-Brand dropped. README boilerplate."
+    },
+    {
+      "slug": "WitGym",
+      "matches": [],
+      "signal_profile": "none",
+      "audit": "Dropped Thousand Token Wood. The quote is present in README, but the project is an explicit WIP stub: respond() ignores input and returns a hardcoded loading message, declared_models is empty, no model/RAG/CBR implemented, default gr.Interface UI. The creative experience is aspirational, not delivered — too thin per drop-on-stub/when-in-doubt rules. No other quests supported."
+    },
+    {
+      "slug": "thousand-token-wood",
+      "matches": [
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.7,
+          "evidence": "gradio Server mounts /static, serves custom index.html homepage",
+          "source": "app_file"
+        }
+      ],
+      "signal_profile": "app_only",
+      "audit": "KEPT Off-Brand: APP_FILE uses gradio Server(), mounts a StaticFiles /static dir, serves a hand-written index.html via a custom route — real custom frontend. Tightened evidence; lowered to 0.7 since index.html contents unseen. DROPPED Thousand Token Wood/Field Notes: README is an explicit Project shell template, title matches track name only. No models/agent/modal/llama.cpp/fine-tune signals."
+    },
+    {
+      "slug": "tiny-army",
+      "matches": [
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.97,
+          "evidence": "Track 2 \"An Adventure in Thousand Token Wood\"",
+          "source": "readme"
+        },
+        {
+          "quest": "Llama Champion",
+          "confidence": 0.95,
+          "evidence": "persona + war-diary generation via llama.cpp",
+          "source": "readme"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.88,
+          "evidence": "local, no cloud — Off the Grid",
+          "source": "readme"
+        },
+        {
+          "quest": "Tiny Titan",
+          "confidence": 0.9,
+          "evidence": "a 1–3B LLM for voice",
+          "source": "readme"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.8,
+          "evidence": "FastAPI serves the custom Pixi battle frontend",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "readme_only",
+      "audit": "All 5 matches verified; every evidence quote present verbatim in README. KEPT all: Thousand Token Wood (Track 2 named), Llama Champion (war-diary via llama.cpp), Off the Grid (llama.cpp local, no cloud; no APP_FILE to contradict), Tiny Titan (1-3B, <=4B), Off-Brand (custom Pixi frontend). APP_FILE absent so profile stays readme_only. Off the Grid confidence trimmed; no code confirms path."
+    },
+    {
+      "slug": "amnesiac",
+      "matches": [
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.78,
+          "evidence": "reverse-Turing interrogation game for the build-small-hackathon",
+          "source": "readme"
+        },
+        {
+          "quest": "Off-Brand",
+          "confidence": 0.7,
+          "evidence": "one FastAPI process serves the static frontend, mounts a minimal Gradio app",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "readme_only",
+      "audit": "KEPT Thousand Token Wood: \"reverse-Turing interrogation game\" is genuine playful AI-native framing (conf 0.82->0.78). KEPT Off-Brand: README says FastAPI serves custom static frontend, Gradio \"minimal for compliance\" — real custom-frontend signal (conf 0.75->0.7). APP_FILE only bootstraps FastAPI/uvicorn; logic in unprovided server.webapp, no model/agent/cloud signals. Stays readme_only."
+    },
+    {
+      "slug": "job-search-assistant",
+      "matches": [
+        {
+          "quest": "Llama Champion",
+          "confidence": 0.95,
+          "evidence": "served via llama.cpp, gguf model declared",
+          "source": "readme"
+        },
+        {
+          "quest": "Well-Tuned",
+          "confidence": 0.9,
+          "evidence": "Qwen3-8B student distilled from DeepSeek V4 Pro",
+          "source": "readme"
+        },
+        {
+          "quest": "Off the Grid",
+          "confidence": 0.78,
+          "evidence": "served via llama.cpp on ZeroGPU, open-weight Qwen3 GGUF",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "readme_only",
+      "audit": "KEPT Llama Champion (README 'served via llama.cpp', gguf tag). KEPT Well-Tuned, evidence tightened to 'distilled from DeepSeek V4 Pro'. KEPT Off the Grid, tightened to llama.cpp/GGUF/Qwen3; APP_FILE is just a Gradio launcher, no cloud API. DROPPED Backyard AI: generic tool, no named persona. Did NOT add Tiny Titan (8B model)."
+    },
+    {
+      "slug": "the-echo",
+      "matches": [
+        {
+          "quest": "Thousand Token Wood",
+          "confidence": 0.9,
+          "evidence": "agentic tree of the lives you didn't live; each echo speaks back in subtly altered voice",
+          "source": "readme"
+        }
+      ],
+      "signal_profile": "readme_only",
+      "audit": "Kept Thousand Token Wood: whimsical/creative README (alternate lives, plant a seed, grow branches); verbatim evidence. Dropped Best Agent: 'agentic tree' is metaphor for alternate selves, not tool use/planner; APP_FILE is only a build_demo()/launch() stub; README admits a placeholder MockLLM path. Off the Grid/Tiny Titan not awarded. Profile readme_only."
+    }
+  ]
+}

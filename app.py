@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
+from threading import Lock, Thread
 from typing import Any, Iterator
+from uuid import uuid4
 
 from fastapi import Body, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response, StreamingResponse
@@ -14,7 +19,15 @@ from hackathon_advisor.agent import AdvisorEngine
 from hackathon_advisor.artifact_bundle import BUNDLE_FILENAME, build_demo_bundle_zip
 from hackathon_advisor.asr_runtime import create_asr_transcriber
 from hackathon_advisor.chapter import build_chapter_markdown
-from hackathon_advisor.data import ProjectIndex
+from hackathon_advisor.dashboard import build_dashboard_payload
+from hackathon_advisor.dashboard_storage import (
+    DashboardStorageError,
+    cache_dir_from_env,
+    load_latest_artifacts,
+    persist_refresh_artifacts,
+    require_writable_cache_dir,
+)
+from hackathon_advisor.data import DEFAULT_EMBEDDING_MODEL_FILE, DEFAULT_EMBEDDING_MODEL_REPO, Project, ProjectIndex
 from hackathon_advisor.demo_rehearsal import build_demo_rehearsal
 from hackathon_advisor.model_runtime import create_tool_planner
 from hackathon_advisor.profiling import (
@@ -27,6 +40,7 @@ from hackathon_advisor.lora_dataset import build_lora_dataset_jsonl
 from hackathon_advisor.lora_training_kit import TRAINING_KIT_FILENAME, build_lora_training_kit_zip
 from hackathon_advisor.png_export import artifact_png_filename, render_artifact_png
 from hackathon_advisor.prize_ledger import prize_ledger
+from hackathon_advisor.quest_analysis import create_quest_analyzer, validate_matches_by_project
 from hackathon_advisor.runtime_hooks import install_asyncio_cleanup_hook
 from hackathon_advisor.submission_packet import build_submission_packet_markdown
 from hackathon_advisor.tool_contracts import resolve_tool_call, tool_schemas
@@ -45,16 +59,49 @@ INDEX_PATH = ROOT / "data" / "project_index.json"
 PROFILE_FIELDS = ["skills", "time", "preferences", "constraints"]
 MAX_AUDIO_UPLOAD_BYTES = 25 * 1024 * 1024
 AUDIO_UPLOAD_SUFFIXES = {".aac", ".aif", ".aiff", ".flac", ".m4a", ".mp3", ".oga", ".ogg", ".opus", ".wav", ".webm"}
+DEFAULT_HF_ORG = "build-small-hackathon"
+REFRESH_STAGE_LABELS = {
+    "crawling": "Fetching public Spaces",
+    "embedding": "Rebuilding the embedding index",
+    "quest_analysis": "Classifying quest coverage",
+    "atlas": "Projecting the atlas",
+    "persisting": "Writing dashboard artifacts",
+    "swapping": "Activating the latest dashboard",
+}
 
-index = ProjectIndex.from_files(DATA_PATH, INDEX_PATH)
+_runtime_lock = Lock()
+_refresh_lock = Lock()
+
+
+def _load_initial_runtime() -> tuple[ProjectIndex, dict[str, Any]]:
+    artifacts = load_latest_artifacts(cache_dir_from_env())
+    if artifacts is not None:
+        loaded_index = ProjectIndex.from_files(artifacts.projects_path, artifacts.index_path)
+        return loaded_index, artifacts.dashboard
+    loaded_index = ProjectIndex.from_files(DATA_PATH, INDEX_PATH)
+    return loaded_index, build_dashboard_payload(loaded_index)
+
+
+index, dashboard_payload = _load_initial_runtime()
+
 # Acceleration is automatic: on a ZeroGPU Space the GPU path uses accelerate device_map inside
 # the @spaces.GPU fork; locally the device resolves CUDA -> Apple MPS -> CPU. CPU is only used
 # as an explicit override or a quota fallback.
-engine = AdvisorEngine(index, create_tool_planner(device="auto" if zero_gpu_enabled() else "local"))
+engine = AdvisorEngine(index, create_tool_planner(device="cuda" if zero_gpu_enabled() else "local"))
 voice_transcriber = create_asr_transcriber()
 app = Server()
 
 _cpu_engine: AdvisorEngine | None = None
+_refresh_state: dict[str, Any] = {
+    "status": "idle",
+    "run_id": "",
+    "stage": "",
+    "stage_label": "",
+    "started_at": "",
+    "finished_at": "",
+    "error": "",
+    "result": None,
+}
 
 
 def _json_event(payload: dict) -> str:
@@ -79,6 +126,185 @@ def _engine_turn_stream_gpu(message: str, session: dict[str, Any]) -> Iterator[d
 @gpu_task
 def _transcribe_voice(audio_path: str) -> dict[str, Any]:
     return voice_transcriber.transcribe(Path(audio_path)).to_dict()
+
+
+@gpu_task
+def _analyze_dashboard_quests(project_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    missing_evidence_keys = [
+        str(item.get("id") or index)
+        for index, item in enumerate(project_rows)
+        if "readme_body" not in item or "app_file_source" not in item
+    ]
+    if missing_evidence_keys:
+        raise RuntimeError(
+            "dashboard quest analysis requires refresh snapshots with readme_body and app_file_source; "
+            f"missing evidence keys for {len(missing_evidence_keys)} projects"
+        )
+    projects = [Project.from_dict(item) for item in project_rows]
+    analyzer = create_quest_analyzer(device="cuda" if zero_gpu_enabled() else "local")
+    matches = analyzer.analyze(projects)
+    source = getattr(analyzer, "source", "quest-analyzer")
+    validated = validate_matches_by_project(matches, projects, source=source)
+    return {
+        "source": validated.source,
+        "matches_by_project": validated.matches_by_project,
+    }
+
+
+def _refresh_public_state() -> dict[str, Any]:
+    with _refresh_lock:
+        return dict(_refresh_state)
+
+
+def _set_refresh_state(**updates: Any) -> None:
+    with _refresh_lock:
+        _refresh_state.update(updates)
+        stage = str(_refresh_state.get("stage") or "")
+        _refresh_state["stage_label"] = REFRESH_STAGE_LABELS.get(stage, "")
+
+
+def _start_refresh_thread(cache_dir: Path) -> dict[str, Any]:
+    with _refresh_lock:
+        if _refresh_state.get("status") == "running":
+            raise HTTPException(status_code=409, detail="Dashboard refresh is already running.")
+        run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid4().hex[:8]
+        _refresh_state.update(
+            {
+                "status": "running",
+                "run_id": run_id,
+                "stage": "crawling",
+                "stage_label": REFRESH_STAGE_LABELS["crawling"],
+                "started_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "finished_at": "",
+                "error": "",
+                "result": None,
+            }
+        )
+    thread = Thread(target=_run_refresh_job, args=(run_id, cache_dir), daemon=True)
+    thread.start()
+    return _refresh_public_state()
+
+
+def _run_refresh_job(run_id: str, cache_dir: Path) -> None:
+    try:
+        projects_payload, index_payload, refreshed_dashboard = _build_refresh_payloads(run_id)
+        _set_refresh_state(stage="persisting")
+        artifacts = persist_refresh_artifacts(
+            cache_dir,
+            run_id,
+            projects_payload=projects_payload,
+            index_payload=index_payload,
+            dashboard_payload=refreshed_dashboard,
+        )
+        _set_refresh_state(stage="swapping")
+        _replace_runtime_from_files(artifacts.projects_path, artifacts.index_path, artifacts.dashboard)
+        _set_refresh_state(
+            status="succeeded",
+            stage="",
+            finished_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            result={
+                "run_id": run_id,
+                "project_count": refreshed_dashboard["project_count"],
+                "snapshot_digest": refreshed_dashboard["provenance"]["snapshot_digest"],
+                "dashboard_generated_at": refreshed_dashboard["generated_at"],
+            },
+        )
+    except Exception as error:  # noqa: BLE001 - background job must report every failure as state
+        _set_refresh_state(
+            status="failed",
+            stage="",
+            finished_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            error=str(error),
+            result=None,
+        )
+
+
+def _build_refresh_payloads(run_id: str) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    from scripts.crawl_hf_spaces import API, crawl_projects
+
+    org = os.environ.get("ADVISOR_HF_ORG", DEFAULT_HF_ORG).strip() or DEFAULT_HF_ORG
+    _set_refresh_state(stage="crawling")
+    project_rows = sorted(crawl_projects(org), key=lambda project: project["id"].lower())
+    projects_payload = {
+        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "source": f"{API}/spaces?author={org}",
+        "projects": project_rows,
+    }
+
+    _set_refresh_state(stage="embedding")
+    with tempfile.TemporaryDirectory(prefix="advisor-refresh-") as directory:
+        project_path = Path(directory) / "projects.json"
+        project_path.write_text(json.dumps(projects_payload, ensure_ascii=False), encoding="utf-8")
+        index_payload = _build_refresh_index_payload(project_path, Path(directory) / "project_index.json")
+
+    projects = [Project.from_dict(item) for item in projects_payload["projects"]]
+    refreshed_index = ProjectIndex(
+        projects=projects,
+        generated_at=str(projects_payload["generated_at"]),
+        source=str(projects_payload["source"]),
+        index_payload=index_payload,
+    )
+
+    _set_refresh_state(stage="quest_analysis")
+    quest_analysis = _analyze_dashboard_quests([project.to_refresh_snapshot_dict() for project in projects])
+    _set_refresh_state(stage="atlas")
+    refreshed_dashboard = build_dashboard_payload(
+        refreshed_index,
+        quest_matches=quest_analysis["matches_by_project"],
+        quest_source=str(quest_analysis["source"]),
+    )
+    return projects_payload, index_payload, refreshed_dashboard
+
+
+def _build_refresh_index_payload(project_path: Path, index_path: Path) -> dict[str, Any]:
+    command = [
+        sys.executable,
+        str(ROOT / "scripts" / "build_project_index.py"),
+        "--projects",
+        str(project_path),
+        "--out",
+        str(index_path),
+        "--model-repo",
+        os.environ.get("ADVISOR_EMBEDDING_MODEL_REPO", DEFAULT_EMBEDDING_MODEL_REPO),
+        "--model-file",
+        os.environ.get("ADVISOR_EMBEDDING_MODEL_FILE", DEFAULT_EMBEDDING_MODEL_FILE),
+        "--build-source",
+        "space dashboard refresh",
+        "--builder",
+        "app.py:/api/dashboard/refresh",
+    ]
+    model_path = os.environ.get("ADVISOR_EMBEDDING_MODEL_PATH", "").strip()
+    if model_path:
+        command.extend(["--model-path", model_path])
+    n_ctx = os.environ.get("ADVISOR_EMBEDDING_N_CTX", "").strip()
+    if n_ctx:
+        command.extend(["--n-ctx", n_ctx])
+    n_threads = os.environ.get("ADVISOR_EMBEDDING_THREADS", "").strip()
+    if n_threads:
+        command.extend(["--n-threads", n_threads])
+
+    completed = subprocess.run(command, cwd=ROOT, capture_output=True, text=True, check=False)
+    if completed.returncode != 0:
+        detail = "\n".join(part for part in (completed.stdout.strip(), completed.stderr.strip()) if part)
+        raise RuntimeError(f"refresh embedding index build failed with exit code {completed.returncode}: {detail}")
+    try:
+        payload = json.loads(index_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise RuntimeError(f"refresh embedding index build did not write valid JSON: {index_path}") from error
+    if not isinstance(payload, dict):
+        raise RuntimeError("refresh embedding index build returned a non-object JSON payload")
+    return payload
+
+
+def _replace_runtime_from_files(projects_path: Path, index_path: Path, refreshed_dashboard: dict[str, Any]) -> None:
+    global index, engine, _cpu_engine, dashboard_payload
+    new_index = ProjectIndex.from_files(projects_path, index_path)
+    with _runtime_lock:
+        index = new_index
+        engine = AdvisorEngine(new_index, engine.planner)
+        if _cpu_engine is not None:
+            _cpu_engine = AdvisorEngine(new_index, _cpu_engine.planner)
+        dashboard_payload = refreshed_dashboard
 
 
 def _session_from_json(session_json: str = "{}") -> dict[str, Any]:
@@ -172,6 +398,28 @@ def static_file(path: str) -> FileResponse:
     if not str(target).startswith(str(STATIC_DIR.resolve())) or not target.is_file():
         return JSONResponse({"error": "not found"}, status_code=404)
     return FileResponse(target)
+
+
+@app.get("/api/dashboard")
+def dashboard() -> dict:
+    with _runtime_lock:
+        payload = dict(dashboard_payload)
+    payload["refresh"] = _refresh_public_state()
+    return payload
+
+
+@app.post("/api/dashboard/refresh")
+def dashboard_refresh_start() -> JSONResponse:
+    try:
+        cache_dir = require_writable_cache_dir()
+    except DashboardStorageError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    return JSONResponse(_start_refresh_thread(cache_dir), status_code=202)
+
+
+@app.get("/api/dashboard/refresh")
+def dashboard_refresh_status() -> dict:
+    return _refresh_public_state()
 
 
 @app.get("/health")

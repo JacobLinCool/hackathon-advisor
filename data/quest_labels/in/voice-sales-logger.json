@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/voice-sales-logger",
+  "slug": "voice-sales-logger",
+  "title": "Voice Sales Logger",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Voice-driven sales logger for a produce vendor. Speak an order, get a transcript, confirm line items, and log the sale.",
+  "APP_FILE": "from dotenv import load_dotenv\nfrom gradio_wizardcapture import WizardCapture\nfrom nemo.collections.asr.models.rnnt_bpe_models_prompt import RNNTPromptTranscribeConfig\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\n\nimport os\n\nON_SPACE = bool(os.environ.get(\"SPACE_ID\"))\n\nimport re\nimport json\nimport math\nimport base64\nimport sqlite3\nimport logging\nimport datetime\nimport subprocess\nimport tempfile\nimport pandas as pd\nimport gradio as gr\nfrom dotenv import load_dotenv\nimport sys\nsys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), \"wizardcapture\", \"backend\"))\nfrom gradio_wizardcapture import WizardCapture\n\nif not ON_SPACE:\n    import modal\n\nload_dotenv()\n\nlogging.basicConfig(level=logging.INFO, format=\"%(asctime)s [%(levelname)s] %(message)s\")\nlog = logging.getLogger(__name__)\n\n# ---------------------------------------------------------------------------\n# Config\n# ---------------------------------------------------------------------------\n\nDB_PATH = \"sales.db\"\n\nCATALOG = {\n    \"apple\":      {\"price\": 0.50, \"unit\": \"count\", \"emoji\": \"🍎\"},\n    \"carrot\":     {\"price\": 0.75, \"unit\": \"count\", \"emoji\": \"🥕\"},\n    \"strawberry\": {\"price\": 1.20, \"unit\": \"count\", \"emoji\": \"🍓\"},\n    \"banana\":     {\"price\": 0.30, \"unit\": \"count\", \"emoji\": \"🍌\"},\n    \"orange\":     {\"price\": 0.60, \"unit\": \"count\", \"emoji\": \"🍊\"},\n    \"tomato\":     {\"price\": 0.80, \"unit\": \"count\", \"emoji\": \"🍅\"},\n    \"potato\":     {\"price\": 0.40, \"unit\": \"count\", \"emoji\": \"🥔\"},\n    \"onion\":      {\"price\": 0.35, \"unit\": \"count\", \"emoji\": \"🧅\"},\n}\n\nLANGUAGE_CODES = {\n    \"English\":    \"en-US\",\n    \"Spanish\":    \"es-US\",\n    \"Vietnamese\": \"vi-VN\",\n}\n\nEMPTY_ITEMS_DF = pd.DataFrame(columns=[\"Item\", \"Qty\", \"Unit\", \"Price\", \"Total\"])\n\n# ---------------------------------------------------------------------------\n# Space inference (ON_SPACE=True only) — persistent CPU workers\n# ---------------- ..."
+}

@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/deepzrj-thousand-token-wood",
+  "slug": "deepzrj-thousand-token-wood",
+  "title": "Deepzrj Thousand Token Wood",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from datetime import datetime\n\nimport gradio as gr\nfrom datetime import datetime\n\nAPP_VERSION = \"v0.1.0\"\n\n\ndef trail_response(builder_name, project_idea):\n    builder_name = (builder_name or \"\").strip() or \"builder\"\n    project_idea = (project_idea or \"\").strip() or \"a small useful AI app\"\n\n    return f\"\"\"\n## Build Small Hackathon Test App\n\nHello **{builder_name}**.\n\nYour current project idea:\n\n> {project_idea}\n\n### Current status\n\n- Space is live inside `build-small-hackathon`\n- Gradio app file is working\n- App version: `{APP_VERSION}`\n- Last run: `{datetime.now().strftime(\"%Y-%m-%d %H:%M:%S\")}`\n\n### Next Codex task\n\nAsk Codex to make one small improvement, then commit it clearly.\n\"\"\"\n\n\nwith gr.Blocks(title=\"DeepZRJ Thousand Token Wood\") as demo:\n    gr.Markdown(\n        \"\"\"\n# DeepZRJ Thousand Token Wood\n\nThis is my starter Gradio app for testing the Codex → GitHub → Hugging Face Space workflow.\n\nThe goal right now is simple: prove that changes to the code show up in the live Gradio app.\n\"\"\"\n    )\n\n    gr.Markdown(\n        \"\"\"\n## Next feature ideas\n\n- puzzle idea generator\n- small-model assistant\n- demo submission checklist\n\"\"\"\n    )\n\n    builder_name = gr.Textbox(\n        label=\"Your name\",\n        placeholder=\"Example: DeepZRJ\",\n    )\n\n    project_idea = gr.Textbox(\n        label=\"Project idea\",\n        placeholder=\"Example: an AI trail guide for small-model builders\",\n        lines=3,\n    )\n\n    button = gr.Button(\"Run test\")\n    output = gr.Markdown()\n\n    button.click(\n        fn=trail_response,\n        inputs=[builder_name, project_idea],\n        outputs=output,\n    )\n\n    gr.Markdown(\n        \"\"\"\n---\n\n## Build log\n\n### v0.1.0\n\nCreated the first working Gradio app inside the hackathon Space.\n\"\"\"\n    )\n\n\nif __name__ == \"__main__\":\n    demo.launch()"
+}

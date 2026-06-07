@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/amnesiac",
+  "slug": "amnesiac",
+  "title": "AMNESIAC",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "# AMNESIAC AMNESIAC is a reverse-Turing interrogation game for the Hugging Face build-small-hackathon. This repository is being built top-down from `RESEARCH.md`, `FEATURES.md`, `ARCHITECTURE.md`, and `PLAN.md`. The entrypoint now follows the Gradio 5.x + FastAPI + FastRTC deployment pattern locked in `ARCHITECTURE.md` §1.1: one FastAPI process serves the static frontend, mounts FastRTC for the media plane, and mounts a minimal Gradio app for hackathon compliance.",
+  "APP_FILE": "from __future__ import annotations\nfrom server.webapp import create_application\n\nfrom __future__ import annotations\n\nimport os\n\nimport uvicorn\n\nfrom server.webapp import create_application\n\n\nSERVER_PORT = int(os.getenv(\"PORT\", \"7860\"))\napp, worker, stream = create_application(\n    include_gradio=True,\n    server_port=SERVER_PORT,\n)\n\n\nif __name__ == \"__main__\":\n    uvicorn.run(app, host=\"0.0.0.0\", port=SERVER_PORT)"
+}

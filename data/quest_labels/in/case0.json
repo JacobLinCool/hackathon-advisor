@@ -1,0 +1,20 @@
+{
+  "id": "build-small-hackathon/case0",
+  "slug": "case0",
+  "title": "Case Zero",
+  "sdk": "docker",
+  "declared_models": [
+    "Qwen/Qwen2.5-1.5B-Instruct"
+  ],
+  "tags": [
+    "build-small-hackathon",
+    "detective-game",
+    "llama-cpp",
+    "text-generation",
+    "tiny-titan",
+    "tts"
+  ],
+  "app_file": "",
+  "README": "# 🕵️ Case Zero — the AI *is* the detective game **A brand-new murder mystery, written and acted by a 1.5B model, every single time.** No scripted cases. No content library. A single small local model invents the whole thing — the victim, the suspects, their secrets and motives, the timeline, the murder weapon, the evidence, and the one who did it — then **role-plays every suspect live**. They remember what you asked. They lie to your face. And when you slap down the right piece of evidence, you watch the lie **crack in real time**. > Interrogate. Investigate. Accuse. One of them is guilty. Prove it. ## ✨ The moment that sells it Search the rooms, find a clue that contradicts a suspect's alibi, **present it**, and their story falls apart on screen — stress spikes, the alibi breaks, the truth leaks. Then name the killer, cite your proof, and get a scored verdict with a \"Director's Cut\" walkthrough of how the crime really went down. ## 🧠 How it works | Layer | What it does | |---|---| | **Model** — Qwen2.5-1.5B-Instruct (GGUF) | The whole game. Runs in-process on the CPU through **llama.cpp** (`llama-cpp-python`) — no server, no GPU, no remote endpoint. | | **Generation** | The model authors every case as JSON; deterministic Python only wires the *structure* (who's guilty, who was where) so the mystery is always solvable. | | **Solver** | A fairness referee: single culprit, a breakable alibi, every innocent cleared, and a discoverability gate so the key clue is always findable i ...",
+  "APP_FILE": "(no app file available)"
+}

@@ -1,0 +1,22 @@
+{
+  "id": "build-small-hackathon/cloud-parade-cabinet",
+  "slug": "cloud-parade-cabinet",
+  "title": "Cloud Parade Cabinet",
+  "sdk": "gradio",
+  "declared_models": [
+    "Qwen/Qwen2.5-7B-Instruct",
+    "openbmb/MiniCPM4-8B",
+    "nvidia/llama-3.1-nemotron-nano-8b-v1"
+  ],
+  "tags": [
+    "build-small-hackathon",
+    "gradio",
+    "modal",
+    "nvidia-nemotron",
+    "openbmb",
+    "thousand-token-wood"
+  ],
+  "app_file": "app.py",
+  "README": "# Cloud Parade Cabinet Cloud Parade Cabinet is a second Thousand Token Wood project concept: a kinetic Gradio toy where a hosted small model invents a tiny impossible parade, then the app turns it into an animated route, three float cards, a crowd chant, a generated parade sound, a poster, a caption, and a run log. ## Why It Fits - **Toy / art experiment:** The first screen is the toy, not a landing page. - **Load-bearing model:** The model writes the parade plan, float actions, chant, and route-changing finale. - **Cloud API allowed:** Uses `HF_API_KEY`/`HF_TOKEN` through `huggingface_hub.InferenceClient`, and can use `NVIDIA_API_KEY` through NVIDIA's chat-completions API. - **Small-model target:** Defaults are Qwen 7B, OpenBMB MiniCPM4 8B, and NVIDIA Nemotron Nano 8B routes, all below the 32B cap. - **Gradio:** Built as a standalone Gradio Blocks app. - **Practice writer:** If a provider is unavailable, deterministic local text keeps the app testable. ## Run Locally ```powershell cd cloud_parade_cabinet python app.py ``` Run the package checks: ```powershell python generate_share_assets.py python artifact_audit.py python space_upload_manifest.py ``` Optional cloud settings: ```powershell $env:HF_API_KEY=\"...\" $env:NVIDIA_API_KEY=\"...\" $env:PARADE_MODEL=\"Qwen/Qwen2.5-7B-Instruct\" python app.py ``` ## User Flow 1. Choose a town, weather, grand marshal, street trouble, cabinet color, and parade energy. 2. Pick **Hugging Face**, **OpenBMB**, **NVIDIA**, or **Practice writer** i ...",
+  "APP_FILE": "from dataclasses import asdict, dataclass\nfrom html import escape\nfrom pathlib import Path\nfrom huggingface_hub import InferenceClient\n\nimport hashlib\nimport json\nimport math\nimport os\nimport random\nimport re\nimport urllib.error\nimport urllib.request\nimport wave\nfrom dataclasses import asdict, dataclass\nfrom html import escape\nfrom pathlib import Path\n\nimport gradio as gr\n\ntry:\n    from huggingface_hub import InferenceClient\nexcept Exception:  # pragma: no cover - dependency is available in normal runtime\n    InferenceClient = None\n\n\nAPP_TITLE = \"Cloud Parade Cabinet\"\nCLOUD_MODEL = os.getenv(\"PARADE_MODEL\", \"Qwen/Qwen2.5-7B-Instruct\")\nOPENBMB_MODEL = os.getenv(\"OPENBMB_MODEL\", \"openbmb/MiniCPM4-8B\")\nNVIDIA_MODEL = os.getenv(\"NVIDIA_MODEL\", \"nvidia/llama-3.1-nemotron-nano-8b-v1\")\nNVIDIA_API_URL = \"https://integrate.api.nvidia.com/v1/chat/completions\"\nSPACE_URL = os.getenv(\"PARADE_SPACE_URL\", \"https://huggingface.co/spaces/build-small-hackathon/cloud-parade-cabinet\")\nMAX_NEW_TOKENS = int(os.getenv(\"PARADE_MAX_NEW_TOKENS\", \"180\"))\n\nPROVIDERS = [\n    \"Hugging Face: Qwen 7B\",\n    \"OpenBMB: MiniCPM4 8B\",\n    \"NVIDIA: Nemotron Nano 8B\",\n    \"Practice writer\",\n]\n\nPUBLIC_PROVIDERS = {\n    \"Hugging Face: Qwen 7B\": \"Cloud parade voice\",\n    \"OpenBMB: MiniCPM4 8B\": \"Mini cabinet voice\",\n    \"NVIDIA: Nemotron Nano 8B\": \"Brass cabinet voice\",\n    \"Practice writer\": \"Cabinet practice voice\",\n}\n\nPROVIDER_CHOICES = [\n    (\"Cloud parade voice\", \"Hugging Face: Qwen 7B\"),\n    (\"Mini cabinet voice\", \"OpenBMB: MiniCPM4 8B\"),\n    (\"Brass cabinet voice\", \"NVIDIA: Nemotron Nano 8B\"),\n    (\"Cabinet practice voice\", \"Practice writer\"),\n]\n\nWEATHERS = [\n    \"paper rain that apologizes\",\n    \"sideways sunshine\",\n    \"fog shaped like old applause\",\n    \"tiny hailstones with opinions\",\n    \"moonlight stuck in traffic\",\n]\n\nMARSHALS = [\n    \"a nervous umbrella\",\n    \"a brass thimble\",\n    \"the mayor's ..."
+}

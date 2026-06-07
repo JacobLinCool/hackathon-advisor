@@ -1,0 +1,19 @@
+{
+  "id": "build-small-hackathon/dreamwall-mc",
+  "slug": "dreamwall-mc",
+  "title": "DreamWall MC",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "agent-trace",
+    "art",
+    "codex",
+    "game",
+    "gradio",
+    "minecraft",
+    "small-models"
+  ],
+  "app_file": "app.py",
+  "README": "# DreamWall MC DreamWall MC is a Minecraft-native AI art wall for the Build Small Hackathon. Players can hatch a NeuroPet from a prompt, then carve the creature's memory into the DreamWall. A tiny local semantic fingerprint engine turns player language into creature traits, survival odds, plot placement, Minecraft packets, and public artifacts. The fun part is drift: tiny wording changes and different player names visibly change the painting. Nearby prompts can fuse into shared concepts, and each plot gets a demo value based on density, adjacency, rarity, and votes. The wall acts like a shared server memory rather than a normal image generator. ## Why This Is Different Most hackathon apps stop at chat or image generation. DreamWall MC turns language into a shared place. - **Minecraft-native:** the output is a wall packet, block palette, and row-run placement plan, not just a picture. - **Creature-native:** prompts hatch named pets with survival odds, lineage, and server state. - **Identity-aware:** the same prompt changes when the player signature or gallery zone changes. - **Social artifact:** every prompt becomes part of a public server museum. - **Creative fusion:** nearby concepts combine into more valuable artifacts. - **Value without compliance risk:** auction/voting uses demo points, not real money or blockchain. - **Small by design:** no giant remote model API is required for the core experience. - **Demo-first:** the video can show prompt -> Space preview -> Minecraf ...",
+  "APP_FILE": "from dataclasses import dataclass\nfrom PIL import Image, ImageDraw\n\nimport hashlib\nimport json\nimport math\nimport os\nfrom dataclasses import dataclass\n\nimport gradio as gr\nimport numpy as np\nfrom PIL import Image, ImageDraw\n\n\nMODEL_ID = \"dreamwall-local-semantic-fingerprint-v1\"\nGRID = 32\nSCALE = 12\n\n\nBLOCKS = [\n    (\"white_wool\", (234, 236, 230)),\n    (\"black_wool\", (25, 25, 25)),\n    (\"gray_wool\", (78, 82, 86)),\n    (\"light_gray_wool\", (156, 160, 162)),\n    (\"brown_wool\", (114, 73, 43)),\n    (\"red_wool\", (160, 39, 34)),\n    (\"orange_wool\", (230, 118, 31)),\n    (\"yellow_wool\", (246, 198, 45)),\n    (\"lime_wool\", (96, 187, 50)),\n    (\"green_wool\", (74, 124, 42)),\n    (\"cyan_wool\", (22, 156, 156)),\n    (\"light_blue_wool\", (92, 168, 224)),\n    (\"blue_wool\", (53, 70, 164)),\n    (\"purple_wool\", (126, 61, 181)),\n    (\"magenta_wool\", (190, 67, 181)),\n    (\"pink_wool\", (239, 141, 172)),\n    (\"sandstone\", (218, 203, 143)),\n    (\"moss_block\", (89, 110, 45)),\n    (\"deepslate\", (62, 62, 68)),\n    (\"amethyst_block\", (133, 89, 184)),\n    (\"prismarine\", (99, 156, 151)),\n    (\"glowstone\", (241, 203, 118)),\n    (\"obsidian\", (28, 22, 38)),\n    (\"sea_lantern\", (172, 205, 190)),\n]\n\nMOOD_WORDS = {\n    \"cozy\": [\"cozy\", \"warm\", \"cottage\", \"soft\", \"home\", \"lantern\"],\n    \"cursed\": [\"cursed\", \"haunted\", \"eldritch\", \"broken\", \"void\", \"forbidden\"],\n    \"ancient\": [\"ancient\", \"ruin\", \"temple\", \"fossil\", \"myth\", \"buried\"],\n    \"mechanical\": [\"machine\", \"gear\", \"factory\", \"robot\", \"engine\", \"circuit\"],\n    \"wild\": [\"forest\", \"storm\", \"moss\", \"ocean\", \"swamp\", \"wind\"],\n    \"royal\": [\"castle\", \"king\", \"queen\", \"gold\", \"throne\", \"banner\"],\n}\n\nCANVAS_SIZE = 12\nPLOT_SCALE = 32\nEXISTING_ARTWORKS = [\n    {\n        \"title\": \"Bird above the broken sky\",\n        \"player\": \"anonymous_heron\",\n        \"prompt\": \"a bird in the sky over a silver tree\",\n        \"x\": 4,\n        \"z\": 5,\n        \"moods\": [\"wild\", \"co ..."
+}

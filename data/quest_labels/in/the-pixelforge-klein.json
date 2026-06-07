@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/the-pixelforge-klein",
+  "slug": "the-pixelforge-klein",
+  "title": "The Pixelforge Klein",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from PIL import Image, ImageDraw\n\nimport sys\nimport types\nimport random\nimport math\nfrom PIL import Image, ImageDraw\n\n# 🚨 DYNAMIC FIX 1: Python 3.13 Compatibility Audio Patch\nif 'audioop' not in sys.modules:\n    dummy_audioop = types.ModuleType('audioop')\n    dummy_audioop.error = Exception\n    sys.modules['audioop'] = dummy_audioop\n\nif 'pyaudioop' not in sys.modules:\n    dummy_pyaudioop = types.ModuleType('pyaudioop')\n    dummy_pyaudioop.error = Exception\n    sys.modules['pyaudioop'] = dummy_pyaudioop\n\n# 🚨 DYNAMIC FIX 2: Critical HuggingFace Hub 'HfFolder' Import Patch\ntry:\n    import huggingface_hub\nexcept ImportError:\n    huggingface_hub = types.ModuleType('huggingface_hub')\n    sys.modules['huggingface_hub'] = huggingface_hub\n\nif not hasattr(huggingface_hub, 'HfFolder'):\n    class DummyHfFolder:\n        @staticmethod\n        def get_token(): return None\n        @staticmethod\n        def save_token(token): pass\n        @staticmethod\n        def delete_token(): pass\n    huggingface_hub.HfFolder = DummyHfFolder\n\nimport gradio as gr\n\ndef draw_retro_sprite(prompt_str, palette_name, bit_depth):\n    \"\"\"\n    Natively compiles localized high-fidelity retro game assets \n    using decentralized state machine matrix processing.\n    \"\"\"\n    # Deterministic hashing from string prompt to lock consistent styles\n    seed_val = abs(hash(prompt_str)) if prompt_str else random.randint(1, 99999)\n    random.seed(seed_val)\n    \n    # 🎨 Dynamic Retro Palette Matrix Assignments\n    palettes = {\n        \"Default/Vibrant\": [(15, 23, 42), (56, 189, 248), (232, 121, 249), (34, 211, 238), (129, 140, 248)],\n        \"888 Color Range\": [(30, 41, 59), (244, 63, 94), (250, 204, 21), (34, 197, 94), (168, 85, 247)],\n        \"GameBoy Green\": [(15, 56, 15), (48, 98, 48), (139, 172, 15), (155, 188, 15), (10, 35, 10)],\n        \"NES Classic Palette\": [(116, 116, 116), (0, 0, 252), (0, 0, 188), (102, 0, 20 ..."
+}

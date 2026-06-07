@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/Council-of-Tiny-Minds",
+  "slug": "Council-of-Tiny-Minds",
+  "title": "Council Of Tiny Minds",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from typing import Dict, List, Any\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\n\nimport os\nimport re\nimport time\nimport random\nfrom typing import Dict, List, Any\n\nimport gradio as gr\nimport torch\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\n\ntry:\n    import spaces  # ZeroGPU decorator\nexcept Exception:\n    class _SpacesFallback:\n        def GPU(self, fn=None, **kwargs):\n            if fn is None:\n                def _wrap(inner):\n                    return inner\n                return _wrap\n            return fn\n    spaces = _SpacesFallback()\n\n\n# ----------------------------\n# Model\n# ----------------------------\nMODEL_ID = os.getenv(\"MODEL_ID\", \"Qwen/Qwen3.5-9B\")\nMAX_NEW_TOKENS = int(os.getenv(\"MAX_NEW_TOKENS\", \"140\"))\nTEMPERATURE = float(os.getenv(\"TEMPERATURE\", \"0.9\"))\nTOP_P = float(os.getenv(\"TOP_P\", \"0.9\"))\n\nPERSONAS = [\n    {\n        \"name\": \"Mister Wink\",\n        \"emoji\": \"✨\",\n        \"style\": (\n            \"You are charming, slightly ridiculous, and surprisingly helpful. \"\n            \"You speak like a cheerful TV host from a glitchy early-2023 chatbot era.\"\n        ),\n    },\n    {\n        \"name\": \"Goblin Clerk\",\n        \"emoji\": \"🪄\",\n        \"style\": (\n            \"You are chaotic but functional. \"\n            \"You love odd metaphors, tiny complaints, and enthusiastic one-liners.\"\n        ),\n    },\n    {\n        \"name\": \"Oracle Beta\",\n        \"emoji\": \"🔮\",\n        \"style\": (\n            \"You speak in short, atmospheric lines. \"\n            \"You sound wise, but a little too dramatic for the situation.\"\n        ),\n    },\n    {\n        \"name\": \"The Skeptic\",\n        \"emoji\": \"🫧\",\n        \"style\": (\n            \"You are skeptical, precise, and dryly funny. \"\n            \"You question nonsense while still being useful.\"\n        ),\n    },\n]\n\n\ndef _load_model():\n    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, trust_remote_code ..."
+}

@@ -1,0 +1,21 @@
+{
+  "id": "build-small-hackathon/pocket-weather-theater",
+  "slug": "pocket-weather-theater",
+  "title": "Pocket Weather Theater",
+  "sdk": "gradio",
+  "declared_models": [
+    "HuggingFaceTB/SmolLM2-135M-Instruct",
+    "PratikBuilds/pocket-weather-theater-smollm2-135m-lora"
+  ],
+  "tags": [
+    "build-small-hackathon",
+    "gradio",
+    "local-inference",
+    "thousand-token-wood",
+    "tiny-models",
+    "transformers"
+  ],
+  "app_file": "app.py",
+  "README": "# Pocket Weather Theater Pocket Weather Theater is a Thousand Token Wood hackathon project: a small, joyful Gradio toy where impossible weather and pocket props become miniature stage plays. The AI is load-bearing: each run asks the model to produce the core delight of the experience, including the scene, stage direction, object monologue, and summary line. The app then formats that output as a tiny theater program. The page opens with a static ready-state ticket so the Space feels responsive, then prewarms the local tiny performer while the first CPU load settles. The main flow is intentionally simple: click **Play featured scenario**, use **Best starter** to restore the strongest defaults, use **Make it wilder** to remix the setup before running, follow the **Tonight's goal** card, click **Surprise performance**, continue the last run with **Sequel performance**, or make a setup and click **Start performance**. The app now has one-click surprise performances, a sequel button that carries the previous best line into the next hidden detail, a custom illustrated poster, a generated scene poster for every run, a short synthetic stage sound, an animated storyboard with Live Remix reactions, a generated motion card, a generated MP4 scene clip with sound, a generated story-strip image, a one-click download pack, a Best Line spotlight, Scene Details, Performance Notes, a Performance Summary, a downloadable postcard image, a visual Postcard Wall gallery, a Share Card, a live Scene S ...",
+  "APP_FILE": "from dataclasses import dataclass\nfrom html import escape\nfrom pathlib import Path\nfrom urllib.parse import quote\nfrom PIL import Image, ImageDraw, ImageFont\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\nfrom peft import PeftModel\n\nimport base64\nimport contextlib\nimport math\nimport os\nimport random\nimport re\nimport subprocess\nimport tempfile\nimport wave\nimport threading\nimport zipfile\nfrom dataclasses import dataclass\nfrom html import escape\nfrom pathlib import Path\nfrom urllib.parse import quote\n\nimport gradio as gr\n\ntry:\n    from PIL import Image, ImageDraw, ImageFont\nexcept Exception:  # pragma: no cover - Pillow is installed in runtime requirements\n    Image = None\n    ImageDraw = None\n    ImageFont = None\n\ntry:\n    import imageio.v3 as iio\nexcept Exception:  # pragma: no cover - optional video renderer\n    iio = None\n\ntry:\n    import imageio_ffmpeg\nexcept Exception:  # pragma: no cover - optional video/audio muxer\n    imageio_ffmpeg = None\n\ntry:\n    import torch\n    from transformers import AutoModelForCausalLM, AutoTokenizer\nexcept Exception:  # pragma: no cover - keeps Space shell import-friendly while deps install\n    torch = None\n    AutoModelForCausalLM = None\n    AutoTokenizer = None\n\ntry:\n    from peft import PeftModel\nexcept Exception:  # pragma: no cover - optional until dependencies finish installing\n    PeftModel = None\n\n\nMODEL_ID = os.getenv(\"MODEL_ID\", \"HuggingFaceTB/SmolLM2-135M-Instruct\")\nTUNED_ADAPTER_ID = os.getenv(\"TUNED_ADAPTER_ID\", \"PratikBuilds/pocket-weather-theater-smollm2-135m-lora\")\nMAX_NEW_TOKENS = int(os.getenv(\"MAX_NEW_TOKENS\", \"52\"))\nPOSTER_PATH = Path(__file__).resolve().parent / \"assets\" / \"pocket-weather-poster.png\"\nMEDIA_DIR = Path(tempfile.gettempdir()) / \"pocket_weather_theater_media\"\nMEDIA_DIR.mkdir(parents=True, exist_ok=True)\nSPACE_URL = \"https://huggingface.co/spaces/build-small-hackathon/pocket-weather-theate ..."
+}

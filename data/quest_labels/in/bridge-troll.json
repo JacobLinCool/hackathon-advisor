@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/bridge-troll",
+  "slug": "bridge-troll",
+  "title": "Bridge Troll",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from __future__ import annotations\nfrom troll_engine import (GameState, START_RESOLVE, LOSE_AT, build_messages,\nfrom models import get_backend\n\n\"\"\"Bridge Troll — Gradio app.\n\nEach session, Gorm is secretly assigned one of several hidden NATURES. The player\nwins by discovering what moves THIS troll — generic sob stories are discounted.\nOn win (resolve -> 0) or loss (resolve -> LOSE_AT, he hurls you back), a reveal\ncard shows what his nature was.\n\nLocal loop test (no GPU/download):  BRIDGE_TROLL_MOCK=1 python app.py\n\"\"\"\n\nfrom __future__ import annotations\n\nimport os\n\nimport gradio as gr\n\nfrom troll_engine import (GameState, START_RESOLVE, LOSE_AT, build_messages,\n                          parse_judgment, random_nature)\nfrom models import get_backend\n\n# ZeroGPU decorator — no-op locally. Supports @gpu and @gpu(duration=...).\ntry:\n    import spaces\n\n    gpu = spaces.GPU\nexcept Exception:\n\n    def gpu(*args, **_kwargs):\n        if args and callable(args[0]):\n            return args[0]\n        return lambda fn: fn\n\n\n_backend = get_backend()\n\n\n@gpu(duration=30)\ndef _generate(messages: list[dict]) -> str:\n    return _backend.generate(messages)\n\n\nINTRO = (\"A mossy troll heaves himself upright across the only bridge over the Mirebeck. \"\n         '*\"None cross Gorm\\'s bridge for free, traveller. Give me a reason — a *good* one.\"*')\n\n\ndef _meter_html(resolve: int, won: bool, lost: bool) -> str:\n    if won:\n        return (\"<div class='resolve-wrap'><div class='resolve-label'>GORM HAS STEPPED ASIDE 🌉</div>\"\n                \"<div class='resolve-bar'><div class='resolve-fill won' style='width:0%'></div></div></div>\")\n    if lost:\n        return (\"<div class='resolve-wrap'><div class='resolve-label'>GORM HURLS YOU BACK 💢</div>\"\n                \"<div class='resolve-bar'><div class='resolve-fill lost' style='width:100%'></div></div></div>\")\n    pct = max(0, min(100, round(resolve / STA ..."
+}

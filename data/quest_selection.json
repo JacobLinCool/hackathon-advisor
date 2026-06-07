@@ -1,0 +1,1160 @@
+{
+  "floor": 400,
+  "kept_count": 108,
+  "dropped_dup": [
+    "build-small-hackathon/agent-swarm-workbench",
+    "build-small-hackathon/chorus",
+    "build-small-hackathon/espressocheese-chess-demo",
+    "build-small-hackathon/Guru",
+    "build-small-hackathon/investigative-news-agent",
+    "build-small-hackathon/jackailocal",
+    "build-small-hackathon/NextClue",
+    "build-small-hackathon/Spooky-From-a-Distance",
+    "build-small-hackathon/storybook",
+    "build-small-hackathon/my-build-small-hackathon",
+    "build-small-hackathon/Myspace",
+    "build-small-hackathon/Objection-Your-Honour",
+    "build-small-hackathon/tricket"
+  ],
+  "dropped_short": [
+    "build-small-hackathon/backyard-dudu-destroyer",
+    "build-small-hackathon/Exo",
+    "build-small-hackathon/gemma4chat",
+    "build-small-hackathon/tarook"
+  ],
+  "projects": [
+    {
+      "id": "build-small-hackathon/dental-soap",
+      "slug": "dental-soap",
+      "readme_len": 16592,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [
+        "Qwen/Qwen3-4B-Instruct-2507"
+      ],
+      "real_signal": 40592
+    },
+    {
+      "id": "build-small-hackathon/pakistan-notice-helper",
+      "slug": "pakistan-notice-helper",
+      "readme_len": 10848,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 34848
+    },
+    {
+      "id": "build-small-hackathon/Kintsugi-Garden",
+      "slug": "Kintsugi-Garden",
+      "readme_len": 9779,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 33779
+    },
+    {
+      "id": "build-small-hackathon/lolaby",
+      "slug": "lolaby",
+      "readme_len": 9493,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [
+        "build-small-hackathon/lolaby-llama-3b",
+        "openbmb/MiniCPM-V-4_6",
+        "hexgrad/Kokoro-82M"
+      ],
+      "real_signal": 33493
+    },
+    {
+      "id": "build-small-hackathon/exam-panic-rescue",
+      "slug": "exam-panic-rescue",
+      "readme_len": 8690,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 32690
+    },
+    {
+      "id": "build-small-hackathon/AI-agent-Evaluation-pipeline",
+      "slug": "AI-agent-Evaluation-pipeline",
+      "readme_len": 7158,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 31158
+    },
+    {
+      "id": "build-small-hackathon/global-leaders",
+      "slug": "global-leaders",
+      "readme_len": 7019,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 31019
+    },
+    {
+      "id": "build-small-hackathon/pocket-weather-theater",
+      "slug": "pocket-weather-theater",
+      "readme_len": 5925,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [
+        "HuggingFaceTB/SmolLM2-135M-Instruct",
+        "PratikBuilds/pocket-weather-theater-smollm2-135m-lora"
+      ],
+      "real_signal": 29925
+    },
+    {
+      "id": "build-small-hackathon/Trollsona",
+      "slug": "Trollsona",
+      "readme_len": 5888,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 29888
+    },
+    {
+      "id": "build-small-hackathon/gitopadesh",
+      "slug": "gitopadesh",
+      "readme_len": 5867,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 29867
+    },
+    {
+      "id": "build-small-hackathon/roadb-other-screen",
+      "slug": "roadb-other-screen",
+      "readme_len": 4760,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [
+        "unsloth/Qwen3.5-9B-GGUF"
+      ],
+      "real_signal": 28760
+    },
+    {
+      "id": "build-small-hackathon/dreamwall-mc",
+      "slug": "dreamwall-mc",
+      "readme_len": 4214,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 28214
+    },
+    {
+      "id": "build-small-hackathon/persona-atlas",
+      "slug": "persona-atlas",
+      "readme_len": 3803,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 27803
+    },
+    {
+      "id": "build-small-hackathon/ContextForge",
+      "slug": "ContextForge",
+      "readme_len": 3376,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 27376
+    },
+    {
+      "id": "build-small-hackathon/lovegpt",
+      "slug": "lovegpt",
+      "readme_len": 2969,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 26969
+    },
+    {
+      "id": "build-small-hackathon/her",
+      "slug": "her",
+      "readme_len": 6558,
+      "app_len": 20337,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 26895
+    },
+    {
+      "id": "build-small-hackathon/ux-crime-scene",
+      "slug": "ux-crime-scene",
+      "readme_len": 2846,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 26846
+    },
+    {
+      "id": "build-small-hackathon/Tone-Bridge",
+      "slug": "Tone-Bridge",
+      "readme_len": 2844,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [
+        "Qwen/Qwen3-14B",
+        "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice"
+      ],
+      "real_signal": 26844
+    },
+    {
+      "id": "build-small-hackathon/family-care-network",
+      "slug": "family-care-network",
+      "readme_len": 2573,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [
+        "facebook/mms-1b-all",
+        "ninte/twi-en-nllb-v2",
+        "Qwen/Qwen2.5-7B-Instruct",
+        "facebook/mms-tts-aka",
+        "facebook/mms-tts-eng",
+        "teckedd/whisper_small-waxal_akan-asr-v1",
+        "GiftMark/akan-whisper-model"
+      ],
+      "real_signal": 26573
+    },
+    {
+      "id": "build-small-hackathon/Case-Lantern",
+      "slug": "Case-Lantern",
+      "readme_len": 2540,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [
+        "lastmass/Qwen3.5-Medical-GSPO"
+      ],
+      "real_signal": 26540
+    },
+    {
+      "id": "build-small-hackathon/planpalette",
+      "slug": "planpalette",
+      "readme_len": 4182,
+      "app_len": 22246,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 26428
+    },
+    {
+      "id": "build-small-hackathon/cloud-parade-cabinet",
+      "slug": "cloud-parade-cabinet",
+      "readme_len": 2346,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [
+        "Qwen/Qwen2.5-7B-Instruct",
+        "openbmb/MiniCPM4-8B",
+        "nvidia/llama-3.1-nemotron-nano-8b-v1"
+      ],
+      "real_signal": 26346
+    },
+    {
+      "id": "build-small-hackathon/neilA",
+      "slug": "neilA",
+      "readme_len": 5129,
+      "app_len": 21083,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 26212
+    },
+    {
+      "id": "build-small-hackathon/First-Principle-AI",
+      "slug": "First-Principle-AI",
+      "readme_len": 1972,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [
+        "build-small-hackathon/phase-3-gguf"
+      ],
+      "real_signal": 25972
+    },
+    {
+      "id": "build-small-hackathon/legawa",
+      "slug": "legawa",
+      "readme_len": 1352,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 25352
+    },
+    {
+      "id": "build-small-hackathon/come-and-compare",
+      "slug": "come-and-compare",
+      "readme_len": 1872,
+      "app_len": 23365,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 25237
+    },
+    {
+      "id": "build-small-hackathon/hackathon-advisor",
+      "slug": "hackathon-advisor",
+      "readme_len": 10142,
+      "app_len": 15011,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 25153
+    },
+    {
+      "id": "build-small-hackathon/wpl-discovery",
+      "slug": "wpl-discovery",
+      "readme_len": 1148,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 25148
+    },
+    {
+      "id": "build-small-hackathon/The-Shrine",
+      "slug": "The-Shrine",
+      "readme_len": 1137,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 25137
+    },
+    {
+      "id": "build-small-hackathon/octopus-ai",
+      "slug": "octopus-ai",
+      "readme_len": 545,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 24545
+    },
+    {
+      "id": "build-small-hackathon/VoiceGate",
+      "slug": "VoiceGate",
+      "readme_len": 463,
+      "app_len": 24000,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 24463
+    },
+    {
+      "id": "build-small-hackathon/AI-Puppet-Theater",
+      "slug": "AI-Puppet-Theater",
+      "readme_len": 107,
+      "app_len": 24000,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 24000
+    },
+    {
+      "id": "build-small-hackathon/LocalDuo",
+      "slug": "LocalDuo",
+      "readme_len": 96,
+      "app_len": 24000,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 24000
+    },
+    {
+      "id": "build-small-hackathon/PocketWorld-Studio",
+      "slug": "PocketWorld-Studio",
+      "readme_len": 96,
+      "app_len": 24000,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 24000
+    },
+    {
+      "id": "build-small-hackathon/voice-sales-logger",
+      "slug": "voice-sales-logger",
+      "readme_len": 119,
+      "app_len": 24000,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 24000
+    },
+    {
+      "id": "build-small-hackathon/wan2-2-fp8da-aoti-14B-fast",
+      "slug": "wan2-2-fp8da-aoti-14B-fast",
+      "readme_len": 96,
+      "app_len": 24000,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 24000
+    },
+    {
+      "id": "build-small-hackathon/nutrilens",
+      "slug": "nutrilens",
+      "readme_len": 2219,
+      "app_len": 21737,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 23956
+    },
+    {
+      "id": "build-small-hackathon/business-order-assistant",
+      "slug": "business-order-assistant",
+      "readme_len": 96,
+      "app_len": 22904,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 22904
+    },
+    {
+      "id": "build-small-hackathon/Kasualdad_LFED",
+      "slug": "Kasualdad_LFED",
+      "readme_len": 7768,
+      "app_len": 12825,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 20593
+    },
+    {
+      "id": "build-small-hackathon/thousand-token-wood-sim",
+      "slug": "thousand-token-wood-sim",
+      "readme_len": 4867,
+      "app_len": 15652,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 20519
+    },
+    {
+      "id": "build-small-hackathon/memrl-canvas",
+      "slug": "memrl-canvas",
+      "readme_len": 96,
+      "app_len": 20348,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 20348
+    },
+    {
+      "id": "build-small-hackathon/roast-my-repo",
+      "slug": "roast-my-repo",
+      "readme_len": 4276,
+      "app_len": 15214,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 19490
+    },
+    {
+      "id": "build-small-hackathon/tiny-dispatch-coach",
+      "slug": "tiny-dispatch-coach",
+      "readme_len": 736,
+      "app_len": 17697,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 18433
+    },
+    {
+      "id": "build-small-hackathon/dm-order-desk",
+      "slug": "dm-order-desk",
+      "readme_len": 2722,
+      "app_len": 13668,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 16390
+    },
+    {
+      "id": "build-small-hackathon/neighbourhood-guide",
+      "slug": "neighbourhood-guide",
+      "readme_len": 1749,
+      "app_len": 14491,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [
+        "CohereLabs/tiny-aya-global",
+        "CohereLabs/cohere-transcribe-03-2026",
+        "nvidia/magpie_tts_multilingual_357m"
+      ],
+      "real_signal": 16240
+    },
+    {
+      "id": "build-small-hackathon/wonderland",
+      "slug": "wonderland",
+      "readme_len": 96,
+      "app_len": 15504,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 15504
+    },
+    {
+      "id": "build-small-hackathon/awaaz",
+      "slug": "awaaz",
+      "readme_len": 806,
+      "app_len": 14088,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 14894
+    },
+    {
+      "id": "build-small-hackathon/karim-lab",
+      "slug": "karim-lab",
+      "readme_len": 1996,
+      "app_len": 12760,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 14756
+    },
+    {
+      "id": "build-small-hackathon/trace-field-notes",
+      "slug": "trace-field-notes",
+      "readme_len": 5076,
+      "app_len": 9561,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 14637
+    },
+    {
+      "id": "build-small-hackathon/Structured-Data-Rescuer",
+      "slug": "Structured-Data-Rescuer",
+      "readme_len": 221,
+      "app_len": 14245,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 14245
+    },
+    {
+      "id": "build-small-hackathon/Council-of-Tiny-Minds",
+      "slug": "Council-of-Tiny-Minds",
+      "readme_len": 96,
+      "app_len": 13149,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 13149
+    },
+    {
+      "id": "build-small-hackathon/blind-quill",
+      "slug": "blind-quill",
+      "readme_len": 5271,
+      "app_len": 7616,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 12887
+    },
+    {
+      "id": "build-small-hackathon/receipt_scanner",
+      "slug": "receipt_scanner",
+      "readme_len": 96,
+      "app_len": 12539,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 12539
+    },
+    {
+      "id": "build-small-hackathon/smol-town",
+      "slug": "smol-town",
+      "readme_len": 5384,
+      "app_len": 6921,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 12305
+    },
+    {
+      "id": "build-small-hackathon/oneiros",
+      "slug": "oneiros",
+      "readme_len": 2956,
+      "app_len": 9036,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 11992
+    },
+    {
+      "id": "build-small-hackathon/oracle-ternary-flame",
+      "slug": "oracle-ternary-flame",
+      "readme_len": 96,
+      "app_len": 11874,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 11874
+    },
+    {
+      "id": "build-small-hackathon/Retail-Insight-AI",
+      "slug": "Retail-Insight-AI",
+      "readme_len": 729,
+      "app_len": 11035,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 11764
+    },
+    {
+      "id": "build-small-hackathon/family-care-asr-eval",
+      "slug": "family-care-asr-eval",
+      "readme_len": 1252,
+      "app_len": 10506,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 11758
+    },
+    {
+      "id": "build-small-hackathon/Backyard-Demo-Builder",
+      "slug": "Backyard-Demo-Builder",
+      "readme_len": 9119,
+      "app_len": 2436,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [
+        "unsloth/gemma-4-12B-it-qat-GGUF",
+        "Qwen/Qwen2.5-7B-Instruct",
+        "nvidia/Nemotron-3.5-Content-Safety"
+      ],
+      "real_signal": 11555
+    },
+    {
+      "id": "build-small-hackathon/code-shrink-token-decimator",
+      "slug": "code-shrink-token-decimator",
+      "readme_len": 3130,
+      "app_len": 8136,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 11266
+    },
+    {
+      "id": "build-small-hackathon/briefing-32",
+      "slug": "briefing-32",
+      "readme_len": 3508,
+      "app_len": 7530,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 11038
+    },
+    {
+      "id": "build-small-hackathon/pawmap",
+      "slug": "pawmap",
+      "readme_len": 2266,
+      "app_len": 8580,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 10846
+    },
+    {
+      "id": "build-small-hackathon/GRM-2.6-Opus",
+      "slug": "GRM-2.6-Opus",
+      "readme_len": 486,
+      "app_len": 9203,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 9689
+    },
+    {
+      "id": "build-small-hackathon/CodeFlow",
+      "slug": "CodeFlow",
+      "readme_len": 96,
+      "app_len": 9174,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 9174
+    },
+    {
+      "id": "build-small-hackathon/borderless",
+      "slug": "borderless",
+      "readme_len": 8328,
+      "app_len": 807,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 9135
+    },
+    {
+      "id": "build-small-hackathon/quran-stt",
+      "slug": "quran-stt",
+      "readme_len": 96,
+      "app_len": 9119,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 9119
+    },
+    {
+      "id": "build-small-hackathon/dream-museum",
+      "slug": "dream-museum",
+      "readme_len": 1068,
+      "app_len": 7500,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 8568
+    },
+    {
+      "id": "build-small-hackathon/one-for-all",
+      "slug": "one-for-all",
+      "readme_len": 554,
+      "app_len": 7826,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 8380
+    },
+    {
+      "id": "build-small-hackathon/the-i3-ghost-matrix-v5",
+      "slug": "the-i3-ghost-matrix-v5",
+      "readme_len": 1452,
+      "app_len": 6873,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 8325
+    },
+    {
+      "id": "build-small-hackathon/the-pixelforge-klein",
+      "slug": "the-pixelforge-klein",
+      "readme_len": 96,
+      "app_len": 8294,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 8294
+    },
+    {
+      "id": "build-small-hackathon/backyard-raccoon-deterrent",
+      "slug": "backyard-raccoon-deterrent",
+      "readme_len": 4959,
+      "app_len": 3284,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 8243
+    },
+    {
+      "id": "build-small-hackathon/patient-virtuel-dentiste",
+      "slug": "patient-virtuel-dentiste",
+      "readme_len": 1297,
+      "app_len": 6617,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 7914
+    },
+    {
+      "id": "build-small-hackathon/ducks-happen",
+      "slug": "ducks-happen",
+      "readme_len": 398,
+      "app_len": 7285,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 7683
+    },
+    {
+      "id": "build-small-hackathon/Sprout-And-Spoon",
+      "slug": "Sprout-And-Spoon",
+      "readme_len": 96,
+      "app_len": 7591,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 7591
+    },
+    {
+      "id": "build-small-hackathon/innerspace",
+      "slug": "innerspace",
+      "readme_len": 6519,
+      "app_len": 584,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 7103
+    },
+    {
+      "id": "build-small-hackathon/repair-guy",
+      "slug": "repair-guy",
+      "readme_len": 96,
+      "app_len": 6838,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 6838
+    },
+    {
+      "id": "build-small-hackathon/SlideAI",
+      "slug": "SlideAI",
+      "readme_len": 683,
+      "app_len": 6100,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 6783
+    },
+    {
+      "id": "build-small-hackathon/Mediassist",
+      "slug": "Mediassist",
+      "readme_len": 96,
+      "app_len": 6628,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 6628
+    },
+    {
+      "id": "build-small-hackathon/metabolic-forensics",
+      "slug": "metabolic-forensics",
+      "readme_len": 1422,
+      "app_len": 4953,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 6375
+    },
+    {
+      "id": "build-small-hackathon/guitar-singalong",
+      "slug": "guitar-singalong",
+      "readme_len": 146,
+      "app_len": 6224,
+      "generic_readme": false,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 6370
+    },
+    {
+      "id": "build-small-hackathon/bridge-troll",
+      "slug": "bridge-troll",
+      "readme_len": 96,
+      "app_len": 5953,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 5953
+    },
+    {
+      "id": "build-small-hackathon/what-changed",
+      "slug": "what-changed",
+      "readme_len": 1365,
+      "app_len": 4027,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [
+        "zeon01/what-changed-1b"
+      ],
+      "real_signal": 5392
+    },
+    {
+      "id": "build-small-hackathon/team_lunch_app_v1",
+      "slug": "team_lunch_app_v1",
+      "readme_len": 96,
+      "app_len": 4930,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 4930
+    },
+    {
+      "id": "build-small-hackathon/dream-customs",
+      "slug": "dream-customs",
+      "readme_len": 4262,
+      "app_len": 356,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [
+        "openbmb/MiniCPM5-1B",
+        "openbmb/MiniCPM-V-4.6"
+      ],
+      "real_signal": 4618
+    },
+    {
+      "id": "build-small-hackathon/ai-study-buddy",
+      "slug": "ai-study-buddy",
+      "readme_len": 96,
+      "app_len": 4509,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 4509
+    },
+    {
+      "id": "build-small-hackathon/Darwin-35B-A3B-Opus",
+      "slug": "Darwin-35B-A3B-Opus",
+      "readme_len": 78,
+      "app_len": 4434,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 4434
+    },
+    {
+      "id": "build-small-hackathon/surgical-tissue-segmentation",
+      "slug": "surgical-tissue-segmentation",
+      "readme_len": 4205,
+      "app_len": 0,
+      "generic_readme": false,
+      "profile": "readme_only",
+      "models": [],
+      "real_signal": 4205
+    },
+    {
+      "id": "build-small-hackathon/mythograph-atelier",
+      "slug": "mythograph-atelier",
+      "readme_len": 3850,
+      "app_len": 162,
+      "generic_readme": false,
+      "profile": "readme_only",
+      "models": [],
+      "real_signal": 4012
+    },
+    {
+      "id": "build-small-hackathon/InContext",
+      "slug": "InContext",
+      "readme_len": 96,
+      "app_len": 3793,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 3793
+    },
+    {
+      "id": "build-small-hackathon/NEXUS-Visual-Weaver",
+      "slug": "NEXUS-Visual-Weaver",
+      "readme_len": 96,
+      "app_len": 3562,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 3562
+    },
+    {
+      "id": "build-small-hackathon/case0",
+      "slug": "case0",
+      "readme_len": 3499,
+      "app_len": 0,
+      "generic_readme": false,
+      "profile": "readme_only",
+      "models": [
+        "Qwen/Qwen2.5-1.5B-Instruct"
+      ],
+      "real_signal": 3499
+    },
+    {
+      "id": "build-small-hackathon/rarebirds",
+      "slug": "rarebirds",
+      "readme_len": 1853,
+      "app_len": 493,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [
+        "google/gemma-3-27b-it"
+      ],
+      "real_signal": 2346
+    },
+    {
+      "id": "build-small-hackathon/attention-firewall",
+      "slug": "attention-firewall",
+      "readme_len": 678,
+      "app_len": 1591,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 2269
+    },
+    {
+      "id": "build-small-hackathon/Advent_of_a_World_of_Flowering_Trees",
+      "slug": "Advent_of_a_World_of_Flowering_Trees",
+      "readme_len": 397,
+      "app_len": 2092,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 2092
+    },
+    {
+      "id": "build-small-hackathon/GTROX",
+      "slug": "GTROX",
+      "readme_len": 224,
+      "app_len": 1807,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 2031
+    },
+    {
+      "id": "build-small-hackathon/mini-fam",
+      "slug": "mini-fam",
+      "readme_len": 96,
+      "app_len": 1979,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 1979
+    },
+    {
+      "id": "build-small-hackathon/deepzrj-thousand-token-wood",
+      "slug": "deepzrj-thousand-token-wood",
+      "readme_len": 96,
+      "app_len": 1754,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 1754
+    },
+    {
+      "id": "build-small-hackathon/Yui-home-assistant",
+      "slug": "Yui-home-assistant",
+      "readme_len": 239,
+      "app_len": 1515,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 1754
+    },
+    {
+      "id": "build-small-hackathon/Family-Bill-Assistant",
+      "slug": "Family-Bill-Assistant",
+      "readme_len": 96,
+      "app_len": 1691,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 1691
+    },
+    {
+      "id": "build-small-hackathon/mycelium",
+      "slug": "mycelium",
+      "readme_len": 1495,
+      "app_len": 81,
+      "generic_readme": false,
+      "profile": "readme_only",
+      "models": [],
+      "real_signal": 1576
+    },
+    {
+      "id": "build-small-hackathon/compliment-forest",
+      "slug": "compliment-forest",
+      "readme_len": 1194,
+      "app_len": 278,
+      "generic_readme": false,
+      "profile": "readme_only",
+      "models": [
+        "build-small-hackathon/compliment-forest-minicpm5-1b",
+        "build-small-hackathon/compliment-forest-flux-lora"
+      ],
+      "real_signal": 1472
+    },
+    {
+      "id": "build-small-hackathon/gemma-task-agent-trace",
+      "slug": "gemma-task-agent-trace",
+      "readme_len": 96,
+      "app_len": 1390,
+      "generic_readme": true,
+      "profile": "app_only",
+      "models": [],
+      "real_signal": 1390
+    },
+    {
+      "id": "build-small-hackathon/WitGym",
+      "slug": "WitGym",
+      "readme_len": 284,
+      "app_len": 760,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 1044
+    },
+    {
+      "id": "build-small-hackathon/thousand-token-wood",
+      "slug": "thousand-token-wood",
+      "readme_len": 477,
+      "app_len": 542,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 1019
+    },
+    {
+      "id": "build-small-hackathon/tiny-army",
+      "slug": "tiny-army",
+      "readme_len": 993,
+      "app_len": 0,
+      "generic_readme": false,
+      "profile": "readme_only",
+      "models": [],
+      "real_signal": 993
+    },
+    {
+      "id": "build-small-hackathon/amnesiac",
+      "slug": "amnesiac",
+      "readme_len": 471,
+      "app_len": 337,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [],
+      "real_signal": 808
+    },
+    {
+      "id": "build-small-hackathon/job-search-assistant",
+      "slug": "job-search-assistant",
+      "readme_len": 299,
+      "app_len": 505,
+      "generic_readme": false,
+      "profile": "both",
+      "models": [
+        "emrekuruu/job-searcher-qwen3-8B",
+        "emrekuruu/job-searcher-qwen3-8B-gguf"
+      ],
+      "real_signal": 804
+    },
+    {
+      "id": "build-small-hackathon/the-echo",
+      "slug": "the-echo",
+      "readme_len": 386,
+      "app_len": 169,
+      "generic_readme": false,
+      "profile": "readme_only",
+      "models": [],
+      "real_signal": 555
+    }
+  ]
+}

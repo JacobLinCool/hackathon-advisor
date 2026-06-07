@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/tiny-army",
+  "slug": "tiny-army",
+  "title": "Tiny Army",
+  "sdk": "docker",
+  "declared_models": [],
+  "tags": [
+    "docker",
+    "region:us"
+  ],
+  "app_file": "",
+  "README": "# ⚔️ Tiny Army **HF Build Small Hackathon entry — Track 2 (\"An Adventure in Thousand Token Wood\").** *Tiny Army: every fighter writes its own legend — and the legend is true.* A small local LLM gives each auto-battler unit a persona and writes its first-person war diary from what it actually lived through. The twist that makes the AI **load-bearing**: a unit's experience-shaped \"soul\" *drives how it fights*, so the diary describes the unit's own real, learned behaviour. Two small models, both load-bearing — a 1–3B LLM for voice, a <1 MB policy net for tactics. ## Architecture - **FastAPI** serves the custom Pixi battle frontend (the deterministic combat engine + souls + the ONNX captain run in the browser). - A **mounted Gradio app** (`/app`) is the barracks: persona + war-diary generation via **llama.cpp** (local, no cloud — 🔌 Off the Grid + 🦙 Llama Champion). This is the current skeleton; see the plan in the auto-battler repo (`docs/design/hackathon-build-small.md`).",
+  "APP_FILE": "(no app file available)"
+}

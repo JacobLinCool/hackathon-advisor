@@ -1,0 +1,18 @@
+{
+  "id": "build-small-hackathon/guitar-singalong",
+  "slug": "guitar-singalong",
+  "title": "Guitar Singalong Generator",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "accompaniment",
+    "audio",
+    "demucs",
+    "guitar",
+    "music",
+    "musicgen"
+  ],
+  "app_file": "app.py",
+  "README": "# 🎸 Guitar Singalong Generator **Upload any song + provide its chords → Get a beautiful acoustic guitar cover to sing along with, at any speed.**",
+  "APP_FILE": "from utils.melody_extractor import MelodyExtractor\nfrom utils.guitar_generator import GuitarGenerator\nfrom utils.audio_processor import AudioProcessor\n\n\"\"\"\n🎸 Guitar Singalong Generator\n\"\"\"\n\nimport spaces\nimport gradio as gr\nimport torch\nimport os\n\nfrom utils.melody_extractor import MelodyExtractor\nfrom utils.guitar_generator import GuitarGenerator\nfrom utils.audio_processor import AudioProcessor\n\nmelody_extractor = None\nguitar_generator = None\naudio_processor = AudioProcessor()\n\n\ndef load_models():\n    global melody_extractor, guitar_generator\n    if melody_extractor is None:\n        print(\"🎸 Loading models...\")\n        melody_extractor = MelodyExtractor()\n        guitar_generator = GuitarGenerator()\n        print(\"✅ All models loaded!\")\n\n\n@spaces.GPU\ndef generate_guitar_cover(audio_file, chords: str, style: str, progress=gr.Progress()):\n    if audio_file is None:\n        raise gr.Error(\"Please upload a song first!\")\n\n    try:\n        load_models()\n\n        progress(0.1, desc=\"🎵 Extracting melody from song...\")\n        vocals_path = melody_extractor.extract_vocals(audio_file)\n\n        song_info = audio_processor.get_audio_info(audio_file)\n        progress(0.2, desc=f\"✅ Melody extracted ({song_info['duration_formatted']})\")\n\n        def musicgen_progress(pct, msg):\n            progress(0.2 + pct * 0.7, desc=f\"🎸 {msg}\")\n\n        progress(0.3, desc=\"🎸 Generating acoustic guitar cover...\")\n        guitar_path = guitar_generator.generate_full_cover(\n            melody_path=vocals_path,\n            chords=chords.strip() if chords else \"\",\n            style=style,\n            progress_callback=musicgen_progress,\n        )\n\n        progress(0.95, desc=\"🔊 Normalizing audio...\")\n        guitar_path = audio_processor.normalize_audio(guitar_path)\n        progress(1.0, desc=\"✅ Done!\")\n\n        # Return both: guitar cover AND extracted melody for comparison\n        return guitar_pa ..."
+}

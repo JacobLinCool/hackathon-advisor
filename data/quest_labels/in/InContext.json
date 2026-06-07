@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/InContext",
+  "slug": "InContext",
+  "title": "InContext",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from transformers import AutoModelForCausalLM, AutoTokenizer\n\nimport gradio as gr\nimport torch\nimport json\nimport html\nimport traceback\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\n\nprint(\"Loading model...\")\nmodel_name = \"Qwen/Qwen2.5-0.5B-Instruct\"\ntokenizer = AutoTokenizer.from_pretrained(model_name)\nmodel = AutoModelForCausalLM.from_pretrained(\n    model_name,\n    torch_dtype=torch.float16,\n    device_map=\"auto\"\n)\nprint(\"Model loaded.\")\n\nSYSTEM_PROMPT = \"\"\"You are an English learning assistant. Extract 8-20 useful expressions from the text.\nFor each expression, output a JSON object with keys: expression, meaning, explanation, original_context, extra_example.\nMeaning and explanation should be in Chinese.\nOutput must be a JSON array. No extra text.\"\"\"\n\ndef analyze(text):\n    try:\n        if not text or len(text.strip()) < 20:\n            return \"<div style='color:red'>⚠️ Please enter at least 20 characters.</div>\"\n\n        messages = [\n            {\"role\": \"system\", \"content\": SYSTEM_PROMPT},\n            {\"role\": \"user\", \"content\": text}\n        ]\n        inputs = tokenizer.apply_chat_template(\n            messages,\n            add_generation_prompt=True,\n            return_tensors=\"pt\"\n        ).to(model.device)\n\n        with torch.no_grad():\n            outputs = model.generate(\n                inputs,\n                max_new_tokens=1024,\n                do_sample=False,\n                temperature=1.0\n            )\n\n        response = tokenizer.decode(outputs[0][inputs.shape[1]:], skip_special_tokens=True)\n\n        # 提取 JSON\n        if \"```json\" in response:\n            response = response.split(\"```json\")[1].split(\"```\")[0]\n        elif \"```\" in response:\n            response = response.split(\"```\")[1].split(\"```\")[0]\n        start = response.find(\"[\")\n        end = response.rfind(\"]\") + 1\n        if start == -1 or end == 0:\n            return f\"< ..."
+}

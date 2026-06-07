@@ -1,0 +1,22 @@
+{
+  "id": "build-small-hackathon/job-search-assistant",
+  "slug": "job-search-assistant",
+  "title": "Job Searcher",
+  "sdk": "gradio",
+  "declared_models": [
+    "emrekuruu/job-searcher-qwen3-8B",
+    "emrekuruu/job-searcher-qwen3-8B-gguf"
+  ],
+  "tags": [
+    "distillation",
+    "gguf",
+    "jobs",
+    "llama-cpp",
+    "lora",
+    "qwen3",
+    "resume"
+  ],
+  "app_file": "app.py",
+  "README": "# Job Searcher Drop your resume. Get matches with the reasoning behind every score. A Qwen3-8B student distilled from DeepSeek V4 Pro, served via llama.cpp on ZeroGPU. **Source, dataset card, model cards, and full docs:** [github.com/emrekuruu/job-search](https://github.com/emrekuruu/job-search)",
+  "APP_FILE": "from pathlib import Path\nfrom job_search.space.ui import build_app  # noqa: E402\n\nimport sys\nfrom pathlib import Path\n\n# HF Spaces' Gradio-SDK Dockerfile installs requirements.txt before copying the workspace,\n# so an editable install of `pyproject.toml` isn't possible. Instead, point Python at `src/`\n# directly so `from job_search...` resolves.\nsys.path.insert(0, str(Path(__file__).resolve().parent / \"src\"))\n\nfrom job_search.space.ui import build_app  # noqa: E402\n\ndemo = build_app()\ndemo.queue(default_concurrency_limit=4)\n\nif __name__ == \"__main__\":\n    demo.launch(share=False)"
+}

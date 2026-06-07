@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/Mediassist",
+  "slug": "Mediassist",
+  "title": "Mediassist",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from transformers import AutoTokenizer, AutoModelForCausalLM\n\nimport gradio as gr\nfrom transformers import AutoTokenizer, AutoModelForCausalLM\nimport torch\n\nmodel = None\ntokenizer = None\n\ndef load_model():\n    global model, tokenizer\n    if model is None:\n        print(\"[MediAssist] Loading...\")\n        model_id = \"TinyLlama/TinyLlama-1.1B-Chat-v1.0\"\n        tokenizer = AutoTokenizer.from_pretrained(model_id)\n        model = AutoModelForCausalLM.from_pretrained(\n            model_id, torch_dtype=torch.float32, low_cpu_mem_usage=True\n        )\n        model.eval()\n        print(\"[MediAssist] Ready!\")\n\n# For Urdu/Hindi we translate the question to English, get answer, keep it simple\n# TinyLlama only works well in English — this is honest and works\nSYSTEM_EN = \"\"\"You are MediAssist, a medical assistant for rural Pakistan communities.\nAnswer clearly in English with this exact format:\n\n🔍 What this might be:\n- cause 1\n- cause 2\n\n🏠 Home care steps:\n- step 1\n- step 2\n- step 3\n\n🚨 Go to doctor immediately if:\n- warning 1\n- warning 2\n\nKeep under 120 words. Never diagnose. Always suggest seeing a doctor for serious issues.\"\"\"\n\nSYSTEM_UR = \"\"\"You are a medical assistant. The user is asking in Urdu.\nFirst translate their question to English, answer in English with this format:\n\n🔍 What this might be:\n- cause\n\n🏠 Home care:\n- step 1\n- step 2\n\n🚨 See doctor if:\n- warning\n\nThen write: \"اردو خلاصہ:\" and give a 2-line Urdu summary of your answer.\nKeep total response under 150 words.\"\"\"\n\nSYSTEM_HI = \"\"\"You are a medical assistant. Answer in simple Hindi with this format:\n\n🔍 यह क्या हो सकता है:\n- कारण\n\n🏠 घर पर करें:\n- कदम 1\n- कदम 2\n\n🚨 डॉक्टर के पास जाएं अगर:\n- चेतावनी\n\n100 शब्दों से कम रखें।\"\"\"\n\nSYSTEMS = {\n    \"English\": SYSTEM_EN,\n    \"اردو\": SYSTEM_UR,\n    \"हिन्दी\": SYSTEM_HI,\n}\n\nDISCLAIMERS = {\n    \"English\": \"\\n\\n⚠️ *For informational purposes only. Always consult a real doctor.*\", ..."
+}

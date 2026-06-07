@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/PocketWorld-Studio",
+  "slug": "PocketWorld-Studio",
+  "title": "PocketWorld Studio",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from pathlib import Path\n\nimport copy\nimport html\nimport json\nfrom pathlib import Path\n\nimport gradio as gr\n\n\nPROJECT_ROOT = Path(__file__).parent\nASSETS_DIR = PROJECT_ROOT / \"assets\"\nASSET_CATALOG_PATH = ASSETS_DIR / \"asset_catalog.json\"\n\nRENDERER_VERSION = \"0.5\"\nWORLD_SCHEMA_VERSION = \"pocketworld-world-v0.5\"\nASSET_SCHEMA_VERSION = \"pocketworld-assets-v0.1\"\nTHEME_OPTIONS = [\"Auto\", \"Light\", \"Dark\"]\nDEFAULT_THEME = \"Auto\"\nWORLD_THEMES = [\"cozy_fantasy\", \"sci_fi_station\", \"haunted_mystery\", \"tiny_city\"]\nDEFAULT_WORLD_THEME = \"cozy_fantasy\"\n\nTILE_LEGEND = {\n    \"W\": \"wall / blocked\",\n    \".\": \"floor / walkable\",\n    \"G\": \"locked goal or exit\",\n}\n\n\nEMBEDDED_ASSET_CATALOG = {\n    \"schema_version\": ASSET_SCHEMA_VERSION,\n    \"source\": {\n        \"name\": \"Kenney Tiny Dungeon\",\n        \"url\": \"https://kenney.nl/assets/tiny-dungeon\",\n        \"license\": \"Creative Commons Zero (CC0)\",\n        \"license_url\": \"https://creativecommons.org/publicdomain/zero/1.0/\",\n        \"credit\": \"Kenney\",\n    },\n    \"tile_size\": 16,\n    \"display_tile_size\": 44,\n    \"themes\": {\n        \"cozy_fantasy\": {\n            \"tile_palette\": {\"W\": \"wall_wood\", \".\": \"floor_wood\", \"G\": \"gate\"},\n            \"player_sprite_key\": \"player\",\n            \"npc_sprite_keys\": [\"npc_wizard\", \"npc_merchant\", \"npc_citizen\"],\n            \"item_sprite_keys\": [\"key\", \"gem\", \"potion\", \"scroll\"],\n            \"landmark_asset_keys\": [\"gate\", \"well\", \"tower\", \"bridge\"],\n        },\n        \"sci_fi_station\": {\n            \"tile_palette\": {\"W\": \"wall_metal\", \".\": \"floor_metal\", \"G\": \"portal\"},\n            \"player_sprite_key\": \"player\",\n            \"npc_sprite_keys\": [\"npc_robot\", \"npc_scientist\"],\n            \"item_sprite_keys\": [\"battery\", \"gear\", \"tool\"],\n            \"landmark_asset_keys\": [\"portal\", \"computer\", \"door\"],\n        },\n        \"haunted_mystery\": {\n            \"tile_palette\": {\"W\": \"wall_stone\", \".\": \"floor_stone\", \"G\" ..."
+}

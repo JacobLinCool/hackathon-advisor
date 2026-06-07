@@ -18,8 +18,11 @@ _logger = logging.getLogger("hackathon_advisor")
 
 DEFAULT_MODEL_ID = "openbmb/MiniCPM5-1B"
 DEFAULT_ADAPTER_ID = "build-small-hackathon/hackathon-advisor-minicpm5-lora"
-DEFAULT_BACKEND = "rules"
+DEFAULT_ADAPTER_REVISION = "25de69bcde397e1bcdd852923b56a42f10222650"
+DEFAULT_BACKEND = "minicpm-transformers"
 MAX_TOOL_CALL_TOKENS = 180
+MINICPM_DEMO_TEMPERATURE = 0.9
+MINICPM_DEMO_TOP_P = 0.95
 
 
 class ToolPlanner(Protocol):
@@ -201,15 +204,12 @@ class MiniCPMTransformersPlanner:
             trust_remote_code=True,
             **(adapter_kwargs if self.adapter_id else {}),
         )
-        model = self._load_model_on_device(
-            AutoModelForCausalLM, base_model_id, target, torch
-        )
+        model = _load_minicpm_causal_lm(AutoModelForCausalLM, base_model_id, target, torch)
         if self.adapter_id:
             model = PeftModel.from_pretrained(model, self.adapter_id, **adapter_kwargs)
             if target not in ("auto", "cpu"):
                 model = model.to(target)
         model.eval()
-        _disable_sampling_generation_defaults(model)
         self._model = model
         if hasattr(torch, "inference_mode"):
             self._inference_mode = torch.inference_mode
@@ -220,32 +220,6 @@ class MiniCPMTransformersPlanner:
             self.adapter_id or "(none)",
         )
 
-    def _load_model_on_device(self, model_cls: Any, base_model_id: str, target: str, torch: Any) -> Any:
-        if target == "auto":
-            return model_cls.from_pretrained(
-                base_model_id, dtype="auto", device_map="auto", trust_remote_code=True
-            )
-        if target == "cpu":
-            return model_cls.from_pretrained(
-                base_model_id, dtype=torch.float32, device_map={"": "cpu"}, trust_remote_code=True
-            )
-        # mps / cuda: load on CPU first (no accelerate dispatch), then move to the device.
-        if target == "mps":
-            os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
-        try:
-            model = model_cls.from_pretrained(
-                base_model_id, dtype=torch.float16, trust_remote_code=True
-            )
-            return model.to(target)
-        except Exception as error:  # noqa: BLE001 - keep the turn runnable on CPU
-            if target == "mps":
-                _logger.warning("MPS load failed (%r); falling back to CPU float32.", error)
-                self.resolved_device = "cpu"
-                return model_cls.from_pretrained(
-                    base_model_id, dtype=torch.float32, device_map={"": "cpu"}, trust_remote_code=True
-                )
-            raise
-
     def _prepare_inputs(self, prompt: str) -> Any:
         assert self._tokenizer is not None
         assert self._model is not None
@@ -253,16 +227,12 @@ class MiniCPMTransformersPlanner:
             {"role": "system", "content": system_prompt()},
             {"role": "user", "content": prompt},
         ]
-        inputs = self._tokenizer.apply_chat_template(
+        return _minicpm_chat_inputs(
+            self._tokenizer,
             messages,
-            add_generation_prompt=True,
             enable_thinking=False,
-            tokenize=True,
-            return_dict=True,
-            return_tensors="pt",
-        ).to(next(self._model.parameters()).device)
-        _strip_unused_generation_inputs(inputs)
-        return inputs
+            device=next(self._model.parameters()).device,
+        )
 
     def _stream_tool_call(self, prompt: str) -> Iterator[tuple[int, str]]:
         from transformers import TextIteratorStreamer
@@ -273,12 +243,12 @@ class MiniCPMTransformersPlanner:
         streamer = TextIteratorStreamer(
             self._tokenizer, skip_prompt=True, skip_special_tokens=True
         )
-        generation_kwargs = {
-            **inputs,
-            "max_new_tokens": MAX_TOOL_CALL_TOKENS,
-            "do_sample": False,
-            "streamer": streamer,
-        }
+        generation_kwargs = _minicpm_generation_kwargs(
+            inputs,
+            max_new_tokens=MAX_TOOL_CALL_TOKENS,
+            temperature=0.0,
+            streamer=streamer,
+        )
         errors: list[BaseException] = []
 
         def _run() -> None:
@@ -343,15 +313,82 @@ def _resolve_torch_device(preference: str, torch: Any) -> str:
     return _best_local_device(torch)
 
 
+def _load_minicpm_causal_lm(model_cls: Any, model_id: str, target: str, torch: Any) -> Any:
+    if target == "auto":
+        return model_cls.from_pretrained(
+            model_id,
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+            trust_remote_code=True,
+        )
+    if target == "cuda":
+        return model_cls.from_pretrained(
+            model_id,
+            torch_dtype=torch.bfloat16,
+            trust_remote_code=True,
+        ).to("cuda")
+    if target == "mps":
+        os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
+        return model_cls.from_pretrained(
+            model_id,
+            torch_dtype=torch.float32,
+            trust_remote_code=True,
+        ).to("mps")
+    return model_cls.from_pretrained(
+        model_id,
+        torch_dtype=torch.float32,
+        trust_remote_code=True,
+    ).to("cpu")
+
+
+def _minicpm_chat_inputs(
+    tokenizer: Any,
+    messages: list[dict[str, str]],
+    *,
+    enable_thinking: bool,
+    device: Any,
+) -> Any:
+    prompt_text = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True,
+        enable_thinking=enable_thinking,
+    )
+    inputs = tokenizer([prompt_text], return_tensors="pt").to(device)
+    _strip_unused_generation_inputs(inputs)
+    return inputs
+
+
+def _minicpm_generation_kwargs(
+    inputs: dict[str, Any],
+    *,
+    max_new_tokens: int,
+    temperature: float = MINICPM_DEMO_TEMPERATURE,
+    top_p: float = MINICPM_DEMO_TOP_P,
+    streamer: Any | None = None,
+) -> dict[str, Any]:
+    generation_kwargs: dict[str, Any] = {
+        **inputs,
+        "max_new_tokens": max_new_tokens,
+    }
+    if streamer is not None:
+        generation_kwargs["streamer"] = streamer
+    if temperature > 0:
+        generation_kwargs.update(temperature=temperature, top_p=top_p, do_sample=True)
+    else:
+        generation_kwargs.update(do_sample=False)
+    return generation_kwargs
+
+
 def create_tool_planner(device: str = "auto") -> ToolPlanner:
-    backend = os.environ.get("ADVISOR_MODEL_BACKEND", DEFAULT_BACKEND).strip().lower()
-    if backend in ("", "rules"):
+    backend = os.environ.get("ADVISOR_MODEL_BACKEND", "").strip().lower() or DEFAULT_BACKEND
+    if backend == "rules":
         return RuleBasedPlanner()
     if backend in ("minicpm", "minicpm-transformers"):
         return MiniCPMTransformersPlanner(
             os.environ.get("ADVISOR_MODEL_ID", DEFAULT_MODEL_ID),
-            os.environ.get("ADVISOR_ADAPTER_ID", ""),
-            os.environ.get("ADVISOR_ADAPTER_REVISION", ""),
+            os.environ.get("ADVISOR_ADAPTER_ID", DEFAULT_ADAPTER_ID),
+            os.environ.get("ADVISOR_ADAPTER_REVISION", DEFAULT_ADAPTER_REVISION),
             device=device,
         )
     raise RuntimeError(f"Unsupported ADVISOR_MODEL_BACKEND={backend!r}")
@@ -405,15 +442,6 @@ def system_prompt() -> str:
 
 def _strip_unused_generation_inputs(inputs: dict[str, Any]) -> None:
     inputs.pop("token_type_ids", None)
-
-
-def _disable_sampling_generation_defaults(model: Any) -> None:
-    generation_config = getattr(model, "generation_config", None)
-    if generation_config is None:
-        return
-    generation_config.do_sample = False
-    generation_config.temperature = None
-    generation_config.top_p = None
 
 
 def _normalize_xml_tool_output(output: str) -> str:

@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/mini-fam",
+  "slug": "mini-fam",
+  "title": "Mini Fam",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from minifam import agent, config\n\n\"\"\"MiniFam — a local AI family assistant. Gradio entry point (Hugging Face Space).\n\nRun locally:   source .venv/bin/activate && python app.py\nThen open the printed http://127.0.0.1:7860 URL.\n\"\"\"\n\nimport gradio as gr\n\nfrom minifam import agent, config\n\n\ndef respond(user_msg, display_history, raw_messages, member):\n    \"\"\"Handle one chat submission.\"\"\"\n    user_msg = (user_msg or \"\").strip()\n    if not user_msg:\n        return display_history, raw_messages, \"\"\n\n    raw_messages = raw_messages + [{\"role\": \"user\", \"content\": user_msg}]\n    try:\n        reply, raw_messages = agent.run_agent(raw_messages, member)\n    except Exception as e:\n        reply = (\n            f\"⚠️ Could not reach the model ({e}).\\n\\n\"\n            \"Is Ollama running and is the model pulled? Try: `ollama run qwen3:30b`\"\n        )\n\n    display_history = display_history + [\n        {\"role\": \"user\", \"content\": user_msg},\n        {\"role\": \"assistant\", \"content\": reply},\n    ]\n    return display_history, raw_messages, \"\"\n\n\ndef switch_member(_member):\n    \"\"\"Start a fresh conversation when the active member changes.\"\"\"\n    return [], []\n\n\nwith gr.Blocks(title=\"MiniFam\") as demo:\n    gr.Markdown(\n        \"# 🏡 MiniFam\\n\"\n        \"Your family's assistant — runs entirely on your own computer.\"\n    )\n\n    member = gr.Dropdown(\n        choices=config.MEMBERS,\n        value=config.MEMBERS[0],\n        label=\"Who's talking?\",\n    )\n\n    chatbot = gr.Chatbot(height=460, label=\"MiniFam\")\n    raw_state = gr.State([])  # full model conversation (incl. tool calls)\n\n    msg = gr.Textbox(\n        placeholder=\"e.g. Remind me to buy milk tomorrow  ·  What are my notes?\",\n        label=\"Message\",\n        autofocus=True,\n    )\n\n    msg.submit(\n        respond,\n        inputs=[msg, chatbot, raw_state, member],\n        outputs=[chatbot, raw_state, msg],\n    )\n    member.change(switch_member, ..."
+}

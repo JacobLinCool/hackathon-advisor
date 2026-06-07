@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/innerspace",
+  "slug": "innerspace",
+  "title": "InnerSpace",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "# InnerSpace **InnerSpace** is a private, local-first cognitive journal and AI reflection companion. It runs a fine-tuned 1.2B parameter language model inside the Hugging Face Space runtime. There is no serverless inference fallback, so journal text is not sent to an external inference API. The model analyzes journal entries through the lens of **Cognitive Behavioral Therapy (CBT)**: surfacing emotions, identifying affected life areas, flagging cognitive distortions, and responding with a gentle reflective question to help the writer think more clearly. InnerSpace is a reflective journaling tool, not medical advice, diagnosis, crisis counseling, or a replacement for a licensed mental-health professional. If someone may be in immediate danger or crisis, they should contact local emergency services or a crisis hotline. **Live Space**: [build-small-hackathon/innerspace](https://huggingface.co/spaces/build-small-hackathon/innerspace) **Source Code**: [awilliams88/innerspace](https://github.com/awilliams88/innerspace) **Fine-tuned Model**: [build-small-hackathon/inner-space-1b-sft-cbt](https://huggingface.co/build-small-hackathon/inner-space-1b-sft-cbt) --- ## What It Does Write or upload a journal entry (`.txt` or `.md`) and set your current distress level. InnerSpace will return a structured reflection in six parts: | Section | Description | |---|---| | **Emotions** | Dominant emotional states present in the entry | | **Life Areas** | Affected domains — career, relationships, he ...",
+  "APP_FILE": "from __future__ import annotations\nfrom env.runtime import patch_asyncio_cleanup_warning\nfrom ui.styles import CUSTOM_CSS\nfrom ui.layout import create_app, get_theme\n\nfrom __future__ import annotations\n\nimport os\nfrom env.runtime import patch_asyncio_cleanup_warning\nfrom ui.styles import CUSTOM_CSS\nfrom ui.layout import create_app, get_theme\n\n# Gradio SSR is noisy in Spaces for this app.\nos.environ.setdefault(\"GRADIO_SSR_MODE\", \"false\")\n\n# Hide a harmless Gradio teardown warning in local runs.\npatch_asyncio_cleanup_warning()\n\n# Build the Space app once for Gradio to discover.\ndemo = create_app()\n\nif __name__ == \"__main__\":\n    # Keep direct Python launch available for Space and smoke tests.\n    demo.launch(theme=get_theme(), css=CUSTOM_CSS)"
+}

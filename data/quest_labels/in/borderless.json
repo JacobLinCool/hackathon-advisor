@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/borderless",
+  "slug": "borderless",
+  "title": "Borderless",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "# Borderless **An agentic immigration research tool — describe your background in plain English, explore where you could go.** Live demo: **[build-small-hackathon/borderless](https://huggingface.co/spaces/build-small-hackathon/borderless)** Built for the [Build Small Hackathon](https://huggingface.co/build-small-hackathon) — small models (≤32B), big adventure. ## What it does Immigration research is fragmented across government sites, forums, and spreadsheets. Borderless puts it in one conversational flow: 1. **Describe yourself** — citizenship, education, work history, languages, budget, and goals in everyday language. 2. **Use guided intake or chat** — start from a structured profile form, a demo persona, or a free-form message. 3. **Get a shortlist** — the agent reasons over your profile and surfaces destination countries that fit. 4. **Explore on a 3D globe** — shortlisted countries appear on an interactive MapLibre globe beside the chat with pathway labels. 5. **Dig into the details** — visa pathways, required documents, realistic timelines, risks, and source links from official pages. No forms to decode. No keyword guessing. Just a research session that meets you where you are. ## How it works Borderless is a **Gradio agent** powered by **[Qwen/Qwen3.6-27B](https://huggingface.co/Qwen/Qwen3.6-27B)** (27B parameters — within the hackathon's 32B cap). The model plans multi-step research and calls tools when it needs ground truth: | Tool | What it fetches | |------|------- ...",
+  "APP_FILE": "from pathlib import Path\nfrom ui.workspace import create_main_workspace\nfrom ui.globe import globe_head_html\nfrom ui.sidebar import render_sidebar\n\n# app.py\nfrom pathlib import Path\n\nimport gradio as gr\n\nfrom ui.workspace import create_main_workspace\nfrom ui.globe import globe_head_html\nfrom ui.sidebar import render_sidebar\n\nASSETS_DIR = Path(__file__).resolve().parent / \"assets\"\n\n\ndef create_demo() -> gr.Blocks:\n    with gr.Blocks(\n        fill_height=True,\n        title=\"Borderless - Immigration Research Agent\",\n    ) as demo:\n        history_host = render_sidebar()\n        create_main_workspace(history_container=history_host)\n\n    # Injected at launch (Gradio 6); also picked up by Hugging Face Spaces auto-launch.\n    app_css = (ASSETS_DIR / \"app.css\").read_text(encoding=\"utf-8\")\n    demo._deprecated_head = f\"{globe_head_html()}\\n<style>{app_css}</style>\"\n    return demo\n\n\ndemo = create_demo()\n\nif __name__ == \"__main__\":\n    demo.launch()"
+}

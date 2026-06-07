@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/WitGym",
+  "slug": "WitGym",
+  "title": "WitGym",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "# WitGym Case-Based Reasoning RAG comedy engine — conversational wit grounded in *The Office* precedent. **Status:** WIP. Core pipeline lives in `witgym/`; Gradio UI wiring in progress. Built for [Build Small Hackathon 2026](https://huggingface.co/build-small-hackathon) (Track 2).",
+  "APP_FILE": "\"\"\"Gradio entry point for Hugging Face Spaces.\"\"\"\nimport gradio as gr\n\nWIP_MESSAGE = (\n    \"WitGym is loading — CBR-RAG comedy engine in development. \"\n    \"Check back soon for live wit grounded in The Office precedent.\"\n)\n\n\ndef respond(prompt: str) -> str:\n    if not prompt.strip():\n        return \"Say something awkward. I'll eventually have the perfect Office-adjacent reply.\"\n    return WIP_MESSAGE\n\n\ndemo = gr.Interface(\n    fn=respond,\n    inputs=gr.Textbox(label=\"Your setup\", placeholder=\"I just got promoted and have no idea what I'm doing.\"),\n    outputs=gr.Textbox(label=\"WitGym\"),\n    title=\"WitGym\",\n    description=\"Conversational wit grounded in human comedy precedent. Pipeline shipping soon.\",\n)\n\nif __name__ == \"__main__\":\n    demo.launch()"
+}

@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/surgical-tissue-segmentation",
+  "slug": "surgical-tissue-segmentation",
+  "title": "Real-Time Surgical Anatomy Assistant",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "",
+  "README": "# 🔬 SurgiSight — Real-Time Surgical Anatomy Assistant > AI-powered tissue detection and anatomy explanation for laparoscopic cholecystectomy — built to support junior medical residents in the operating room. **Built for the [Build Small Hackathon 2026](https://huggingface.co/build-small-hackathon)** All footage is from the publicly available **CholecSeg8k** research dataset (MICCAI 2020). No patient data involved. *** ## 🎯 What It Does SurgiSight analyzes laparoscopic surgical frames in real time and provides three layers of output: 1. **Tissue & Instrument Detection** — A fine-tuned YOLOv8 model detects and segments anatomical structures and surgical instruments with confidence scores 2. **Safety Alerts** — Instantly flags critical structures (e.g., Hepatic Vein, Cystic Duct) with a danger zone warning 3. **Anatomy Explanation** — Llama 3.1 generates a 3-sentence surgical teaching note explaining what each detected structure is, why it matters, and what to be careful about *** ## 🖼️ Demo Upload any laparoscopic cholecystectomy frame, or try one of the provided example images from the CholecSeg8k dataset. **Example output:** - ✅ Detected: `Liver Ligament (93%)`, `Hepatic Vein (89%)` - ⚠️ Safety Alert: `DANGER ZONE DETECTED: Hepatic Vein — Exercise caution near these structures.` - 🧠 Explanation: *\"During a laparoscopic cholecystectomy, the resident should be aware that the Liver Ligament (falciform ligament) is a fibrous structure attaching the liver to the anterior abdominal ...",
+  "APP_FILE": "(no app file available)"
+}

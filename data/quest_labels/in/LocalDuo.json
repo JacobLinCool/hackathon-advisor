@@ -1,0 +1,14 @@
+{
+  "id": "build-small-hackathon/LocalDuo",
+  "slug": "LocalDuo",
+  "title": "LocalDuo",
+  "sdk": "gradio",
+  "declared_models": [],
+  "tags": [
+    "gradio",
+    "region:us"
+  ],
+  "app_file": "app.py",
+  "README": "Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference",
+  "APP_FILE": "from PIL import Image\nfrom supertonic import TTS\nfrom transformers import AutoProcessor, AutoModelForImageTextToText\nfrom bs4 import BeautifulSoup\nfrom playwright.sync_api import sync_playwright\nfrom urllib.parse import urljoin\nfrom transformers import TextIteratorStreamer, StoppingCriteria, StoppingCriteriaList\nfrom threading import Thread\n\n# Copyright: Shayekh Bin Islam. KAIST, South Korea. 2026.\n\nMAX_TEXT_CHAR = 1500\n\n# model_id = \"Qwen/Qwen3.5-9B\"\nmodel_id = \"Qwen/Qwen3.5-2B\"\n\ntry:\n    import spaces\n    IS_HF = True\nexcept ImportError:\n    IS_HF = False\n\n\nif not IS_HF:\n    class spaces:\n        @staticmethod\n        def GPU(*args, **kwargs):\n            def decorator(func):\n                return func\n            if len(args) == 1 and callable(args[0]) and not kwargs:\n                return args[0]\n            return decorator\nelse:\n    import os, sys, subprocess\n    os.environ['SUPERTONIC_CACHE_DIR']  = '/home/user/huggingface'\n    os.environ[\"HF_HOME\"] = \"/home/user/huggingface\"\n    os.environ['XDG_CACHE_HOME'] = \"/home/user/huggingface\"\n    \n    os.environ['PLAYWRIGHT_BROWSERS_PATH'] = \"/home/user/huggingface/ms-playwright\"\n    # os.system(\"playwright install chromium\")\n    result = subprocess.run(\n        [\"python\", \"-m\", \"playwright\", \"install\", \"chromium\"],\n        env={**os.environ},\n        check=True,\n        stdout=subprocess.PIPE,\n        stderr=subprocess.PIPE\n    )\n\nimport gradio as gr\nimport fitz  # PyMuPDF\nfrom PIL import Image\nimport io\nimport json\nimport base64\nimport soundfile as sf\nimport torch\nimport os\n\nfrom supertonic import TTS\nfrom transformers import AutoProcessor, AutoModelForImageTextToText\n\n# model = None\n# processor = None\n# tts = None\n# voice_style = None\n\nglobal_stop_thinking = [False]\nglobal_kill_threads = [False]\n\ndef set_stop_thinking():\n    global_stop_thinking[0] = True\n    print(f\"[STOP-THINK] set_stop_thinking CALLED! Flag is ..."
+}
