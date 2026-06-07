@@ -134,7 +134,7 @@ def runtime() -> dict:
 
 @app.get("/api/prize-ledger")
 def prize_ledger_endpoint() -> dict:
-    return prize_ledger(engine.runtime_status())
+    return prize_ledger(engine.runtime_status(), trace_metadata(index))
 
 
 @app.get("/api/tool-contracts")
@@ -153,7 +153,7 @@ def demo_session() -> dict:
 @app.get("/api/demo-bundle.zip")
 def demo_bundle() -> Response:
     runtime_status = engine.runtime_status()
-    ledger = prize_ledger(runtime_status)
+    ledger = prize_ledger(runtime_status, trace_metadata(index))
     metadata = {
         **trace_metadata(index),
         "project_count": len(index.projects),
@@ -219,7 +219,7 @@ def chapter_api(payload: dict[str, Any] | None = Body(default=None)) -> Response
 @app.get("/api/lora-training-kit.zip")
 def lora_training_kit() -> Response:
     runtime_status = engine.runtime_status()
-    ledger = prize_ledger(runtime_status)
+    ledger = prize_ledger(runtime_status, trace_metadata(index))
     metadata = {
         **trace_metadata(index),
         "project_count": len(index.projects),
@@ -291,7 +291,7 @@ def submission_packet_artifact(session_json: str = "{}") -> str:
             **trace_metadata(index),
             "project_count": len(index.projects),
         },
-        prize_ledger(runtime_status),
+        prize_ledger(runtime_status, trace_metadata(index)),
     )
 
 

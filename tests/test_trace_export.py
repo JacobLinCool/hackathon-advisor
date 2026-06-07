@@ -1,13 +1,15 @@
 import json
 from pathlib import Path
 
+from tests.helpers import load_test_index
+
 from hackathon_advisor.agent import AdvisorEngine
 from hackathon_advisor.data import ProjectIndex
 from hackathon_advisor.trace_export import build_trace_jsonl, trace_metadata
 
 
 def test_trace_jsonl_contains_manifest_and_turns() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
     state = engine.turn("A local-first archive cartographer for family photos", {}).state
     state = engine.turn("make a build plan", state).state
@@ -16,7 +18,7 @@ def test_trace_jsonl_contains_manifest_and_turns() -> None:
 
     assert lines[0]["type"] == "trace_manifest"
     assert lines[0]["turn_count"] == 2
-    assert lines[0]["index"]["algorithm"] == "tfidf-sparse-v1"
+    assert lines[0]["index"]["algorithm"] == "llama-cpp-embedding-v1"
     assert lines[1]["type"] == "agent_turn"
     assert lines[1]["tools"]
     assert lines[1]["tool_resolution"]["call"]["name"] == "save_idea"

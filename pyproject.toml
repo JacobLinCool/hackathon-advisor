@@ -10,6 +10,7 @@ dependencies = [
   "accelerate>=1.0,<2",
   "gradio>=6.16.0,<7",
   "huggingface-hub>=0.36,<1",
+  "llama-cpp-python>=0.3.26,<1",
   "peft>=0.13,<1",
   "pillow>=10,<13",
   "spaces>=0.50,<1",
@@ -23,6 +24,7 @@ dev = [
 ]
 model = [
   "accelerate>=1.0,<2",
+  "llama-cpp-python>=0.3.26,<1",
   "peft>=0.13,<1",
   "spaces>=0.50,<1",
   "torch>=2.8,<3",
@@ -34,6 +36,10 @@ train = [
   "peft>=0.13,<1",
   "torch>=2.8,<3",
   "transformers>=4.55,<5",
+]
+index = [
+  "llama-cpp-python>=0.3.26,<1",
+  "modal>=1.4,<2",
 ]
 
 [tool.pytest.ini_options]

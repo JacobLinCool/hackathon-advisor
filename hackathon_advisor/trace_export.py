@@ -47,12 +47,26 @@ def build_trace_jsonl(session: dict[str, Any], metadata: dict[str, Any]) -> str:
 
 
 def trace_metadata(index: Any) -> dict[str, str]:
-    return {
+    metadata = {
         "snapshot_generated_at": index.generated_at,
         "index_generated_at": index.index_generated_at,
         "index_algorithm": index.index_algorithm,
         "snapshot_digest": index.snapshot_digest,
     }
+    embedding = getattr(index, "embedding_metadata", None)
+    if isinstance(embedding, dict):
+        metadata.update(
+            {
+                "embedding_model_repo": str(embedding.get("model_repo") or ""),
+                "embedding_model_file": str(embedding.get("model_file") or ""),
+                "embedding_runtime": str(embedding.get("runtime") or ""),
+                "embedding_build_source": str(embedding.get("build_source") or ""),
+                "embedding_dimensions": str(embedding.get("dimensions") or ""),
+                "embedding_builder": str(embedding.get("builder") or ""),
+                "embedding_modal_app": str(embedding.get("modal_app") or ""),
+            }
+        )
+    return metadata
 
 
 def _tools(event: dict[str, Any]) -> list[dict[str, str]]:

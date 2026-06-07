@@ -1,6 +1,8 @@
 import json
 from io import BytesIO
 from pathlib import Path
+
+from tests.helpers import load_test_index
 from zipfile import ZipFile
 
 from hackathon_advisor.agent import AdvisorEngine
@@ -12,7 +14,7 @@ from hackathon_advisor.trace_export import trace_metadata
 
 
 def test_demo_bundle_contains_submission_evidence_files() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
     metadata = {
         **trace_metadata(index),

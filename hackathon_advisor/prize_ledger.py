@@ -13,18 +13,11 @@ MODEL_STACK = [
         "runtime": "ZeroGPU + transformers + PEFT",
     },
     {
-        "role": "Retriever",
-        "model": "offline TF-IDF snapshot",
-        "params_b": 0.0,
-        "status": "deployed",
-        "runtime": "local sparse index",
-    },
-    {
-        "role": "Planned embedder",
-        "model": "google/embeddinggemma-300m",
+        "role": "Embedding retriever",
+        "model": "ggml-org/embeddinggemma-300M-qat-q4_0-GGUF",
         "params_b": 0.30,
-        "status": "documented build path",
-        "runtime": "sentence-transformers / llama.cpp",
+        "status": "deployed",
+        "runtime": "Modal-built llama.cpp GGUF index + runtime llama.cpp query embeddings",
     },
     {
         "role": "Voice bonus",
@@ -40,7 +33,7 @@ BADGE_LEDGER = [
     {
         "name": "Off the Grid",
         "status": "ready",
-        "evidence": "Runtime uses a checked-in snapshot and local search; no proprietary inference API.",
+        "evidence": "Runtime uses checked-in project vectors and local llama.cpp query embeddings; no proprietary inference API.",
     },
     {
         "name": "Off-Brand",
@@ -69,8 +62,8 @@ BADGE_LEDGER = [
     },
     {
         "name": "Llama Champion",
-        "status": "planned",
-        "evidence": "MiniCPM5 GGUF and EmbeddingGemma GGUF paths are documented; runtime does not depend on them yet.",
+        "status": "ready",
+        "evidence": "Retrieval uses an EmbeddingGemma GGUF index built by llama.cpp on Modal and query embeddings computed through llama.cpp at runtime.",
     },
 ]
 
@@ -94,11 +87,12 @@ TRAINING_ARTIFACTS = [
 ]
 
 
-def prize_ledger(runtime: dict[str, Any]) -> dict[str, Any]:
+def prize_ledger(runtime: dict[str, Any], index_metadata: dict[str, Any] | None = None) -> dict[str, Any]:
     total_params = round(sum(float(item["params_b"]) for item in MODEL_STACK), 2)
     largest = max(MODEL_STACK, key=lambda item: float(item["params_b"]))
     return {
         "runtime": runtime,
+        "retrieval_index": index_metadata or {},
         "model_stack": MODEL_STACK,
         "total_params_b": total_params,
         "largest_model": {

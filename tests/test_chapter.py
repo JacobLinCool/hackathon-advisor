@@ -1,4 +1,7 @@
+import re
 from pathlib import Path
+
+from tests.helpers import load_test_index
 
 from hackathon_advisor.agent import AdvisorEngine
 from hackathon_advisor.chapter import build_chapter_markdown
@@ -7,7 +10,7 @@ from hackathon_advisor.trace_export import trace_metadata
 
 
 def test_chapter_markdown_contains_idea_pages_and_citations() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
     state = engine.turn("A local-first archive cartographer for family photos", {}).state
     state = engine.turn("write bolder and find whitespace", state).state
@@ -26,7 +29,7 @@ def test_chapter_markdown_contains_idea_pages_and_citations() -> None:
     assert "Goals:" in markdown
     assert "Targets:" not in markdown
     assert "Closest cited pages:" in markdown
-    assert "Page 30:" in markdown
+    assert re.search(r"Page \d+:", markdown)
 
 
 def test_empty_chapter_markdown_is_explicit() -> None:

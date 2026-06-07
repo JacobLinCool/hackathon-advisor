@@ -1,12 +1,14 @@
 from pathlib import Path
 
+from tests.helpers import load_test_index
+
 from hackathon_advisor.agent import AdvisorEngine
 from hackathon_advisor.data import ProjectIndex
 from hackathon_advisor.demo_rehearsal import DEMO_GOALS, build_demo_rehearsal
 
 
 def test_demo_rehearsal_builds_complete_session() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
 
     payload = build_demo_rehearsal(engine)

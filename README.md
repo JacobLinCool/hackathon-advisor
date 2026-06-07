@@ -28,7 +28,7 @@ tags:
 The current milestone is a deployed ZeroGPU + MiniCPM5 LoRA advisor:
 
 - Local snapshot of public `build-small-hackathon` Spaces.
-- Offline search over project titles, tags, models, and descriptions.
+- Modal-built EmbeddingGemma GGUF retrieval index, with runtime query embeddings computed through llama.cpp.
 - Jargon correction for hackathon/model terms.
 - MiniCPM5 tool-call planning with a published PEFT LoRA adapter, plus deterministic local rules for tests and CPU-only
   development.
@@ -52,12 +52,14 @@ Then open <http://127.0.0.1:7860>.
 
 ```bash
 python scripts/crawl_hf_spaces.py --org build-small-hackathon --out data/projects.json
-python scripts/build_project_index.py --projects data/projects.json --out data/project_index.json
+.venv/bin/modal run scripts/modal_build_project_index.py --projects data/projects.json --out data/project_index.json
 python scripts/generate_sample_trace.py --projects data/projects.json --index data/project_index.json --out data/sample_trace.jsonl
 ```
 
 The app uses `data/projects.json` and `data/project_index.json` at runtime. The index validates the snapshot timestamp,
-source, project order, and digest before the app starts.
+source, project order, digest, embedding dimensions, and normalized vector shape before the app starts. The canonical
+index is built on Modal with `ggml-org/embeddinggemma-300M-qat-q4_0-GGUF` through llama.cpp; runtime search embeds the
+user query with the same GGUF model and performs local cosine search over the checked-in vectors.
 
 ## Trace Artifact
 
@@ -136,8 +138,9 @@ depending on browser `localStorage`.
 ## Prize Ledger
 
 `/api/prize-ledger` exposes submission evidence: the documented model stack, total parameter budget, Tiny Titan
-eligibility, runtime backend, and badge readiness. It is kept as an API artifact rather than a primary in-app panel so
-the user-facing app stays centered on idea evaluation. The main `/api/bootstrap` payload does not include the ledger.
+eligibility, runtime backend, retrieval-index metadata, and badge readiness. It is kept as an API artifact rather than a
+primary in-app panel so the user-facing app stays centered on idea evaluation. The main `/api/bootstrap` payload does
+not include the ledger.
 
 ## Wood Map
 
@@ -170,15 +173,19 @@ The deployed Space is configured for ZeroGPU inference with:
 
 ```bash
 ADVISOR_ZERO_GPU=1
-ADVISOR_ZERO_GPU_DURATION=60
+ADVISOR_ZERO_GPU_DURATION=120
 ADVISOR_MODEL_BACKEND=minicpm-transformers
 ADVISOR_MODEL_ID=openbmb/MiniCPM5-1B
 ADVISOR_ADAPTER_ID=build-small-hackathon/hackathon-advisor-minicpm5-lora
 ADVISOR_ADAPTER_REVISION=25de69bcde397e1bcdd852923b56a42f10222650
+ADVISOR_EMBEDDING_MODEL_REPO=ggml-org/embeddinggemma-300M-qat-q4_0-GGUF
+ADVISOR_EMBEDDING_MODEL_FILE=embeddinggemma-300M-qat-Q4_0.gguf
 ```
 
 `agent_turn` wraps the engine call with `spaces.GPU` when `ADVISOR_ZERO_GPU=1`, so model loading and generation run on
-the ZeroGPU allocation. Local tests and CPU-only development still default to `ADVISOR_MODEL_BACKEND=rules`.
+the ZeroGPU allocation. The retrieval query embedder downloads the GGUF model through `huggingface_hub` unless
+`ADVISOR_EMBEDDING_MODEL_PATH` points to a local file. Local tests and CPU-only development still default to
+`ADVISOR_MODEL_BACKEND=rules`.
 
 ## Test
 

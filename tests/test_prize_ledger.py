@@ -2,7 +2,10 @@ from hackathon_advisor.prize_ledger import prize_ledger
 
 
 def test_prize_ledger_tracks_param_budget_and_badges() -> None:
-    payload = prize_ledger({"backend": "rules", "model_id": "deterministic-tool-router"})
+    payload = prize_ledger(
+        {"backend": "rules", "model_id": "deterministic-tool-router"},
+        {"index_algorithm": "llama-cpp-embedding-v1"},
+    )
 
     assert payload["runtime"]["backend"] == "rules"
     assert payload["total_params_b"] <= payload["tiny_titan_limit_b"]
@@ -11,6 +14,8 @@ def test_prize_ledger_tracks_param_budget_and_badges() -> None:
     badges = {badge["name"]: badge["status"] for badge in payload["badges"]}
     assert badges["Off the Grid"] == "ready"
     assert badges["Well-Tuned"] == "ready"
+    assert badges["Llama Champion"] == "ready"
+    assert payload["retrieval_index"]["index_algorithm"] == "llama-cpp-embedding-v1"
     assert payload["training_artifacts"][0]["base_model"] == "openbmb/MiniCPM5-1B"
     assert payload["training_artifacts"][1]["format"] == "zip"
     assert payload["training_artifacts"][1]["adapter_repo"] == "build-small-hackathon/hackathon-advisor-minicpm5-lora"

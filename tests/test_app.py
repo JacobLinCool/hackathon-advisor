@@ -39,7 +39,7 @@ def test_health_exposes_index_metadata() -> None:
 
     assert payload["ok"] is True
     assert payload["projects"] == len(index.projects)
-    assert payload["index_algorithm"] == "tfidf-sparse-v1"
+    assert payload["index_algorithm"] == "llama-cpp-embedding-v1"
     assert payload["runtime"]["backend"] == "rules"
     assert len(payload["snapshot_digest"]) == 64
 
@@ -47,7 +47,7 @@ def test_health_exposes_index_metadata() -> None:
 def test_bootstrap_exposes_index_metadata() -> None:
     payload = bootstrap()
 
-    assert payload["index_algorithm"] == "tfidf-sparse-v1"
+    assert payload["index_algorithm"] == "llama-cpp-embedding-v1"
     assert payload["index_generated_at"]
     assert payload["snapshot_digest"]
     assert payload["runtime"]["tool_count"] >= 8
@@ -247,5 +247,8 @@ def test_prize_ledger_endpoint_reports_submission_evidence() -> None:
     assert payload["runtime"]["backend"] == "rules"
     assert payload["tiny_titan_eligible"] is True
     assert any(badge["name"] == "Sharing is Caring" for badge in payload["badges"])
+    assert {badge["name"]: badge["status"] for badge in payload["badges"]}["Llama Champion"] == "ready"
+    assert payload["retrieval_index"]["index_algorithm"] == "llama-cpp-embedding-v1"
+    assert payload["retrieval_index"]["embedding_runtime"] == "llama.cpp via llama-cpp-python"
     assert payload["training_artifacts"][0]["endpoint"] == "lora_dataset"
     assert payload["training_artifacts"][1]["endpoint"] == "/api/lora-training-kit.zip"

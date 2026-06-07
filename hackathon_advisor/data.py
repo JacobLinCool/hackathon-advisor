@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections import Counter
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from hashlib import sha256
@@ -8,6 +8,7 @@ import json
 import math
 from pathlib import Path
 import re
+from typing import Any
 
 
 TOKEN_RE = re.compile(r"[a-z0-9][a-z0-9.+_-]*", re.IGNORECASE)
@@ -21,6 +22,15 @@ GENERIC_PUBLIC_SUMMARY_RE = re.compile(
     r"|(?:^\s*todo\s*$)",
     re.IGNORECASE,
 )
+
+INDEX_SCHEMA_VERSION = 2
+INDEX_ALGORITHM = "llama-cpp-embedding-v1"
+DEFAULT_EMBEDDING_MODEL_REPO = "ggml-org/embeddinggemma-300M-qat-q4_0-GGUF"
+DEFAULT_EMBEDDING_MODEL_FILE = "embeddinggemma-300M-qat-Q4_0.gguf"
+DEFAULT_EMBEDDING_RUNTIME = "llama.cpp via llama-cpp-python"
+
+
+EmbeddingFunction = Callable[[str], Sequence[float]]
 
 
 @dataclass(frozen=True)
@@ -199,47 +209,45 @@ WHITESPACE_SEEDS: tuple[WhitespaceSeed, ...] = (
 )
 
 
-INDEX_ALGORITHM = "tfidf-sparse-v1"
-
-
 class ProjectIndex:
     def __init__(
         self,
         projects: list[Project],
         generated_at: str,
         source: str,
-        index_payload: dict | None = None,
+        index_payload: dict,
+        query_embedder: EmbeddingFunction | None = None,
     ) -> None:
         if not projects:
             raise ValueError("project index requires at least one project")
+        validate_index_payload(index_payload, projects, generated_at, source)
         self.projects = projects
         self.generated_at = generated_at
         self.source = source
-        if index_payload is None:
-            index_payload = build_index_payload(projects, generated_at, source)
-        validate_index_payload(index_payload, projects, generated_at, source)
         self.index_generated_at = str(index_payload["generated_at"])
         self.index_algorithm = str(index_payload["algorithm"])
         self.snapshot_digest = str(index_payload["snapshot_digest"])
-        self._idf = {str(term): float(value) for term, value in index_payload["idf"].items()}
-        self._documents = [
-            Counter({str(term): float(value) for term, value in document["weights"].items()})
+        self.embedding_metadata = dict(index_payload["embedding"])
+        self.embedding_dimensions = int(self.embedding_metadata["dimensions"])
+        self._query_embedder = query_embedder
+        self._vectors = [
+            tuple(float(value) for value in document["vector"])
             for document in index_payload["documents"]
         ]
-        self._norms = [float(document["norm"]) for document in index_payload["documents"]]
 
     @classmethod
-    def from_file(cls, path: Path) -> "ProjectIndex":
+    def from_file(cls, path: Path, query_embedder: EmbeddingFunction | None = None) -> "ProjectIndex":
         data = json.loads(path.read_text(encoding="utf-8"))
         projects = [Project.from_dict(item) for item in data["projects"]]
-        return cls(
-            projects=projects,
-            generated_at=str(data.get("generated_at") or ""),
-            source=str(data.get("source") or ""),
-        )
+        raise ValueError("ProjectIndex.from_file requires a separate embedding index payload")
 
     @classmethod
-    def from_files(cls, project_path: Path, index_path: Path) -> "ProjectIndex":
+    def from_files(
+        cls,
+        project_path: Path,
+        index_path: Path,
+        query_embedder: EmbeddingFunction | None = None,
+    ) -> "ProjectIndex":
         data = json.loads(project_path.read_text(encoding="utf-8"))
         index_payload = json.loads(index_path.read_text(encoding="utf-8"))
         projects = [Project.from_dict(item) for item in data["projects"]]
@@ -248,7 +256,11 @@ class ProjectIndex:
             generated_at=str(data.get("generated_at") or ""),
             source=str(data.get("source") or ""),
             index_payload=index_payload,
+            query_embedder=query_embedder,
         )
+
+    def set_query_embedder(self, embedder: EmbeddingFunction) -> None:
+        self._query_embedder = embedder
 
     def top_projects(self, limit: int = 8) -> list[Project]:
         return sorted(
@@ -258,35 +270,21 @@ class ProjectIndex:
         )[:limit]
 
     def search(self, query: str, limit: int = 5) -> list[SearchHit]:
-        query_terms = tokenize(query)
+        query_terms = set(tokenize(query))
         if not query_terms:
             return []
-        query_doc = Counter(query_terms)
-        query_norm = self._norm(query_doc)
+        query_vector = normalize_vector(self._embed_query(query))
         hits: list[SearchHit] = []
-        for page_number, (project, doc, doc_norm) in enumerate(
-            zip(self.projects, self._documents, self._norms, strict=True),
+        for page_number, (project, vector) in enumerate(
+            zip(self.projects, self._vectors, strict=True),
             start=1,
         ):
-            if doc_norm == 0.0 or query_norm == 0.0:
-                continue
-            raw = 0.0
-            matched: list[str] = []
-            for term, count in query_doc.items():
-                if term not in doc:
-                    continue
-                raw += (count * self._idf.get(term, 1.0)) * doc[term]
-                matched.append(term)
-            if not matched:
-                continue
-            title_bonus = sum(0.08 for term in matched if term in tokenize(project.title))
-            tag_bonus = sum(0.05 for term in matched if term in tokenize(" ".join(project.tags)))
-            score = raw / (query_norm * doc_norm) + title_bonus + tag_bonus
+            score = max(0.0, min(1.0, (dot_product(query_vector, vector) + 1.0) / 2.0))
             hits.append(
                 SearchHit(
                     project=project,
                     score=score,
-                    matched_terms=tuple(sorted(matched)),
+                    matched_terms=matched_terms(query_terms, project),
                     page_number=page_number,
                 )
             )
@@ -304,7 +302,7 @@ class ProjectIndex:
         for seed in WHITESPACE_SEEDS:
             hits = self.search(seed.query, limit=3)
             saturation = sum(hit.score for hit in hits) / max(len(hits), 1)
-            score = max(0.0, 1.0 - min(saturation, 0.95))
+            score = max(0.0, min(1.0, 1.0 - max(0.0, saturation - 0.35) / 0.60))
             if hits:
                 evidence = f"Nearest echoes are weak: {', '.join(hit.project.title for hit in hits[:2])}."
             else:
@@ -321,47 +319,67 @@ class ProjectIndex:
         items.sort(key=lambda item: item.score, reverse=True)
         return items[:limit]
 
-    def _norm(self, doc: Counter[str]) -> float:
-        return math.sqrt(sum((count * self._idf.get(term, 1.0)) ** 2 for term, count in doc.items()))
+    def _embed_query(self, query: str) -> Sequence[float]:
+        if self._query_embedder is None:
+            from hackathon_advisor.llama_embedding import create_llama_cpp_embedder
+
+            self._query_embedder = create_llama_cpp_embedder(self.embedding_metadata)
+        return self._query_embedder(query)
 
 
 def tokenize(text: str) -> list[str]:
     return [token.lower().strip("._-+") for token in TOKEN_RE.findall(text) if len(token.strip("._-+")) > 1]
 
 
-def build_index_payload(projects: list[Project], snapshot_generated_at: str, source: str) -> dict:
-    documents = [Counter(tokenize(project.searchable_text)) for project in projects]
-    df = Counter(term for document in documents for term in document)
-    idf = {
-        term: math.log((1 + len(documents)) / (1 + freq)) + 1.0
-        for term, freq in sorted(df.items())
+def matched_terms(query_terms: set[str], project: Project) -> tuple[str, ...]:
+    project_terms = set(tokenize(project.searchable_text))
+    return tuple(sorted(query_terms & project_terms)[:8])
+
+
+def build_index_payload(
+    projects: list[Project],
+    snapshot_generated_at: str,
+    source: str,
+    embeddings: Sequence[Sequence[float]],
+    *,
+    embedding_metadata: dict[str, Any] | None = None,
+) -> dict:
+    if len(embeddings) != len(projects):
+        raise ValueError("embedding count must match project count")
+    normalized = [normalize_vector(vector) for vector in embeddings]
+    dimensions = len(normalized[0]) if normalized else 0
+    if dimensions <= 0:
+        raise ValueError("embedding vectors must not be empty")
+    if any(len(vector) != dimensions for vector in normalized):
+        raise ValueError("embedding vectors must have one shared dimension")
+
+    metadata = {
+        "model_repo": DEFAULT_EMBEDDING_MODEL_REPO,
+        "model_file": DEFAULT_EMBEDDING_MODEL_FILE,
+        "runtime": DEFAULT_EMBEDDING_RUNTIME,
+        "dimensions": dimensions,
+        "normalized": True,
+        **(embedding_metadata or {}),
     }
     indexed_documents = []
-    for project, document in zip(projects, documents, strict=True):
-        weights = {
-            term: round(count * idf.get(term, 1.0), 8)
-            for term, count in sorted(document.items())
-        }
-        norm = math.sqrt(sum(value * value for value in weights.values()))
+    for project, vector in zip(projects, normalized, strict=True):
         indexed_documents.append(
             {
                 "project_id": project.id,
-                "tokens": sum(document.values()),
-                "unique_terms": len(document),
-                "norm": round(norm, 8),
-                "weights": weights,
+                "text_digest": sha256(project.searchable_text.encode("utf-8")).hexdigest(),
+                "norm": round(vector_norm(vector), 8),
+                "vector": [round(value, 8) for value in vector],
             }
         )
     return {
-        "schema_version": 1,
+        "schema_version": INDEX_SCHEMA_VERSION,
         "algorithm": INDEX_ALGORITHM,
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "snapshot_generated_at": snapshot_generated_at,
         "snapshot_source": source,
         "snapshot_digest": project_snapshot_digest(projects, snapshot_generated_at, source),
         "document_count": len(projects),
-        "vocabulary_size": len(idf),
-        "idf": {term: round(value, 8) for term, value in idf.items()},
+        "embedding": metadata,
         "documents": indexed_documents,
     }
 
@@ -372,7 +390,7 @@ def validate_index_payload(
     snapshot_generated_at: str,
     snapshot_source: str,
 ) -> None:
-    if payload.get("schema_version") != 1:
+    if payload.get("schema_version") != INDEX_SCHEMA_VERSION:
         raise ValueError("unsupported project index schema version")
     if payload.get("algorithm") != INDEX_ALGORITHM:
         raise ValueError(f"unsupported project index algorithm: {payload.get('algorithm')}")
@@ -386,6 +404,16 @@ def validate_index_payload(
         snapshot_source,
     ):
         raise ValueError("project index digest does not match projects snapshot")
+
+    embedding = payload.get("embedding")
+    if not isinstance(embedding, dict):
+        raise ValueError("project index embedding metadata is missing")
+    dimensions = int(embedding.get("dimensions") or 0)
+    if dimensions <= 0:
+        raise ValueError("project index embedding dimensions must be positive")
+    if embedding.get("runtime") != DEFAULT_EMBEDDING_RUNTIME:
+        raise ValueError("project index embedding runtime must be llama.cpp")
+
     documents = payload.get("documents")
     if not isinstance(documents, list) or len(documents) != len(projects):
         raise ValueError("project index document count does not match projects snapshot")
@@ -393,6 +421,31 @@ def validate_index_payload(
     indexed_ids = [document.get("project_id") for document in documents]
     if indexed_ids != project_ids:
         raise ValueError("project index project order does not match projects snapshot")
+    for document in documents:
+        vector = document.get("vector")
+        if not isinstance(vector, list) or len(vector) != dimensions:
+            raise ValueError("project index vector dimensions do not match embedding metadata")
+        norm = vector_norm(float(value) for value in vector)
+        if not 0.99 <= norm <= 1.01:
+            raise ValueError("project index vectors must be normalized")
+
+
+def normalize_vector(vector: Sequence[float]) -> tuple[float, ...]:
+    values = tuple(float(value) for value in vector)
+    norm = vector_norm(values)
+    if norm == 0.0:
+        raise ValueError("embedding vector norm must be non-zero")
+    return tuple(value / norm for value in values)
+
+
+def vector_norm(vector: Sequence[float]) -> float:
+    return math.sqrt(sum(float(value) * float(value) for value in vector))
+
+
+def dot_product(left: Sequence[float], right: Sequence[float]) -> float:
+    if len(left) != len(right):
+        raise ValueError("embedding vectors must have equal dimensions")
+    return sum(float(a) * float(b) for a, b in zip(left, right, strict=True))
 
 
 def project_snapshot_digest(projects: list[Project], generated_at: str, source: str) -> str:

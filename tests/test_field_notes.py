@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from tests.helpers import load_test_index
+
 from hackathon_advisor.agent import AdvisorEngine
 from hackathon_advisor.data import ProjectIndex
 from hackathon_advisor.field_notes import build_field_notes_markdown
@@ -7,7 +9,7 @@ from hackathon_advisor.trace_export import trace_metadata
 
 
 def test_field_notes_markdown_contains_session_decisions() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
     state = {
         "profile": {"skills": "frontend prototyping"},

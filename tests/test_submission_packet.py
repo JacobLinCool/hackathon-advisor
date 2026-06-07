@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from tests.helpers import load_test_index
+
 from hackathon_advisor.agent import AdvisorEngine
 from hackathon_advisor.data import ProjectIndex
 from hackathon_advisor.prize_ledger import prize_ledger
@@ -8,7 +10,7 @@ from hackathon_advisor.trace_export import trace_metadata
 
 
 def test_submission_packet_contains_demo_and_prize_evidence() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
     state = {"goals": ["Well-Tuned", "Field Notes"]}
     state = engine.turn("A local-first archive cartographer for family photos", state).state
@@ -44,7 +46,7 @@ def test_empty_submission_packet_is_honest_about_missing_session_artifacts() -> 
         {
             "snapshot_generated_at": "2026-06-06T00:00:00+00:00",
             "project_count": 100,
-            "index_algorithm": "tfidf-sparse-v1",
+            "index_algorithm": "llama-cpp-embedding-v1",
             "index_generated_at": "2026-06-06T01:00:00+00:00",
             "snapshot_digest": "abc",
         },

@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+from tests.helpers import load_test_index
+
 from hackathon_advisor.agent import AdvisorEngine
 from hackathon_advisor.data import ProjectIndex
 from hackathon_advisor.lora_dataset import BASE_MODEL, build_lora_dataset_jsonl
@@ -8,7 +10,7 @@ from hackathon_advisor.trace_export import trace_metadata
 
 
 def test_lora_dataset_exports_tool_call_and_response_examples() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
     state = {"goals": ["Well-Tuned", "Field Notes"]}
     state = engine.turn("A local-first archive cartographer for family photos", state).state
@@ -23,7 +25,7 @@ def test_lora_dataset_exports_tool_call_and_response_examples() -> None:
     assert manifest["record_kinds"] == ["tool_call", "advisor_response"]
     assert manifest["example_count"] == len(examples)
     assert manifest["included_turn_count"] == 2
-    assert manifest["index"]["algorithm"] == "tfidf-sparse-v1"
+    assert manifest["index"]["algorithm"] == "llama-cpp-embedding-v1"
     assert {example["example_kind"] for example in examples} == {"tool_call", "advisor_response"}
     assert examples[0]["messages"][2]["content"].startswith('<function name="save_idea">')
     assert examples[0]["goals"] == ["Well-Tuned", "Field Notes"]
@@ -41,7 +43,7 @@ def test_empty_lora_dataset_only_exports_manifest() -> None:
     payload = build_lora_dataset_jsonl(
         {},
         {
-            "index_algorithm": "tfidf-sparse-v1",
+            "index_algorithm": "llama-cpp-embedding-v1",
             "snapshot_generated_at": "2026-06-06T00:00:00+00:00",
             "index_generated_at": "2026-06-06T01:00:00+00:00",
             "snapshot_digest": "abc",

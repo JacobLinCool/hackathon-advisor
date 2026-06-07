@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from tests.helpers import load_test_index
+
 from hackathon_advisor.agent import AdvisorEngine
 from hackathon_advisor.data import ProjectIndex
 from hackathon_advisor.tool_contracts import ToolCall, ToolResolution
@@ -17,7 +19,7 @@ class StaticPlanner:
 
 
 def test_agent_scores_and_persists_idea() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
 
     result = engine.turn("A local-first archive cartographer for family photos", {})
@@ -42,7 +44,7 @@ def test_agent_scores_and_persists_idea() -> None:
 
 
 def test_agent_finds_whitespace() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
 
     result = engine.turn("write bolder and find whitespace", {})
@@ -54,7 +56,7 @@ def test_agent_finds_whitespace() -> None:
 
 
 def test_gap_command_explores_unused_whitespace() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
 
     first = engine.turn("write bolder and find whitespace", {})
@@ -67,7 +69,7 @@ def test_gap_command_explores_unused_whitespace() -> None:
 
 
 def test_agent_preserves_canonical_jargon_case() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
 
     result = engine.turn("use neutron and mini cpm on zero gpu", {})
@@ -77,7 +79,7 @@ def test_agent_preserves_canonical_jargon_case() -> None:
 
 
 def test_plan_command_uses_current_idea() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
 
     first = engine.turn("A local-first archive cartographer for family photos", {})
@@ -91,7 +93,7 @@ def test_plan_command_uses_current_idea() -> None:
 
 
 def test_non_plan_turns_clear_stale_build_plan() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
 
     first = engine.turn("A local-first archive cartographer for family photos", {})
@@ -105,7 +107,7 @@ def test_non_plan_turns_clear_stale_build_plan() -> None:
 
 
 def test_plan_and_rank_do_not_create_placeholder_ideas() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
 
     planned = engine.turn("make a build plan", {})
@@ -120,7 +122,7 @@ def test_plan_and_rank_do_not_create_placeholder_ideas() -> None:
 
 
 def test_plan_uses_profile_context() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
     state = {
         "profile": {
@@ -141,7 +143,7 @@ def test_plan_uses_profile_context() -> None:
 
 
 def test_distinct_idea_turns_append_to_board() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
 
     first = engine.turn("A local-first archive cartographer for family photos", {})
@@ -155,7 +157,7 @@ def test_distinct_idea_turns_append_to_board() -> None:
 
 
 def test_compare_ideas_reranks_board_and_selects_winner() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
 
     first = engine.turn("A local-first archive cartographer for family photos", {})
@@ -173,7 +175,7 @@ def test_compare_ideas_reranks_board_and_selects_winner() -> None:
 
 
 def test_plan_preserves_unwritten_whitespace_verdict() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
 
     whitespace = engine.turn("write bolder and find whitespace", {})
@@ -185,7 +187,7 @@ def test_plan_preserves_unwritten_whitespace_verdict() -> None:
 
 
 def test_planner_get_project_drives_project_response() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index, planner=StaticPlanner(ToolCall("get_project", {"id": "lolaby"})))
 
     result = engine.turn("read lolaby", {})
@@ -196,7 +198,7 @@ def test_planner_get_project_drives_project_response() -> None:
 
 
 def test_rule_project_reference_does_not_create_or_score_idea() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
     first = engine.turn("A local-first archive cartographer for family photos", {})
 
@@ -213,7 +215,7 @@ def test_rule_project_reference_does_not_create_or_score_idea() -> None:
 
 
 def test_planner_profile_and_goals_update_state() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     planned = AdvisorEngine(index).turn("A local-first archive cartographer for family photos", {})
     planned = AdvisorEngine(index).turn("make a build plan", planned.state)
     assert planned.state["last_plan"]
@@ -236,7 +238,7 @@ def test_planner_profile_and_goals_update_state() -> None:
 
 
 def test_goal_update_invalidates_current_idea_artifact() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     first = AdvisorEngine(index).turn("A local-first archive cartographer for family photos", {})
     first = AdvisorEngine(index).turn("make a build plan", first.state)
     assert first.state["last_plan"]
@@ -255,7 +257,7 @@ def test_goal_update_invalidates_current_idea_artifact() -> None:
 
 
 def test_session_goals_apply_to_new_and_current_ideas() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
     state = {"goals": ["Field Notes"]}
 
@@ -268,7 +270,7 @@ def test_session_goals_apply_to_new_and_current_ideas() -> None:
 
 
 def test_well_tuned_goal_adds_training_step_to_plan() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
     state = {"goals": ["Well-Tuned"]}
 
@@ -281,7 +283,7 @@ def test_well_tuned_goal_adds_training_step_to_plan() -> None:
 
 
 def test_planner_score_idea_scores_current_idea() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     first = AdvisorEngine(index).turn("A local-first archive cartographer for family photos", {})
     engine = AdvisorEngine(index, planner=StaticPlanner(ToolCall("score_idea", {})))
 

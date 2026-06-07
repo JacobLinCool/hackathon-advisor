@@ -1,22 +1,24 @@
 from pathlib import Path
+
+from tests.helpers import load_test_index
 import json
 
 from hackathon_advisor.data import Project, ProjectIndex, public_project_summary, public_project_title
 
 
 def test_project_index_searches_snapshot() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
 
     hits = index.search("lullaby children audio", limit=3)
 
     assert hits
     assert hits[0].project.id.startswith("build-small-hackathon/")
     assert hits[0].page_number >= 1
-    assert index.index_algorithm == "tfidf-sparse-v1"
+    assert index.index_algorithm == "llama-cpp-embedding-v1"
 
 
 def test_project_index_whitespace() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
 
     items = index.find_whitespace(limit=3)
 

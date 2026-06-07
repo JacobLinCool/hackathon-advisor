@@ -3,6 +3,8 @@ import subprocess
 import sys
 from io import BytesIO
 from pathlib import Path
+
+from tests.helpers import load_test_index
 from zipfile import ZipFile
 
 from hackathon_advisor.agent import AdvisorEngine
@@ -18,7 +20,7 @@ from hackathon_advisor.trace_export import trace_metadata
 
 
 def test_lora_training_kit_contains_recipe_and_model_card() -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
     metadata = {
         **trace_metadata(index),
@@ -67,7 +69,7 @@ def test_parse_lora_dataset_jsonl_rejects_empty_payload() -> None:
 
 
 def test_train_minicpm_lora_dry_run_writes_recipe(tmp_path: Path) -> None:
-    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+    index = load_test_index()
     engine = AdvisorEngine(index)
     metadata = {
         **trace_metadata(index),

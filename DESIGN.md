@@ -128,8 +128,8 @@ investigate → ideate → score loop — the experience collapses without the m
 | ↳ fallback | `nvidia/parakeet-tdt-0.6b-v3` | 0.6B | **transformers** (no NeMo) | CC-BY-4.0 | 🟩 (Quest brand — verify, §5.1) |
 | LLM brain | **`openbmb/MiniCPM5-1B`** ("OpenCPM5") | 1.08B | **transformers** (self-parse XML) / llama.cpp | **Apache-2.0** | 🏮 OpenBMB |
 | Turn detection (voice-later) | **`pipecat-ai/smart-turn-v3`** | ~8M | ONNX Runtime (browser) | BSD-2 | (natural voice UX) |
-| Embedder | **`google/embeddinggemma-300m`** | ~300M | sentence-transformers / llama.cpp | Gemma (gated) | 🔌 Off the Grid · 🦙 Llama Champion |
-| Fine-tune (to add) | LoRA on MiniCPM5 → published to Hub | — | PEFT / Modal | — | 🎯 Well-Tuned |
+| Embedder | **`ggml-org/embeddinggemma-300M-qat-q4_0-GGUF`** | ~300M | llama.cpp / llama-cpp-python | Gemma | 🔌 Off the Grid · 🦙 Llama Champion · 🟢 Modal |
+| Fine-tune | LoRA on MiniCPM5 → published to Hub | — | PEFT / HF Jobs | — | 🎯 Well-Tuned |
 
 **Total ≈ 1.9B params → ≤4B → 🐜 Tiny Titan eligible.** All open-weight, all runnable locally → 🔌 Off the Grid.
 
@@ -150,8 +150,8 @@ With **text-first + batch ASR**, the old "streaming ASR vs ZeroGPU" Config A/B t
   remains as the Gradio-client contract for external checks.
 - **Voice (later bonus):** push-to-talk records an utterance → POST blob → the same `@spaces.GPU` call also runs
   Nemotron/Parakeet ASR (batch) before the brain. No persistent stream, no WebRTC, **no TURN server**.
-- **Modal (build-time only):** crawl the org + build the EmbeddingGemma index offline; the Space ships with the index
-  artifact. Runtime never calls Modal → 🔌 Off the Grid holds (see §10).
+- **Modal (build-time only):** crawl the org + build the llama.cpp EmbeddingGemma vector index offline; the Space ships
+  with checked-in project vectors. Runtime never calls Modal → 🔌 Off the Grid holds (see §10).
 
 > Off the Grid = no proprietary cloud inference APIs. Open weights on an HF GPU Space / local box / Modal all qualify.
 
@@ -221,33 +221,28 @@ Silero VAD turn detection, FastRTC. Documented but not on the text-first critica
   required before relying on it; fallbacks: port pipecat's numpy-only mel extractor to JS, or do feature-extraction +
   onnx **server-side** per posted blob. Pair with `@ricky0123/vad-web` (Silero) for the speech start/stop gate.
 
-### 5.4 EmbeddingGemma — `google/embeddinggemma-300m`
+### 5.4 EmbeddingGemma GGUF — `ggml-org/embeddinggemma-300M-qat-q4_0-GGUF`
 
-- **Gated** — accept Gemma terms + `HF_TOKEN`. 2048-token ctx, 100+ langs, mean pooling, **fp32/bf16 only (no fp16)**.
-  ```python
-  from sentence_transformers import SentenceTransformer
-  m = SentenceTransformer("google/embeddinggemma-300m", truncate_dim=256)   # Matryoshka 768→512→256→128
-  q = m.encode_query("voice game for kids")          # prefix: "task: search result | query: "
-  d = m.encode_document(project_descriptions)        # prefix: "title: none | text: "
-  ```
-- **Exact prefixes matter:** query → `task: search result | query: `; document → `title: {title} | text: `; whitespace
-  clustering → prompt `Clustering` (`task: clustering | query: `). 256-dim is a good speed/quality tradeoff.
-- Footprint ~1.2 GB fp32 / ~0.6 GB bf16; QAT Q4_0/Q8_0 + ONNX (`onnx-community/embeddinggemma-300m-ONNX`).
+- Active retrieval model: `embeddinggemma-300M-qat-Q4_0.gguf`, 768-dimensional normalized embeddings.
+- Build-time path: Modal remote function runs `llama-cpp-python` with mean pooling and writes `data/project_index.json`.
+- Runtime path: Space embeds each user query through the same GGUF model via llama.cpp, then performs local cosine search
+  over checked-in project vectors.
+- Evidence is recorded in index metadata: model repo, GGUF filename, runtime, dimensions, build source, builder script,
+  llama-cpp-python version, and Modal app name.
 
 ### 5.5 llama.cpp support (🦙 Llama Champion)
 
-The two **language** models run on llama.cpp; the two **audio** models use their own runtimes. Running the core LLM on
-llama.cpp earns the badge.
+The active Llama Champion path is the retrieval model: the project index is built with EmbeddingGemma GGUF through
+llama.cpp on Modal, and runtime query embeddings use the same llama.cpp path.
 
 | Model | llama.cpp? | Runtime | Notes |
 |---|---|---|---|
-| `openbmb/MiniCPM5-1B` | ✅ | llama.cpp / Ollama | `openbmb/MiniCPM5-1B-GGUF` (Q4_K_M 688 MB); standard Llama arch |
-| `google/embeddinggemma-300m` | ✅ | `llama-embedding` | `gemma-embedding` arch (build ≥ b6384); `ggml-org/embeddinggemma-300M-GGUF` |
+| `openbmb/MiniCPM5-1B` | ✅ planned only | llama.cpp / Ollama | Not used for deployed tool-calling; Transformers + LoRA is the deployed brain. |
+| `ggml-org/embeddinggemma-300M-qat-q4_0-GGUF` | ✅ active | llama.cpp / llama-cpp-python | Builds project vectors on Modal and embeds runtime queries in the Space. |
 | ASR (Nemotron / Parakeet) | ❌ | NeMo / transformers | FastConformer-RNNT |
 | `pipecat-ai/smart-turn-v3` | ❌ | ONNX Runtime | Whisper encoder + classifier head |
 
-Verify-before-ship: EmbeddingGemma GGUF quant accuracy drifts ([#19040](https://github.com/ggml-org/llama.cpp/issues/19040))
-→ prefer Q8_0 or keep the embedder on sentence-transformers; MiniCPM5 tool-calling via llama.cpp is a pending PR.
+If retrieval quality becomes the bottleneck, compare Q4_0 against Q8_0, but do not keep two runtime retrieval paths.
 
 ---
 
@@ -336,46 +331,21 @@ score`) into one *code* "research" action the model calls once. The degradation 
 
 ## 10. Modal — offline pipeline (build-time only → preserves Off the Grid)
 
-Modal = build-time; runtime never calls it. This is how we claim **both** 🟢 Modal **and** 🔌 Off the Grid. Modal also
-trains the 🎯 Well-Tuned LoRA. Crawl org Spaces → embed with EmbeddingGemma → build vector index → commit to a Volume;
-the Space ships the index artifact and searches locally.
+Modal = build-time; runtime never calls it. This is how the app claims **both** 🟢 Modal and 🔌 Off the Grid. The
+canonical command is:
 
-```python
-import modal
-app = modal.App("bsh-advisor-index")
-CACHE = "/cache"
-hf_vol    = modal.Volume.from_name("hf-cache", create_if_missing=True)
-index_vol = modal.Volume.from_name("bsh-index", create_if_missing=True)
-image = (modal.Image.debian_slim("3.12")
-         .pip_install("sentence-transformers", "huggingface_hub", "requests", "numpy", "faiss-cpu")
-         .env({"HF_HUB_ENABLE_HF_TRANSFER": "1", "HF_HOME": CACHE}))
-
-@app.function(image=image)                                   # CPU: crawl one Space
-def crawl(space_id):
-    import requests
-    m = requests.get(f"https://huggingface.co/api/spaces/{space_id}").json()
-    return {"id": space_id, "text": m.get("cardData", {}).get("short_description", "")}
-
-@app.cls(image=image, gpu="T4", volumes={CACHE: hf_vol}, scaledown_window=120)
-class Embedder:
-    @modal.enter()
-    def load(self):
-        from sentence_transformers import SentenceTransformer
-        self.m = SentenceTransformer("google/embeddinggemma-300m", cache_folder=CACHE, truncate_dim=256)
-    @modal.method()
-    def embed(self, docs): return self.m.encode_document(docs).tolist()
-
-@app.local_entrypoint()
-def main(org="build-small-hackathon"):
-    import requests
-    ids  = [s["id"] for s in requests.get(f"https://huggingface.co/api/spaces?author={org}").json()]
-    docs = [d for d in crawl.map(ids) if d["text"]]
-    vecs = Embedder().embed.remote([d["text"] for d in docs])
-    # build FAISS index → write to index_vol → index_vol.commit()
+```bash
+.venv/bin/modal run scripts/modal_build_project_index.py \
+  --projects data/projects.json \
+  --out data/project_index.json
 ```
 
-- T4/CPU is plenty (pennies; $30/mo free credits). `gpu="T4"`/`"L4"` (note `"A10"`, not `"A10G"`). `volume.commit()`
-  after writing. `HF_TOKEN` via `modal.Secret` for the gated EmbeddingGemma download. Crawl on CPU, embed on GPU.
+The remote function installs `llama-cpp-python`, downloads
+`ggml-org/embeddinggemma-300M-qat-q4_0-GGUF/embeddinggemma-300M-qat-Q4_0.gguf`, embeds every project card through
+llama.cpp, and returns a schema-v2 JSON index. The local entrypoint writes that payload into the repo for Space runtime.
+
+Latest successful run: `hackathon-advisor-llama-index` on Modal, producing a 100-document, 768-dimensional normalized
+index at `2026-06-07T08:16:19+00:00`.
 
 ---
 
@@ -429,7 +399,7 @@ open grimoire as the hero component.
 | 🎨 Off-Brand (badge + $1.5k) | `gr.Server` custom UI is the agent's output surface |
 | 🏮 OpenBMB ($10k) | brain = MiniCPM5-1B ("OpenBMB pick") |
 | 🟩 NVIDIA Quest (2× RTX 5080) | ASR = Nemotron (verify if Parakeet qualifies, §5.1) |
-| 🦙 Llama Champion (badge) | MiniCPM5 + EmbeddingGemma run through llama.cpp (§5.5) |
+| 🦙 Llama Champion (badge) | EmbeddingGemma GGUF retrieval index and runtime query embeddings run through llama.cpp (§5.5) |
 | 📡 Sharing is Caring (badge) | publish the agent's tool-call trace to the Hub |
 | 📓 Field Notes (badge) | this DESIGN.md → a build blog post |
 | 🎖️ Bonus Quest Champion ($2k) | 6/6 badges (needs the Well-Tuned fine-tune) |
