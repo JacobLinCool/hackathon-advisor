@@ -123,6 +123,26 @@ def test_transcribe_audio_endpoint_saves_audio(monkeypatch) -> None:
     assert captured["path"].endswith(".wav")
 
 
+def test_transcribe_audio_endpoint_accepts_octet_stream_audio(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app._transcribe_voice",
+        lambda path: {
+            "transcript": "A local-first memory archive.",
+            "model_id": "nvidia/nemotron-speech-streaming-en-0.6b",
+            "backend": "nemo-asr",
+            "sample_rate": 16000,
+        },
+    )
+
+    payload = asyncio.run(
+        transcribe_audio(
+            DummyUpload(b"RIFF....WAVE", filename="idea.wav", content_type="application/octet-stream")
+        )
+    )
+
+    assert payload["transcript"] == "A local-first memory archive."
+
+
 def test_transcribe_audio_endpoint_rejects_non_audio() -> None:
     upload = DummyUpload(b"hello", filename="note.txt", content_type="text/plain")
 

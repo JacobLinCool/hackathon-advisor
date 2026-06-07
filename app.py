@@ -34,6 +34,7 @@ DATA_PATH = ROOT / "data" / "projects.json"
 INDEX_PATH = ROOT / "data" / "project_index.json"
 PROFILE_FIELDS = ["skills", "time", "preferences", "constraints"]
 MAX_AUDIO_UPLOAD_BYTES = 25 * 1024 * 1024
+AUDIO_UPLOAD_SUFFIXES = {".aac", ".aif", ".aiff", ".flac", ".m4a", ".mp3", ".oga", ".ogg", ".opus", ".wav", ".webm"}
 
 index = ProjectIndex.from_files(DATA_PATH, INDEX_PATH)
 engine = AdvisorEngine(index)
@@ -204,14 +205,22 @@ def agent_turn_stream(payload: dict[str, Any] | None = Body(default=None)) -> St
 @app.post("/api/transcribe")
 async def transcribe_audio(audio: UploadFile = File(...)) -> dict[str, Any]:
     content_type = str(audio.content_type or "")
-    if content_type and not content_type.startswith("audio/"):
+    filename = Path(str(audio.filename or "voice-note")).name
+    suffix = Path(filename).suffix.lower() or ".audio"
+    if not _is_audio_upload(content_type, suffix):
         raise HTTPException(status_code=415, detail="Voice input must be an audio file.")
     with tempfile.TemporaryDirectory(prefix="advisor-upload-") as directory:
-        filename = Path(str(audio.filename or "voice-note")).name
-        suffix = Path(filename).suffix or ".audio"
         source = Path(directory) / f"voice{suffix}"
         await _save_audio_upload(audio, source)
         return _transcribe_voice(str(source))
+
+
+def _is_audio_upload(content_type: str, suffix: str) -> bool:
+    if content_type.startswith("audio/"):
+        return True
+    if content_type in {"", "application/octet-stream"} and suffix in AUDIO_UPLOAD_SUFFIXES:
+        return True
+    return False
 
 
 async def _save_audio_upload(upload: UploadFile, target: Path) -> None:
