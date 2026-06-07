@@ -6,7 +6,7 @@ from hackathon_advisor.data import DEFAULT_EMBEDDING_MODEL_FILE, DEFAULT_EMBEDDI
 from hackathon_advisor.llama_embedding import DEFAULT_N_CTX, LlamaCppEmbedder, create_llama_cpp_embedder
 
 
-def test_llama_embedder_uses_q8_defaults_and_full_context(
+def test_llama_embedder_uses_q8_defaults_and_configured_context(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
