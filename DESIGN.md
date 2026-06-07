@@ -32,9 +32,11 @@ authoritative decision log; the rest of the doc is written to be consistent with
 **Verified corrections:**
 - **Drop SGLang.** It needs a persistent GPU process → incompatible with ZeroGPU (same root cause as vLLM). Run
   MiniCPM5 via plain `transformers` inside `@spaces.GPU` and parse its XML tool calls in our own code.
-- **gr.Server SSE generator streaming IS shipped** (the launch blog only deferred the *explanation*). On ZeroGPU the
-  browser MUST call endpoints via **`@gradio/client`** (`client.predict`/`submit`) — it forwards the HF iframe auth
-  headers for GPU quota; a raw `fetch`/`EventSource` POST silently breaks quota.
+- **gr.Server custom UI streaming IS shipped** (the launch blog only deferred the *explanation*). The deployed browser
+  UI calls our own same-origin `/api/agent-turn` NDJSON stream with `fetch`; `_engine_turn` itself is wrapped in
+  `@spaces.GPU`, so the real MiniCPM5 + LoRA path still runs on ZeroGPU. The `@app.api("/agent_turn")` generator stays
+  available for Gradio/Python clients and contract checks, but the visible app no longer depends on the CDN
+  `@gradio/client` path after real Space testing showed that browser turn could hang while the backend completed.
 - **OpenAI Track has NO model requirement** ("OpenAI's own podium across all submissions") → auto-entered; a free
   lottery ticket. Do NOT add gpt-oss (breaks Tiny Titan, dilutes the small-model thesis). Deliberate non-target.
 - **Badges = 6 total** (Tiny Titan is a $1.5k *special award*, not a badge). Decision #3 takes us from 5/6 → 6/6.
@@ -54,8 +56,8 @@ authoritative decision log; the rest of the doc is written to be consistent with
 
 **Day-1 go/no-go spikes (before any feature work):**
 - Trivial `@spaces.GPU` hello-cuda build GREEN on torch 2.8+, deps pinned, heavy deps added one at a time.
-- `gr.Server` minimal: static `index.html` + one `@app.api()` generator streaming tokens, called via `@gradio/client`,
-  on the real ZeroGPU Space.
+- `gr.Server` minimal: static `index.html` + one same-origin `/api/agent-turn` NDJSON stream, plus the retained
+  `@app.api()` generator for external clients, on the real ZeroGPU Space.
 - Nemotron `nemo_toolkit[asr]` install + one batch `transcribe()` inside `@spaces.GPU` (decision #4; else Parakeet).
 
 ---
@@ -143,8 +145,9 @@ With **text-first + batch ASR**, the old "streaming ASR vs ZeroGPU" Config A/B t
 
 - **ZeroGPU Gradio-SDK Space** (free). GPU is attached only inside `@spaces.GPU` calls (default 60s, max ~120s,
   RTX Pro 6000 Blackwell, `large`=48 GB). Per-turn inference fits this model exactly.
-- **Text-first runtime loop:** user types → `gr.Server` `@app.api()` endpoint (called via `@gradio/client`) → one
-  `@spaces.GPU` call runs MiniCPM5 (tool loop, in `transformers`) → SSE-stream text tokens + drive live visuals.
+- **Text-first runtime loop:** user types → custom `/api/agent-turn` NDJSON endpoint → one `@spaces.GPU` call runs
+  MiniCPM5 (tool loop, in `transformers`) → streamed text tokens + live visual updates. The `@app.api()` endpoint
+  remains as the Gradio-client contract for external checks.
 - **Voice (later bonus):** push-to-talk records an utterance → POST blob → the same `@spaces.GPU` call also runs
   Nemotron/Parakeet ASR (batch) before the brain. No persistent stream, no WebRTC, **no TURN server**.
 - **Modal (build-time only):** crawl the org + build the EmbeddingGemma index offline; the Space ships with the index
@@ -324,8 +327,9 @@ score`) into one *code* "research" action the model calls once. The degradation 
 - `import spaces; @spaces.GPU(duration=…)`. GPU only inside decorated fns; **Gradio-SDK Space only** (no Docker ZeroGPU).
 - Load models at **module level**, `.to('cuda')` once (emulated until first real GPU call); real compute inside the
   decorator. torch 2.8+; **no `torch.compile`** (use AOT). Quota PRO ~40 min/day → never idle-hold the GPU.
-- **Frontend → backend via `@gradio/client`** (`client.predict`/`submit`), NOT raw fetch — it forwards the HF iframe
-  auth headers ZeroGPU needs for quota. Generator `@app.api()` endpoints stream tokens over SSE.
+- **Frontend → backend via same-origin `fetch("/api/agent-turn")`** reading NDJSON from our FastAPI route. The GPU
+  boundary is `_engine_turn`, decorated with `@spaces.GPU`; `@app.api()` endpoints remain available for Gradio-client
+  tests and external callers.
 - All four models fit in `large` (48 GB). Keep each `@spaces.GPU` call short for queue priority.
 
 ---
@@ -381,8 +385,9 @@ No TTS → the **visual output is the agent's "voice"**; it must carry the delig
 TTW polish + Best Demo score). The visual world is **The Unwritten Almanac** (§2): a candlelit tree-hollow with a heavy
 open grimoire as the hero component.
 
-- `gradio.Server` is a FastAPI subclass keeping Gradio's queue/SSE/ZeroGPU/`gradio_client` engine while serving **your
-  own frontend**. `@app.api(name=...)` fns are queued + client-callable + ZeroGPU-aware; plain `@app.post()` are not.
+- `gradio.Server` is a FastAPI subclass serving **your own frontend** while still exposing `@app.api(name=...)`
+  functions for Gradio/Python clients. The visible app uses first-party `@app.post()` endpoints for deterministic
+  browser behavior; the GPU boundary stays in the decorated engine function.
   ```python
   from gradio import Server
   from fastapi.responses import HTMLResponse
@@ -397,7 +402,8 @@ open grimoire as the hero component.
   async def home(): return open("index.html").read()
   app.launch()
   ```
-- Frontend calls via `@gradio/client`: `client.predict("/agent_turn", { message })` (NOT raw fetch — ZeroGPU auth).
+- Frontend calls via `fetch("/api/agent-turn")`, parses newline-delimited JSON events, and updates the grimoire as
+  `start` / `token` / `done` messages arrive. Notes and chapter exports use `/api/field-notes` and `/api/chapter`.
 - **UI surfaces (the grimoire is the canvas):** streaming reply = ink writing itself (typewriter on already-streaming
   tokens); `search_projects`/overlap → **bleed** animation + page-number citations (real titles on hover);
   `find_whitespace` → **gold bloom** + sprouting leaf + a one-shaft light-mask ("the page chooses you");
@@ -441,8 +447,8 @@ lever is §11 custom-UI polish.
 
 ## 13. Risks / open items
 
-1. **Day-1 spikes are go/no-go** (§1): ZeroGPU hello-cuda build; gr.Server `@gradio/client` SSE streaming; Nemotron
-   batch in `@spaces.GPU` (else Parakeet). Do these before feature work.
+1. **Day-1 spikes are go/no-go** (§1): ZeroGPU hello-cuda build; gr.Server same-origin NDJSON browser streaming;
+   Nemotron batch in `@spaces.GPU` (else Parakeet). Do these before feature work.
 2. **EmbeddingGemma is gated** — accept Gemma terms + `HF_TOKEN` before any crawl/build.
 3. **MiniCPM5 tool-call reliability at 1B** — covered by the degradation ladder (§8); validate name+args in code.
 4. **NVIDIA Quest brand** — Parakeet is not "Nemotron"-branded; confirm eligibility with organizers or keep Nemotron
@@ -464,7 +470,7 @@ lever is §11 custom-UI polish.
 2. **`tools.py`** — research + ideation tools + the hardcoded `score_idea` rubric + the jargon alias layer, over the index.
 3. **`agent.py`** — 3-layer context + single-hop loop + degradation ladder, MiniCPM5 via `transformers` (self-parsed XML).
 4. **`app.py`** — `gr.Server` custom frontend (idea board, project/whitespace wall, streaming text), called via
-   `@gradio/client`; concept skin applied.
+   first-party `/api/...` endpoints; concept skin applied.
 5. **Well-Tuned LoRA** — small fine-tune on Modal → publish to Hub (→ 6/6 badges).
 6. **Polish + submission** — demo video + social post (Best Demo / Community Choice), publish agent trace (📡),
    write up Field Notes (📓).
