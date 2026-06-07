@@ -13,6 +13,7 @@ from hackathon_advisor.lora_dataset import BASE_MODEL, build_lora_dataset_jsonl
 TRAINING_RECIPE_SCHEMA_VERSION = 1
 TRAINING_KIT_FILENAME = "hackathon-advisor-lora-training-kit.zip"
 ADAPTER_REPO = "build-small-hackathon/hackathon-advisor-minicpm5-lora"
+ADAPTER_PUBLISH_STATUS = "published"
 
 
 def parse_lora_dataset_jsonl(text: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
@@ -40,13 +41,15 @@ def build_training_recipe(
     example_count: int,
     *,
     max_steps: int = 120,
+    adapter_repo: str = ADAPTER_REPO,
+    publish_status: str = "local-only",
 ) -> dict[str, Any]:
     return {
         "type": "lora_training_recipe",
         "schema_version": TRAINING_RECIPE_SCHEMA_VERSION,
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "base_model": dataset_manifest.get("base_model") or BASE_MODEL,
-        "adapter_repo": ADAPTER_REPO,
+        "adapter_repo": adapter_repo,
         "adapter_task": dataset_manifest.get("adapter_task") or "hackathon_advisor_tool_call_and_voice",
         "dataset_format": dataset_manifest.get("format") or "chat-jsonl",
         "example_count": example_count,
@@ -59,18 +62,26 @@ def build_training_recipe(
         "learning_rate": 0.0002,
         "max_seq_length": 1024,
         "target_modules": "discovered torch.nn.Linear module suffixes at training runtime",
-        "publish_status": "not-published",
+        "publish_status": publish_status,
     }
 
 
 def build_training_model_card(recipe: dict[str, Any], dataset_manifest: dict[str, Any], ledger: dict[str, Any]) -> str:
     badges = ledger.get("badges") if isinstance(ledger.get("badges"), list) else []
+    if recipe.get("publish_status") == "published":
+        intro = (
+            "This PEFT LoRA adapter is trained for The Unwritten Almanac's MiniCPM5 tool-call routing and "
+            "advisor voice. It is loaded by the deployed Space when `ADVISOR_ADAPTER_ID` points at this repo."
+        )
+    else:
+        intro = (
+            "This is a local training artifact for the Well-Tuned adapter candidate. Publish the saved PEFT "
+            "adapter before claiming the deployed Space is using it."
+        )
     lines = [
         "# Hackathon Advisor MiniCPM5 LoRA",
         "",
-        "This is the prepared model card for the Well-Tuned adapter candidate. The checked-in app can export the SFT "
-        "dataset and this training kit; the adapter is not claimed as published until a real Hub repo and training run "
-        "exist.",
+        intro,
         "",
         "## Recipe",
         "",
@@ -106,14 +117,20 @@ def build_train_command(recipe: dict[str, Any]) -> str:
         "  --dataset lora-sft.jsonl \\\n"
         "  --output-dir ./minicpm5-hackathon-advisor-lora \\\n"
         f"  --base-model {recipe['base_model']} \\\n"
-        f"  --max-steps {recipe['max_steps']}\n"
+        f"  --max-steps {recipe['max_steps']} \\\n"
+        "  --push-to-hub \\\n"
+        f"  --hub-repo-id {recipe['adapter_repo']}\n"
     )
 
 
 def build_lora_training_kit_zip(session: dict[str, Any], metadata: dict[str, Any], ledger: dict[str, Any]) -> bytes:
     dataset_text = build_lora_dataset_jsonl(session, metadata)
     dataset_manifest, examples = parse_lora_dataset_jsonl(dataset_text)
-    recipe = build_training_recipe(dataset_manifest, len(examples))
+    recipe = build_training_recipe(
+        dataset_manifest,
+        len(examples),
+        publish_status=ADAPTER_PUBLISH_STATUS,
+    )
     model_card = build_training_model_card(recipe, dataset_manifest, ledger)
     command = build_train_command(recipe)
     files = {
@@ -145,7 +162,12 @@ def build_lora_training_kit_zip(session: dict[str, Any], metadata: dict[str, Any
 def write_lora_training_dry_run(dataset_path: Path, output_dir: Path, *, max_steps: int = 120) -> dict[str, Any]:
     dataset_text = dataset_path.read_text(encoding="utf-8")
     dataset_manifest, examples = parse_lora_dataset_jsonl(dataset_text)
-    recipe = build_training_recipe(dataset_manifest, len(examples), max_steps=max_steps)
+    recipe = build_training_recipe(
+        dataset_manifest,
+        len(examples),
+        max_steps=max_steps,
+        publish_status="dry-run",
+    )
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "training-recipe.json").write_text(
         json.dumps(recipe, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
@@ -158,8 +180,9 @@ def write_lora_training_dry_run(dataset_path: Path, output_dir: Path, *, max_ste
 def _kit_readme(recipe: dict[str, Any]) -> str:
     return (
         "# Hackathon Advisor LoRA Training Kit\n\n"
-        "This kit prepares the Well-Tuned path without claiming the adapter has already been trained or published.\n\n"
+        "This kit records the same dataset and recipe used for the published MiniCPM5 LoRA adapter.\n\n"
         "Run `train-command.txt` in an environment with the `train` extra installed. The training script validates the "
-        "dataset, loads the base model, discovers LoRA target modules from the loaded model, and saves the PEFT adapter.\n\n"
+        "dataset, loads the base model, discovers LoRA target modules from the loaded model, saves the PEFT adapter, "
+        "and can publish it to the Hub.\n\n"
         f"Adapter repo target: `{recipe['adapter_repo']}`\n"
     )

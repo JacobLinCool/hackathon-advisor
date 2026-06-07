@@ -1,6 +1,7 @@
 import pytest
 
 from hackathon_advisor.model_runtime import (
+    DEFAULT_ADAPTER_ID,
     MiniCPMTransformersPlanner,
     RuleBasedPlanner,
     create_tool_planner,
@@ -8,6 +9,7 @@ from hackathon_advisor.model_runtime import (
     runtime_status,
     system_prompt,
 )
+from hackathon_advisor.zerogpu import gpu_task, zero_gpu_duration_seconds, zero_gpu_enabled
 
 
 def test_rule_planner_emits_valid_search_call() -> None:
@@ -119,6 +121,22 @@ def test_create_tool_planner_defaults_to_rules(monkeypatch: pytest.MonkeyPatch) 
 
     assert isinstance(planner, RuleBasedPlanner)
     assert runtime_status(planner).to_dict()["loaded"] is True
+    assert runtime_status(planner).to_dict()["adapter_id"] == ""
+
+
+def test_create_tool_planner_accepts_adapter_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ADVISOR_MODEL_BACKEND", "minicpm-transformers")
+    monkeypatch.setenv("ADVISOR_MODEL_ID", "openbmb/MiniCPM5-1B")
+    monkeypatch.setenv("ADVISOR_ADAPTER_ID", DEFAULT_ADAPTER_ID)
+
+    planner = create_tool_planner()
+    status = runtime_status(planner).to_dict()
+
+    assert isinstance(planner, MiniCPMTransformersPlanner)
+    assert status["backend"] == "minicpm-transformers"
+    assert status["model_id"] == "openbmb/MiniCPM5-1B"
+    assert status["adapter_id"] == DEFAULT_ADAPTER_ID
+    assert status["loaded"] is False
 
 
 def test_create_tool_planner_rejects_unknown_backend(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -129,8 +147,28 @@ def test_create_tool_planner_rejects_unknown_backend(monkeypatch: pytest.MonkeyP
 
 
 def test_minicpm_status_is_lazy() -> None:
-    planner = MiniCPMTransformersPlanner("openbmb/MiniCPM5-1B")
+    planner = MiniCPMTransformersPlanner("openbmb/MiniCPM5-1B", DEFAULT_ADAPTER_ID)
     status = runtime_status(planner).to_dict()
 
     assert status["backend"] == "minicpm-transformers"
+    assert status["adapter_id"] == DEFAULT_ADAPTER_ID
     assert status["loaded"] is False
+
+
+def test_zerogpu_disabled_leaves_function_unwrapped(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ADVISOR_ZERO_GPU", raising=False)
+
+    def marker() -> str:
+        return "ok"
+
+    assert zero_gpu_enabled() is False
+    assert gpu_task(marker) is marker
+
+
+def test_zerogpu_duration_validates_positive_values(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ADVISOR_ZERO_GPU_DURATION", "7")
+    assert zero_gpu_duration_seconds() == 7
+
+    monkeypatch.setenv("ADVISOR_ZERO_GPU_DURATION", "0")
+    with pytest.raises(RuntimeError, match="positive"):
+        zero_gpu_duration_seconds()

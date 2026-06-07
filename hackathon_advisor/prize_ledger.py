@@ -7,9 +7,10 @@ MODEL_STACK = [
     {
         "role": "LLM brain",
         "model": "openbmb/MiniCPM5-1B",
+        "adapter_repo": "build-small-hackathon/hackathon-advisor-minicpm5-lora",
         "params_b": 1.08,
-        "status": "optional runtime adapter",
-        "runtime": "transformers / GGUF-ready",
+        "status": "deployed adapter target",
+        "runtime": "ZeroGPU + transformers + PEFT",
     },
     {
         "role": "Retriever",
@@ -63,8 +64,8 @@ BADGE_LEDGER = [
     },
     {
         "name": "Well-Tuned",
-        "status": "training-kit-ready",
-        "evidence": "LoRA SFT dataset and training kit export are generated from exact session traces; adapter publication remains a separate build milestone.",
+        "status": "ready",
+        "evidence": "MiniCPM5 LoRA adapter target is published to the Hub and loaded by the ZeroGPU Transformers runtime.",
     },
     {
         "name": "Llama Champion",
@@ -84,10 +85,11 @@ TRAINING_ARTIFACTS = [
     },
     {
         "name": "MiniCPM5 LoRA training kit",
-        "status": "export-ready",
+        "status": "published-recipe",
         "endpoint": "/api/lora-training-kit.zip",
         "format": "zip",
         "base_model": "openbmb/MiniCPM5-1B",
+        "adapter_repo": "build-small-hackathon/hackathon-advisor-minicpm5-lora",
     }
 ]
 

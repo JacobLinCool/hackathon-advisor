@@ -10,6 +10,7 @@ def test_prize_ledger_tracks_param_budget_and_badges() -> None:
     assert payload["largest_model"]["model"] == "openbmb/MiniCPM5-1B"
     badges = {badge["name"]: badge["status"] for badge in payload["badges"]}
     assert badges["Off the Grid"] == "ready"
-    assert badges["Well-Tuned"] == "training-kit-ready"
+    assert badges["Well-Tuned"] == "ready"
     assert payload["training_artifacts"][0]["base_model"] == "openbmb/MiniCPM5-1B"
     assert payload["training_artifacts"][1]["format"] == "zip"
+    assert payload["training_artifacts"][1]["adapter_repo"] == "build-small-hackathon/hackathon-advisor-minicpm5-lora"

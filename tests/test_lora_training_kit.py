@@ -47,11 +47,14 @@ def test_lora_training_kit_contains_recipe_and_model_card() -> None:
         "README.md",
     }
     assert manifest["type"] == "lora_training_kit_manifest"
-    assert manifest["publish_status"] == "not-published"
+    assert manifest["publish_status"] == "published"
     assert recipe["base_model"] == "openbmb/MiniCPM5-1B"
+    assert recipe["adapter_repo"] == "build-small-hackathon/hackathon-advisor-minicpm5-lora"
     assert recipe["example_count"] == manifest["example_count"]
-    assert "adapter is not claimed as published" in model_card
+    assert "PEFT LoRA adapter is trained" in model_card
     assert "scripts/train_minicpm_lora.py" in command
+    assert "--push-to-hub" in command
+    assert "--hub-repo-id build-small-hackathon/hackathon-advisor-minicpm5-lora" in command
 
 
 def test_parse_lora_dataset_jsonl_rejects_empty_payload() -> None:

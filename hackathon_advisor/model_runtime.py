@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import nullcontext
 from dataclasses import dataclass
 import os
 import re
@@ -10,12 +11,14 @@ from hackathon_advisor.tool_contracts import ToolResolution, resolve_tool_call, 
 
 
 DEFAULT_MODEL_ID = "openbmb/MiniCPM5-1B"
+DEFAULT_ADAPTER_ID = "build-small-hackathon/hackathon-advisor-minicpm5-lora"
 DEFAULT_BACKEND = "rules"
 
 
 class ToolPlanner(Protocol):
     backend: str
     model_id: str
+    adapter_id: str
 
     def plan(self, message: str, state: dict[str, Any]) -> ToolResolution:
         ...
@@ -25,6 +28,7 @@ class ToolPlanner(Protocol):
 class RuntimeStatus:
     backend: str
     model_id: str
+    adapter_id: str
     loaded: bool
     tool_count: int
 
@@ -32,6 +36,7 @@ class RuntimeStatus:
         return {
             "backend": self.backend,
             "model_id": self.model_id,
+            "adapter_id": self.adapter_id,
             "loaded": self.loaded,
             "tool_count": self.tool_count,
         }
@@ -40,6 +45,7 @@ class RuntimeStatus:
 class RuleBasedPlanner:
     backend = "rules"
     model_id = "deterministic-tool-router"
+    adapter_id = ""
 
     def plan(self, message: str, state: dict[str, Any]) -> ToolResolution:
         text = " ".join(message.strip().split())
@@ -72,10 +78,12 @@ class RuleBasedPlanner:
 class MiniCPMTransformersPlanner:
     backend = "minicpm-transformers"
 
-    def __init__(self, model_id: str = DEFAULT_MODEL_ID) -> None:
-        self.model_id = model_id
+    def __init__(self, model_id: str = DEFAULT_MODEL_ID, adapter_id: str = "") -> None:
+        self.model_id = model_id.strip() or DEFAULT_MODEL_ID
+        self.adapter_id = adapter_id.strip()
         self._tokenizer = None
         self._model = None
+        self._inference_mode = None
 
     def plan(self, message: str, state: dict[str, Any]) -> ToolResolution:
         self._ensure_loaded()
@@ -89,18 +97,30 @@ class MiniCPMTransformersPlanner:
         try:
             import torch
             from transformers import AutoModelForCausalLM, AutoTokenizer
+            if self.adapter_id:
+                from peft import PeftConfig, PeftModel
         except ImportError as error:
             raise RuntimeError(
-                "ADVISOR_MODEL_BACKEND=minicpm-transformers requires optional model dependencies. "
-                "Install the model extra before enabling it."
+                "ADVISOR_MODEL_BACKEND=minicpm-transformers requires torch, transformers, accelerate, "
+                "and peft when ADVISOR_ADAPTER_ID is set. Install runtime requirements before enabling it."
             ) from error
-        self._tokenizer = AutoTokenizer.from_pretrained(self.model_id, trust_remote_code=True)
-        self._model = AutoModelForCausalLM.from_pretrained(
-            self.model_id,
+        base_model_id = self.model_id
+        tokenizer_id = self.adapter_id or base_model_id
+        if self.adapter_id:
+            adapter_config = PeftConfig.from_pretrained(self.adapter_id)
+            base_model_id = str(adapter_config.base_model_name_or_path or base_model_id)
+
+        self._tokenizer = AutoTokenizer.from_pretrained(tokenizer_id, trust_remote_code=True)
+        model = AutoModelForCausalLM.from_pretrained(
+            base_model_id,
             torch_dtype="auto",
             device_map="auto",
             trust_remote_code=True,
         )
+        if self.adapter_id:
+            model = PeftModel.from_pretrained(model, self.adapter_id)
+        model.eval()
+        self._model = model
         if hasattr(torch, "inference_mode"):
             self._inference_mode = torch.inference_mode
 
@@ -119,12 +139,14 @@ class MiniCPMTransformersPlanner:
             tokenize=True,
             return_dict=True,
             return_tensors="pt",
-        ).to(self._model.device)
-        generated = self._model.generate(
-            **inputs,
-            max_new_tokens=180,
-            do_sample=False,
-        )
+        ).to(next(self._model.parameters()).device)
+        context = self._inference_mode() if self._inference_mode is not None else nullcontext()
+        with context:
+            generated = self._model.generate(
+                **inputs,
+                max_new_tokens=180,
+                do_sample=False,
+            )
         new_tokens = generated[:, inputs["input_ids"].shape[-1] :]
         return self._tokenizer.decode(new_tokens[0], skip_special_tokens=True).strip()
 
@@ -134,7 +156,10 @@ def create_tool_planner() -> ToolPlanner:
     if backend in ("", "rules"):
         return RuleBasedPlanner()
     if backend in ("minicpm", "minicpm-transformers"):
-        return MiniCPMTransformersPlanner(os.environ.get("ADVISOR_MODEL_ID", DEFAULT_MODEL_ID))
+        return MiniCPMTransformersPlanner(
+            os.environ.get("ADVISOR_MODEL_ID", DEFAULT_MODEL_ID),
+            os.environ.get("ADVISOR_ADAPTER_ID", ""),
+        )
     raise RuntimeError(f"Unsupported ADVISOR_MODEL_BACKEND={backend!r}")
 
 
@@ -142,6 +167,7 @@ def runtime_status(planner: ToolPlanner) -> RuntimeStatus:
     return RuntimeStatus(
         backend=planner.backend,
         model_id=planner.model_id,
+        adapter_id=planner.adapter_id,
         loaded=not isinstance(planner, MiniCPMTransformersPlanner) or planner._model is not None,
         tool_count=len(tool_schemas()),
     )

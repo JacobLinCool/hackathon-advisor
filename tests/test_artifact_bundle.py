@@ -47,7 +47,7 @@ def test_demo_bundle_contains_submission_evidence_files() -> None:
     assert manifest["type"] == "demo_bundle_manifest"
     assert manifest["turn_count"] == 2
     assert manifest["file_count"] == len(names) - 1
-    assert manifest["badge_status"]["Well-Tuned"] == "training-kit-ready"
+    assert manifest["badge_status"]["Well-Tuned"] == "ready"
     assert "agent_turn" in trace
     assert "## Prize Evidence" in packet
     assert png_names == ["archive-cartographer.png"]

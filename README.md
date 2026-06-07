@@ -25,11 +25,13 @@ tags:
 **The Unwritten Almanac**: a journal-style workspace that compares your idea against real Spaces in the
 `build-small-hackathon` organization, finds under-explored territory, scores the idea, and drafts a practical build plan.
 
-The current milestone is a deployable, deterministic vertical slice:
+The current milestone is a deployed ZeroGPU + MiniCPM5 LoRA advisor:
 
 - Local snapshot of public `build-small-hackathon` Spaces.
 - Offline search over project titles, tags, models, and descriptions.
 - Jargon correction for hackathon/model terms.
+- MiniCPM5 tool-call planning with a published PEFT LoRA adapter, plus deterministic local rules for tests and CPU-only
+  development.
 - One-turn advisor loop with overlap citations, whitespace suggestions, scoring, and plans.
 - Custom `gradio.Server` frontend focused on the builder's idea workflow, with submission evidence kept in API exports.
 
@@ -100,16 +102,15 @@ and inserted into `Plan` and `Compare` build paths, so the app can turn "one eve
 
 The `lora_dataset` Gradio API endpoint exports a compact chat JSONL dataset from successful session turns. Each included
 turn yields a tool-call example and an advisor-response example for `openbmb/MiniCPM5-1B`, with the selected goals,
-parsed XML tool call, tool observations, and score context preserved. This prepares the Well-Tuned path without claiming
-that the adapter has already been trained or published.
+parsed XML tool call, tool observations, and score context preserved. This is the dataset format used to train the
+published MiniCPM5 LoRA adapter.
 
 ## LoRA Training Kit
 
-`/api/lora-training-kit.zip` exports a training kit for the deterministic demo session: SFT JSONL, training recipe,
-adapter model-card draft, and the exact training command. The included `scripts/train_minicpm_lora.py` entrypoint
-supports a dependency-light `--dry-run` validation path and a real `transformers + PEFT` training path after installing
-`pip install -e '.[train]'`. The Prize Ledger still marks Well-Tuned as training-kit-ready until a real adapter is
-trained and published.
+`/api/lora-training-kit.zip` exports the training kit for the deterministic demo session: SFT JSONL, training recipe,
+adapter model card, and the exact training command. The included `scripts/train_minicpm_lora.py` entrypoint supports a
+dependency-light `--dry-run` validation path and a real `transformers + PEFT` training path that can publish the adapter
+to `build-small-hackathon/hackathon-advisor-minicpm5-lora` with `--push-to-hub`.
 
 ## Submission Packet
 
@@ -165,9 +166,17 @@ the schemas, and returns either the valid call or a safe default call for the UI
 
 ## Runtime Backend
 
-The deployed Space defaults to `ADVISOR_MODEL_BACKEND=rules`, a deterministic planner that emits the same validated XML
-tool calls as the MiniCPM path. To enable the optional MiniCPM adapter in a GPU environment, install the `model` extra
-and set `ADVISOR_MODEL_BACKEND=minicpm-transformers` plus `ADVISOR_MODEL_ID=openbmb/MiniCPM5-1B`.
+The deployed Space is configured for ZeroGPU inference with:
+
+```bash
+ADVISOR_ZERO_GPU=1
+ADVISOR_MODEL_BACKEND=minicpm-transformers
+ADVISOR_MODEL_ID=openbmb/MiniCPM5-1B
+ADVISOR_ADAPTER_ID=build-small-hackathon/hackathon-advisor-minicpm5-lora
+```
+
+`agent_turn` wraps the engine call with `spaces.GPU` when `ADVISOR_ZERO_GPU=1`, so model loading and generation run on
+the ZeroGPU allocation. Local tests and CPU-only development still default to `ADVISOR_MODEL_BACKEND=rules`.
 
 ## Test
 

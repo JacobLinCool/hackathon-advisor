@@ -30,7 +30,7 @@ def test_submission_packet_contains_demo_and_prize_evidence() -> None:
     assert "## Model Budget" in markdown
     assert "## Social Post Draft" in markdown
     assert "Hackathon Advisor" in markdown
-    assert "Well-Tuned | training-kit-ready" in markdown
+    assert "Well-Tuned | ready" in markdown
     assert "MiniCPM5 LoRA SFT JSONL | ready | lora_dataset" in markdown
     assert "Fate page PNG | ready | /api/artifact.png" in markdown
     assert "Notes, Chapter, and PNG are available in the app" in markdown
@@ -48,7 +48,7 @@ def test_empty_submission_packet_is_honest_about_missing_session_artifacts() -> 
             "index_generated_at": "2026-06-06T01:00:00+00:00",
             "snapshot_digest": "abc",
         },
-        prize_ledger({"backend": "rules", "model_id": "deterministic-tool-router"}),
+        prize_ledger({"backend": "rules", "model_id": "deterministic-tool-router", "adapter_id": ""}),
     )
 
     assert "Title: Unwritten Page" in markdown

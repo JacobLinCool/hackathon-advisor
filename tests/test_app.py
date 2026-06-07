@@ -182,7 +182,8 @@ def test_lora_training_kit_endpoint_returns_zip_attachment() -> None:
 
     assert "adapter-model-card.md" in names
     assert "train-command.txt" in names
-    assert recipe["publish_status"] == "not-published"
+    assert recipe["publish_status"] == "published"
+    assert recipe["adapter_repo"] == "build-small-hackathon/hackathon-advisor-minicpm5-lora"
 
 
 def test_tool_contract_check_endpoint_defaults_safely() -> None:

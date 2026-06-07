@@ -11,7 +11,9 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from hackathon_advisor.lora_training_kit import (
+    ADAPTER_REPO,
     build_training_recipe,
+    build_training_model_card,
     parse_lora_dataset_jsonl,
     write_lora_training_dry_run,
 )
@@ -28,6 +30,9 @@ def main() -> None:
     parser.add_argument("--dropout", default=0.05, type=float, help="LoRA dropout.")
     parser.add_argument("--learning-rate", default=2e-4, type=float, help="Learning rate.")
     parser.add_argument("--max-seq-length", default=1024, type=int, help="Maximum tokenized sequence length.")
+    parser.add_argument("--push-to-hub", action="store_true", help="Publish the trained adapter to the Hub.")
+    parser.add_argument("--hub-repo-id", default=ADAPTER_REPO, help="Target Hub model repo for the adapter.")
+    parser.add_argument("--hub-token-env", default="HF_TOKEN", help="Environment variable containing a Hub token.")
     parser.add_argument("--dry-run", action="store_true", help="Validate dataset and write recipe without training.")
     args = parser.parse_args()
 
@@ -46,6 +51,9 @@ def main() -> None:
         dropout=args.dropout,
         learning_rate=args.learning_rate,
         max_seq_length=args.max_seq_length,
+        push_to_hub=args.push_to_hub,
+        hub_repo_id=args.hub_repo_id,
+        hub_token_env=args.hub_token_env,
     )
 
 
@@ -60,6 +68,9 @@ def train_lora(
     dropout: float,
     learning_rate: float,
     max_seq_length: int,
+    push_to_hub: bool,
+    hub_repo_id: str,
+    hub_token_env: str,
 ) -> None:
     try:
         import torch
@@ -91,7 +102,13 @@ def train_lora(
     )
     model = get_peft_model(model, lora_config)
     train_dataset = _ChatDataset(examples, tokenizer, max_seq_length)
-    recipe = build_training_recipe(dataset_manifest, len(examples), max_steps=max_steps)
+    recipe = build_training_recipe(
+        dataset_manifest,
+        len(examples),
+        max_steps=max_steps,
+        adapter_repo=hub_repo_id,
+        publish_status="local-only",
+    )
     training_args = TrainingArguments(
         output_dir=str(output_dir),
         max_steps=max_steps,
@@ -113,10 +130,61 @@ def train_lora(
     output_dir.mkdir(parents=True, exist_ok=True)
     model.save_pretrained(output_dir)
     tokenizer.save_pretrained(output_dir)
+    _write_training_metadata(output_dir, recipe, dataset_manifest)
+
+    if push_to_hub:
+        _publish_adapter(output_dir, hub_repo_id, hub_token_env)
+        recipe = {**recipe, "publish_status": "published"}
+        _write_training_metadata(output_dir, recipe, dataset_manifest)
+        _publish_metadata(output_dir, hub_repo_id, hub_token_env)
+
+
+def _write_training_metadata(output_dir: Path, recipe: dict[str, Any], dataset_manifest: dict[str, Any]) -> None:
     (output_dir / "training-recipe.json").write_text(
         json.dumps(recipe, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+    model_card = build_training_model_card(recipe, dataset_manifest, {"badges": []})
+    (output_dir / "README.md").write_text(model_card, encoding="utf-8")
+
+
+def _publish_adapter(output_dir: Path, hub_repo_id: str, hub_token_env: str) -> None:
+    import os
+
+    try:
+        from huggingface_hub import HfApi
+    except ImportError as error:
+        raise SystemExit("Install huggingface_hub before using --push-to-hub.") from error
+    token = os.environ.get(hub_token_env)
+    if not token:
+        raise SystemExit(f"--push-to-hub requires {hub_token_env} to be set.")
+    api = HfApi(token=token)
+    api.create_repo(repo_id=hub_repo_id, repo_type="model", exist_ok=True)
+    api.upload_folder(
+        folder_path=str(output_dir),
+        repo_id=hub_repo_id,
+        repo_type="model",
+        commit_message="Train Hackathon Advisor MiniCPM5 LoRA adapter",
+    )
+
+
+def _publish_metadata(output_dir: Path, hub_repo_id: str, hub_token_env: str) -> None:
+    import os
+
+    from huggingface_hub import HfApi
+
+    token = os.environ.get(hub_token_env)
+    if not token:
+        raise SystemExit(f"metadata publish requires {hub_token_env} to be set.")
+    api = HfApi(token=token)
+    for filename in ("README.md", "training-recipe.json"):
+        api.upload_file(
+            path_or_fileobj=str(output_dir / filename),
+            path_in_repo=filename,
+            repo_id=hub_repo_id,
+            repo_type="model",
+            commit_message="Mark Hackathon Advisor LoRA adapter published",
+        )
 
 
 def _discover_lora_targets(model: Any, torch_module: Any) -> list[str]:
