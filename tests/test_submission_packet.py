@@ -10,7 +10,7 @@ from hackathon_advisor.trace_export import trace_metadata
 def test_submission_packet_contains_demo_and_prize_evidence() -> None:
     index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
     engine = AdvisorEngine(index)
-    state = {"targets": ["Well-Tuned", "Field Notes"]}
+    state = {"goals": ["Well-Tuned", "Field Notes"]}
     state = engine.turn("A local-first archive cartographer for family photos", state).state
     state = engine.turn("make a build plan", state).state
 

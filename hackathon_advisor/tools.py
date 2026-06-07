@@ -8,7 +8,7 @@ from hackathon_advisor.data import Project, ProjectIndex, WhitespaceItem
 from hackathon_advisor.scoring import ScoreCard, score_idea
 
 
-TARGETS = [
+GOALS = [
     "Off the Grid",
     "Well-Tuned",
     "Off-Brand",
@@ -17,7 +17,7 @@ TARGETS = [
     "Field Notes",
 ]
 
-TARGET_PROFILE_BY_ID = {
+GOAL_PROFILE_BY_ID = {
     "Off the Grid": {
         "label": "Local-first",
         "description": "Favor ideas that work without proprietary inference APIs.",
@@ -45,41 +45,41 @@ TARGET_PROFILE_BY_ID = {
 }
 
 
-def target_profiles() -> list[dict[str, str]]:
+def goal_profiles() -> list[dict[str, str]]:
     return [
         {
-            "id": target,
-            "label": TARGET_PROFILE_BY_ID[target]["label"],
-            "description": TARGET_PROFILE_BY_ID[target]["description"],
+            "id": goal,
+            "label": GOAL_PROFILE_BY_ID[goal]["label"],
+            "description": GOAL_PROFILE_BY_ID[goal]["description"],
         }
-        for target in TARGETS
+        for goal in GOALS
     ]
 
 
-def target_label(target: str) -> str:
-    return TARGET_PROFILE_BY_ID.get(target, {}).get("label", target)
+def goal_label(goal: str) -> str:
+    return GOAL_PROFILE_BY_ID.get(goal, {}).get("label", goal)
 
 
-def normalize_targets(raw_targets: Any, default: list[str] | None = None) -> list[str]:
-    if raw_targets is None:
+def normalize_goals(raw_goals: Any, default: list[str] | None = None) -> list[str]:
+    if raw_goals is None:
         return list(default or [])
-    if not isinstance(raw_targets, list):
+    if not isinstance(raw_goals, list):
         return list(default or [])
 
-    targets: list[str] = []
+    goals: list[str] = []
     seen: set[str] = set()
-    for raw_target in raw_targets:
-        target = str(raw_target)
-        if target in TARGETS and target not in seen:
-            targets.append(target)
-            seen.add(target)
-    return targets
+    for raw_goal in raw_goals:
+        goal = str(raw_goal)
+        if goal in GOALS and goal not in seen:
+            goals.append(goal)
+            seen.add(goal)
+    return goals
 
 
-def targets_from_state(state: dict[str, Any]) -> list[str]:
-    if "targets" not in state:
-        return TARGETS[:3]
-    return normalize_targets(state.get("targets"), default=[])
+def goals_from_state(state: dict[str, Any]) -> list[str]:
+    if "goals" not in state:
+        return GOALS[:3]
+    return normalize_goals(state.get("goals"), default=[])
 
 
 @dataclass
@@ -87,7 +87,7 @@ class Idea:
     id: str
     title: str
     pitch: str
-    targets: list[str] = field(default_factory=lambda: TARGETS[:3])
+    goals: list[str] = field(default_factory=lambda: GOALS[:3])
     score: dict | None = None
 
     def to_dict(self) -> dict:
@@ -95,7 +95,7 @@ class Idea:
             "id": self.id,
             "title": self.title,
             "pitch": self.pitch,
-            "targets": self.targets,
+            "goals": self.goals,
             "score": self.score,
         }
 
@@ -129,21 +129,21 @@ class AdvisorTools:
     def save_idea(self, state: dict[str, Any], title: str, pitch: str) -> tuple[Idea, ToolEvent]:
         ideas = [Idea(**item) for item in state.get("ideas", [])]
         current_id = state.get("current_idea_id")
-        targets = targets_from_state(state)
+        goals = goals_from_state(state)
         idea = next((item for item in ideas if item.id == current_id), None)
         if idea is None or _is_new_idea(idea, title, pitch):
-            idea = Idea(id=uuid.uuid4().hex[:8], title=title, pitch=pitch, targets=targets)
+            idea = Idea(id=uuid.uuid4().hex[:8], title=title, pitch=pitch, goals=goals)
             ideas.append(idea)
         else:
             idea.title = title
             idea.pitch = pitch
-            idea.targets = targets
+            idea.goals = goals
         state["ideas"] = [item.to_dict() for item in ideas]
         state["current_idea_id"] = idea.id
         return idea, ToolEvent("save_idea", f"Wrote idea page '{idea.title}'.")
 
     def score_idea(self, idea: Idea) -> tuple[ScoreCard, ToolEvent]:
-        score = score_idea(self.index, idea.title, idea.pitch, idea.targets)
+        score = score_idea(self.index, idea.title, idea.pitch, idea.goals)
         idea.score = score.to_dict()
         return score, ToolEvent("score_idea", f"Pressed a five-quadrant seal: {score.overall}/10.")
 
@@ -158,7 +158,7 @@ class AdvisorTools:
         profile_steps = profile_plan_steps(profile)
         if profile_steps:
             plan[1:1] = profile_steps
-        if any("Well" in target for target in idea.targets):
+        if any("Well" in goal for goal in idea.goals):
             plan.insert(
                 max(0, len(plan) - 1),
                 "Prepare a tiny LoRA dataset from successful advisor turns before training.",

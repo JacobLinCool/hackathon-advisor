@@ -16,7 +16,7 @@ def build_submission_packet_markdown(
 ) -> str:
     ideas = _list_of_dicts(session.get("ideas"))
     trace = _list_of_dicts(session.get("trace"))
-    targets = [str(target) for target in session.get("targets") or []]
+    goals = [str(goal) for goal in session.get("goals") or []]
     last_plan = [str(step) for step in session.get("last_plan") or []]
     current = _current_idea(session, ideas)
     score = current.get("score") if isinstance(current.get("score"), dict) else {}
@@ -46,7 +46,7 @@ def build_submission_packet_markdown(
         "",
         f"- Title: {title}",
         f"- Verdict: {verdict} {overall}/10",
-        f"- Targets: {', '.join(targets) if targets else 'No specific targets'}",
+        f"- Goals: {', '.join(goals) if goals else 'No specific goals'}",
         f"- Pitch: {_clean(current.get('pitch')) or 'No pitch recorded.'}",
         "",
     ]

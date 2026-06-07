@@ -23,8 +23,8 @@ RESPONSE_SYSTEM_PROMPT = (
 def build_lora_dataset_jsonl(session: dict[str, Any], metadata: dict[str, Any]) -> str:
     trace = _list_of_dicts(session.get("trace"))
     ideas = _list_of_dicts(session.get("ideas"))
-    targets = [str(target) for target in session.get("targets") or []]
-    examples = _examples(trace, targets)
+    goals = [str(goal) for goal in session.get("goals") or []]
+    examples = _examples(trace, goals)
     records = [
         {
             "type": "lora_sft_manifest",
@@ -47,7 +47,7 @@ def build_lora_dataset_jsonl(session: dict[str, Any], metadata: dict[str, Any]) 
     return "\n".join(json.dumps(record, ensure_ascii=False, sort_keys=True) for record in records) + "\n"
 
 
-def _examples(trace: list[dict[str, Any]], targets: list[str]) -> list[dict[str, Any]]:
+def _examples(trace: list[dict[str, Any]], goals: list[str]) -> list[dict[str, Any]]:
     examples: list[dict[str, Any]] = []
     for turn_index, event in enumerate(trace, start=1):
         if not _is_successful_turn(event):
@@ -65,7 +65,7 @@ def _examples(trace: list[dict[str, Any]], targets: list[str]) -> list[dict[str,
             "base_model": BASE_MODEL,
             "adapter_task": ADAPTER_TASK,
             "turn_index": turn_index,
-            "targets": targets,
+            "goals": goals,
             "score": _score(event),
             "tool_call": tool_call,
             "tool_observations": _tool_observations(event),

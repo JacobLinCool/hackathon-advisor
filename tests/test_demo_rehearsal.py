@@ -2,7 +2,7 @@ from pathlib import Path
 
 from hackathon_advisor.agent import AdvisorEngine
 from hackathon_advisor.data import ProjectIndex
-from hackathon_advisor.demo_rehearsal import DEMO_TARGETS, build_demo_rehearsal
+from hackathon_advisor.demo_rehearsal import DEMO_GOALS, build_demo_rehearsal
 
 
 def test_demo_rehearsal_builds_complete_session() -> None:
@@ -19,7 +19,7 @@ def test_demo_rehearsal_builds_complete_session() -> None:
     assert payload["artifact"]["wood_map"]["dots"]
     assert payload["plan"]
     assert any("LoRA" in step for step in payload["plan"])
-    assert session["targets"] == DEMO_TARGETS
+    assert session["goals"] == DEMO_GOALS
     assert session["profile"]["constraints"] == "CPU Space runtime; no proprietary inference API"
     assert len(session["trace"]) == 2
     assert payload["export_ready"] == {

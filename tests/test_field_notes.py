@@ -11,7 +11,7 @@ def test_field_notes_markdown_contains_session_decisions() -> None:
     engine = AdvisorEngine(index)
     state = {
         "profile": {"skills": "frontend prototyping"},
-        "targets": ["Field Notes"],
+        "goals": ["Field Notes"],
     }
     first = engine.turn("A local-first archive cartographer for family photos", state)
     planned = engine.turn("make a build plan", first.state)

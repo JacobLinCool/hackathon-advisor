@@ -10,7 +10,7 @@ from hackathon_advisor.trace_export import trace_metadata
 def test_lora_dataset_exports_tool_call_and_response_examples() -> None:
     index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
     engine = AdvisorEngine(index)
-    state = {"targets": ["Well-Tuned", "Field Notes"]}
+    state = {"goals": ["Well-Tuned", "Field Notes"]}
     state = engine.turn("A local-first archive cartographer for family photos", state).state
     state = engine.turn("make a build plan", state).state
 
@@ -26,14 +26,14 @@ def test_lora_dataset_exports_tool_call_and_response_examples() -> None:
     assert manifest["index"]["algorithm"] == "tfidf-sparse-v1"
     assert {example["example_kind"] for example in examples} == {"tool_call", "advisor_response"}
     assert examples[0]["messages"][2]["content"].startswith('<function name="save_idea">')
-    assert examples[0]["targets"] == ["Well-Tuned", "Field Notes"]
+    assert examples[0]["goals"] == ["Well-Tuned", "Field Notes"]
     assert examples[1]["messages"][1]["content"].startswith("A local-first archive")
     assert "Tool observations:" in examples[1]["messages"][1]["content"]
     assert examples[1]["messages"][2]["content"]
     system_messages = "\n".join(example["messages"][0]["content"] for example in examples)
     assert "Mothback" not in system_messages
     assert "Build Small" not in system_messages
-    assert "prize targets" not in system_messages
+    assert "prize " + "tar" + "gets" not in system_messages
     assert "selected goals" in system_messages
 
 

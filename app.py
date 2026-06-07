@@ -19,7 +19,7 @@ from hackathon_advisor.lora_training_kit import TRAINING_KIT_FILENAME, build_lor
 from hackathon_advisor.prize_ledger import prize_ledger
 from hackathon_advisor.submission_packet import build_submission_packet_markdown
 from hackathon_advisor.tool_contracts import resolve_tool_call, tool_schemas
-from hackathon_advisor.tools import TARGETS, target_profiles
+from hackathon_advisor.tools import GOALS, goal_profiles
 from hackathon_advisor.trace_export import build_trace_jsonl, trace_metadata
 
 
@@ -70,9 +70,9 @@ def bootstrap() -> dict:
         **trace_metadata(index),
         "top_projects": [project.to_public_dict() for project in index.top_projects(limit=8)],
         "whitespace": [item.to_dict() for item in index.find_whitespace(limit=5)],
-        "target_options": TARGETS,
-        "target_profiles": target_profiles(),
-        "default_targets": TARGETS[:3],
+        "goal_options": GOALS,
+        "goal_profiles": goal_profiles(),
+        "default_goals": GOALS[:3],
         "profile_fields": PROFILE_FIELDS,
         "prize_ledger": prize_ledger(runtime_status),
     }

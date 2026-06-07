@@ -14,7 +14,7 @@ DEMO_PROFILE = {
     "preferences": "auditable artifacts, local-first runtime, strong demo beat",
     "constraints": "CPU Space runtime; no proprietary inference API",
 }
-DEMO_TARGETS = [
+DEMO_GOALS = [
     "Off the Grid",
     "Well-Tuned",
     "Off-Brand",
@@ -26,7 +26,7 @@ DEMO_TARGETS = [
 def build_demo_rehearsal(engine: Any) -> dict[str, Any]:
     initial_state = {
         "profile": dict(DEMO_PROFILE),
-        "targets": list(DEMO_TARGETS),
+        "goals": list(DEMO_GOALS),
     }
     first = engine.turn(DEMO_PROMPT, initial_state)
     second = engine.turn(DEMO_PLAN_PROMPT, first.state)

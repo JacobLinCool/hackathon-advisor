@@ -8,7 +8,7 @@ const corrections = document.querySelector("#corrections");
 const projectsEl = document.querySelector("#projects");
 const whitespaceEl = document.querySelector("#whitespace");
 const ideasEl = document.querySelector("#ideas");
-const targetsEl = document.querySelector("#targets");
+const goalsEl = document.querySelector("#goals");
 const profileEl = document.querySelector("#profile");
 const woodMapEl = document.querySelector("#wood-map");
 const scoreEl = document.querySelector("#score");
@@ -22,14 +22,14 @@ const sealCopyEl = document.querySelector("#seal-copy");
 const verdictStampEl = document.querySelector("#verdict-stamp");
 const spreadEl = document.querySelector("#spread");
 const ideaCountEl = document.querySelector("#idea-count");
-const targetCountEl = document.querySelector("#target-count");
+const goalCountEl = document.querySelector("#goal-count");
 const demoButton = document.querySelector("#load-demo");
 const exportButton = document.querySelector("#export-artifact");
 const exportNotesButton = document.querySelector("#export-notes");
 const exportChapterButton = document.querySelector("#export-chapter");
 const resetButton = document.querySelector("#reset-session");
 
-const SESSION_STORAGE_KEY = "hackathon-advisor-session-v1";
+const SESSION_STORAGE_KEY = "hackathon-advisor-session-v2";
 const FIELD_NOTES_FILENAME = "hackathon-advisor-field-notes.md";
 const CHAPTER_FILENAME = "hackathon-advisor-chapter.md";
 const PNG_EXPORT_LABEL = "PNG";
@@ -37,9 +37,9 @@ const PNG_EXPORT_LABEL = "PNG";
 let session = {};
 let clientPromise = Client.connect(window.location.origin);
 let currentArtifact = null;
-let targetOptions = [];
-let targetProfiles = [];
-let targetProfileById = new Map();
+let goalOptions = [];
+let goalProfiles = [];
+let goalProfileById = new Map();
 let profileFields = [];
 let turnWatchdog = null;
 let sawTurnToken = false;
@@ -89,16 +89,16 @@ resetButton.addEventListener("click", () => {
   resetSession();
 });
 
-targetsEl.addEventListener("change", (event) => {
+goalsEl.addEventListener("change", (event) => {
   const target = event.target;
-  if (!(target instanceof HTMLInputElement) || !target.dataset.target) return;
+  if (!(target instanceof HTMLInputElement) || !target.dataset.goal) return;
   const checked = new Set(
-    Array.from(targetsEl.querySelectorAll("input[data-target]:checked")).map((input) => input.dataset.target),
+    Array.from(goalsEl.querySelectorAll("input[data-goal]:checked")).map((input) => input.dataset.goal),
   );
-  session.targets = targetOptions.filter((option) => checked.has(option));
-  syncCurrentIdeaTargets();
+  session.goals = goalOptions.filter((option) => checked.has(option));
+  syncCurrentIdeaGoals();
   saveSession();
-  renderTargets(session.targets);
+  renderGoals(session.goals);
   renderIdeas(session.ideas || []);
 });
 
@@ -175,15 +175,15 @@ async function bootstrap() {
   if (!response.ok) throw new Error(`project index failed with ${response.status}`);
   const data = await response.json();
   bootstrapData = data;
-  const rawProfiles = Array.isArray(data.target_profiles) ? data.target_profiles : [];
-  const rawOptions = Array.isArray(data.target_options) ? data.target_options : [];
-  targetProfiles = normalizeTargetProfiles(rawProfiles, rawOptions);
-  targetOptions = targetProfiles.map((target) => target.id);
-  targetProfileById = new Map(targetProfiles.map((target) => [target.id, target]));
+  const rawProfiles = Array.isArray(data.goal_profiles) ? data.goal_profiles : [];
+  const rawOptions = Array.isArray(data.goal_options) ? data.goal_options : [];
+  goalProfiles = normalizeGoalProfiles(rawProfiles, rawOptions);
+  goalOptions = goalProfiles.map((goal) => goal.id);
+  goalProfileById = new Map(goalProfiles.map((goal) => [goal.id, goal]));
   profileFields = data.profile_fields || [];
   session = normalizeSession(readSavedSession(), defaultSession(data));
   renderProvenance(data);
-  renderTargets(session.targets);
+  renderGoals(session.goals);
   renderProfile(session.profile);
   renderRestoredSession(data);
   renderWhitespace(data.whitespace || []);
@@ -205,7 +205,7 @@ function handleBootstrapError(error) {
   renderScore(null);
   setVerdictDisplay("INDEX CLOSED", 0, null);
   renderWoodMap(null);
-  renderTargets([]);
+  renderGoals([]);
   renderProfile({});
   renderIdeas([]);
   renderProjects([]);
@@ -216,7 +216,7 @@ function handleBootstrapError(error) {
 function defaultSession(data = bootstrapData) {
   return {
     profile: {},
-    targets: data?.default_targets || targetOptions.slice(0, 3),
+    goals: data?.default_goals || goalOptions.slice(0, 3),
   };
 }
 
@@ -292,7 +292,7 @@ function setActionButtonLabel(button, label) {
 
 function setSessionControlsDisabled(disabled) {
   sessionControlsLocked = disabled;
-  targetsEl.querySelectorAll("input[data-target]").forEach((target) => {
+  goalsEl.querySelectorAll("input[data-goal]").forEach((target) => {
     target.disabled = disabled;
   });
   profileEl.querySelectorAll("input[data-profile-field]").forEach((field) => {
@@ -320,7 +320,7 @@ function resetSession() {
   ink.textContent = "The book is open. The next page waits for its first line.";
   ink.classList.remove("thinking", "bleed", "gold");
   corrections.textContent = "Session reset.";
-  renderTargets(session.targets);
+  renderGoals(session.goals);
   renderProfile(session.profile);
   renderScore(null);
   setVerdictDisplay("READY", 0, null);
@@ -366,7 +366,7 @@ async function loadDemoSession() {
 function applyDemoSession(data) {
   session = data.session || {};
   session.profile = session.profile || {};
-  session.targets = Array.isArray(session.targets) ? session.targets : [];
+  session.goals = Array.isArray(session.goals) ? session.goals : [];
   session.last_response = data.response || session.last_response || "";
   session.ui_status = `example loaded: ${data.turn_count || 0} advisor turns`;
   currentArtifact = data.artifact || session.last_artifact || null;
@@ -378,7 +378,7 @@ function applyDemoSession(data) {
     ink.classList.toggle("bleed", data.score.verdict.startsWith("ECHO"));
     ink.classList.toggle("gold", data.score.verdict.startsWith("UNWRITTEN"));
   }
-  renderTargets(session.targets);
+  renderGoals(session.goals);
   renderProfile(session.profile);
   renderIdeas(session.ideas || []);
   renderPlan(data.plan || session.last_plan || []);
@@ -450,9 +450,9 @@ function normalizeSession(savedSession, defaultSession) {
   const normalized = { ...defaultSession };
   if (!savedSession) return normalized;
   normalized.profile = savedSession.profile && typeof savedSession.profile === "object" ? savedSession.profile : {};
-  const savedTargets = Array.isArray(savedSession.targets) ? savedSession.targets : defaultSession.targets;
-  normalized.targets = targetOptions.filter((option) => savedTargets.includes(option));
-  if (!normalized.targets.length && defaultSession.targets?.length) normalized.targets = [...defaultSession.targets];
+  const savedGoals = Array.isArray(savedSession.goals) ? savedSession.goals : defaultSession.goals;
+  normalized.goals = goalOptions.filter((option) => savedGoals.includes(option));
+  if (!normalized.goals.length && defaultSession.goals?.length) normalized.goals = [...defaultSession.goals];
   if (Array.isArray(savedSession.ideas)) normalized.ideas = savedSession.ideas;
   if (Array.isArray(savedSession.trace)) normalized.trace = savedSession.trace;
   if (Array.isArray(savedSession.last_plan)) normalized.last_plan = savedSession.last_plan;
@@ -472,7 +472,7 @@ function restoreSessionCopy() {
   if (status) corrections.textContent = status;
 }
 
-function normalizeTargetProfiles(profiles, options) {
+function normalizeGoalProfiles(profiles, options) {
   const byId = new Map(
     profiles
       .filter((profile) => profile && typeof profile.id === "string")
@@ -504,22 +504,22 @@ function clearSavedSession() {
   }
 }
 
-function renderTargets(selectedTargets) {
-  const selected = new Set(selectedTargets || []);
-  if (targetCountEl) targetCountEl.textContent = selected.size;
-  targetsEl.innerHTML = "";
-  if (!targetOptions.length) {
-    targetsEl.innerHTML = `<div class="empty">No goals loaded.</div>`;
+function renderGoals(selectedGoals) {
+  const selected = new Set(selectedGoals || []);
+  if (goalCountEl) goalCountEl.textContent = selected.size;
+  goalsEl.innerHTML = "";
+  if (!goalOptions.length) {
+    goalsEl.innerHTML = `<div class="empty">No goals loaded.</div>`;
     return;
   }
-  for (const option of targetOptions) {
-    const profile = targetProfileById.get(option) || { label: option, description: "" };
+  for (const option of goalOptions) {
+    const profile = goalProfileById.get(option) || { label: option, description: "" };
     const label = document.createElement("label");
-    label.className = `target-toggle goal ${selected.has(option) ? "on" : ""}`;
+    label.className = `goal-toggle goal ${selected.has(option) ? "on" : ""}`;
     label.innerHTML = `
       <input
         type="checkbox"
-        data-target="${escapeAttribute(option)}"
+        data-goal="${escapeAttribute(option)}"
         aria-label="${escapeAttribute(profile.label)}"
         ${sessionControlsLocked ? "disabled" : ""}
         ${selected.has(option) ? "checked" : ""}
@@ -527,12 +527,12 @@ function renderTargets(selectedTargets) {
       <span class="check" aria-hidden="true">
         <svg class="icon"><use href="#icon-check"></use></svg>
       </span>
-      <span class="target-copy">
+      <span class="goal-copy">
         <strong>${escapeHtml(profile.label)}</strong>
         ${profile.description ? `<small>${escapeHtml(profile.description)}</small>` : ""}
       </span>
     `;
-    targetsEl.append(label);
+    goalsEl.append(label);
   }
 }
 
@@ -583,7 +583,7 @@ function handleEvent(event) {
     }
     session = event.state || {};
     session.profile = session.profile || {};
-    session.targets = Array.isArray(session.targets) ? session.targets : [];
+    session.goals = Array.isArray(session.goals) ? session.goals : [];
     session.last_response = event.response || session.last_response || "";
     delete session.ui_status;
     if (event.score?.echoes?.length) {
@@ -592,7 +592,7 @@ function handleEvent(event) {
       renderProjects(event.projects);
     }
     if (event.whitespace?.length) renderWhitespace(event.whitespace);
-    renderTargets(session.targets);
+    renderGoals(session.goals);
     renderProfile(session.profile);
     renderIdeas(session.ideas || []);
     renderPlan(event.plan || []);
@@ -622,7 +622,7 @@ function renderIdeas(ideas) {
   }
   for (const idea of visibleIdeas(ideas)) {
     const score = idea.score?.overall ? Number(idea.score.overall).toFixed(1) : "0.0";
-    const targets = (idea.targets || []).slice(0, 3).map(targetDisplayName).join(" · ");
+    const goals = (idea.goals || []).slice(0, 3).map(goalDisplayName).join(" · ");
     const selected = idea.id === session.current_idea_id;
     const verdict = idea.score?.verdict || "DRAFT";
     const isEcho = String(verdict).startsWith("ECHO");
@@ -639,7 +639,7 @@ function renderIdeas(ideas) {
       </div>
       <p>${escapeHtml((idea.pitch || "").slice(0, 120))}</p>
       <span class="iverdict ${isEcho ? "echo" : "unwritten"}">${escapeHtml(verdict)}</span>
-      ${targets ? `<small>${escapeHtml(targets)}</small>` : ""}
+      ${goals ? `<small>${escapeHtml(goals)}</small>` : ""}
     `;
     ideasEl.append(item);
   }
@@ -663,8 +663,8 @@ function selectIdea(ideaId) {
   if (!idea) return;
   bumpSessionRevision();
   session.current_idea_id = idea.id;
-  if (Array.isArray(idea.targets) && idea.targets.length) {
-    session.targets = targetOptions.filter((option) => idea.targets.includes(option));
+  if (Array.isArray(idea.goals) && idea.goals.length) {
+    session.goals = goalOptions.filter((option) => idea.goals.includes(option));
   }
   const score = idea.score || null;
   if (score) {
@@ -682,7 +682,7 @@ function selectIdea(ideaId) {
     renderWoodMap(null);
     exportButton.disabled = true;
   }
-  renderTargets(session.targets || []);
+  renderGoals(session.goals || []);
   renderIdeas(session.ideas);
   renderPlan([]);
   session.ui_status = `selected: ${idea.title}`;
@@ -690,8 +690,8 @@ function selectIdea(ideaId) {
   saveSession();
 }
 
-function targetDisplayName(target) {
-  return targetProfileById.get(target)?.label || target;
+function goalDisplayName(goal) {
+  return goalProfileById.get(goal)?.label || goal;
 }
 
 function renderScore(score) {
@@ -873,11 +873,11 @@ function clearTurnWatchdog() {
   }
 }
 
-function syncCurrentIdeaTargets() {
+function syncCurrentIdeaGoals() {
   const currentId = session.current_idea_id;
   if (!currentId || !Array.isArray(session.ideas)) return;
   const idea = session.ideas.find((item) => item.id === currentId);
-  if (idea) idea.targets = [...(session.targets || [])];
+  if (idea) idea.goals = [...(session.goals || [])];
 }
 
 async function exportNotes() {

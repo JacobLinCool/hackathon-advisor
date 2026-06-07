@@ -3,12 +3,12 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from hackathon_advisor.tools import target_label
+from hackathon_advisor.tools import goal_label
 
 
 def build_chapter_markdown(session: dict[str, Any], metadata: dict[str, Any]) -> str:
     ideas = _list_of_dicts(session.get("ideas"))
-    goals = _goal_labels(session.get("targets"))
+    goals = _goal_labels(session.get("goals"))
     artifact = session.get("last_artifact") if isinstance(session.get("last_artifact"), dict) else {}
     lines = [
         "# The Unwritten Almanac Chapter",
@@ -35,7 +35,7 @@ def build_chapter_markdown(session: dict[str, Any], metadata: dict[str, Any]) ->
 def _idea_page(index: int, idea: dict[str, Any]) -> list[str]:
     title = _clean(idea.get("title") or f"Page {index}")
     pitch = _clean(idea.get("pitch"))
-    goals = _goal_labels(idea.get("targets"))
+    goals = _goal_labels(idea.get("goals"))
     score = idea.get("score") if isinstance(idea.get("score"), dict) else {}
     verdict = _clean(score.get("verdict")) if score else "DRAFT"
     overall = _clean(score.get("overall")) if score else "0.0"
@@ -74,7 +74,7 @@ def _list_of_dicts(value: Any) -> list[dict[str, Any]]:
 def _goal_labels(value: Any) -> list[str]:
     if not isinstance(value, list):
         return []
-    return [target_label(str(target)) for target in value]
+    return [goal_label(str(goal)) for goal in value]
 
 
 def _clean(value: Any) -> str:

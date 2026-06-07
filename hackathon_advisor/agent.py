@@ -10,14 +10,14 @@ from hackathon_advisor.model_runtime import ToolPlanner, create_tool_planner, ru
 from hackathon_advisor.scoring import ScoreCard
 from hackathon_advisor.tool_contracts import ToolCall
 from hackathon_advisor.tools import (
-    TARGETS,
+    GOALS,
     AdvisorTools,
     Idea,
     ToolEvent,
+    goal_label,
+    goals_from_state,
     idea_from_text,
-    normalize_targets,
-    target_label,
-    targets_from_state,
+    normalize_goals,
 )
 from hackathon_advisor.wood_map import build_wood_map
 
@@ -62,7 +62,7 @@ class AdvisorEngine:
         state = dict(state or {})
         state.setdefault("ideas", [])
         state.setdefault("profile", {})
-        state.setdefault("targets", TARGETS[:3])
+        state.setdefault("goals", GOALS[:3])
         normalized, corrections = normalize_text(message)
         resolution = self.planner.plan(normalized, state)
         state["last_tool_resolution"] = resolution.to_dict()
@@ -129,7 +129,7 @@ class AdvisorEngine:
             return self._profile_turn(call, normalized, corrections, state, tool_events)
 
         if call.name == "set_goals":
-            return self._target_turn(call, normalized, corrections, state, tool_events)
+            return self._goal_turn(call, normalized, corrections, state, tool_events)
 
         return self._idea_research_turn(call, normalized, corrections, state, tool_events)
 
@@ -177,13 +177,13 @@ class AdvisorEngine:
         current_id = state.get("current_idea_id")
         for item in state.get("ideas", []):
             if item.get("id") == current_id:
-                return self._with_session_targets(Idea(**item), state)
+                return self._with_session_goals(Idea(**item), state)
         if state.get("ideas"):
-            return self._with_session_targets(Idea(**state["ideas"][-1]), state)
+            return self._with_session_goals(Idea(**state["ideas"][-1]), state)
         return None
 
-    def _with_session_targets(self, idea: Idea, state: dict[str, Any]) -> Idea:
-        idea.targets = targets_from_state(state)
+    def _with_session_goals(self, idea: Idea, state: dict[str, Any]) -> Idea:
+        idea.goals = goals_from_state(state)
         return idea
 
     def _profile_context(self, state: dict[str, Any]) -> dict[str, Any]:
@@ -347,7 +347,7 @@ class AdvisorEngine:
         response = f"Profile updated: {field} = {profile[field]}."
         return self._result(normalized, corrections, response, state, tool_events, [], [], None, [], {})
 
-    def _target_turn(
+    def _goal_turn(
         self,
         call: ToolCall,
         normalized: str,
@@ -355,14 +355,14 @@ class AdvisorEngine:
         state: dict[str, Any],
         tool_events: list[ToolEvent],
     ) -> TurnResult:
-        targets = normalize_targets(call.arguments.get("goals"), default=[])
-        state["targets"] = targets
+        goals = normalize_goals(call.arguments.get("goals"), default=[])
+        state["goals"] = goals
         idea = self._current_idea(state)
         if idea is not None:
-            idea.targets = targets
+            idea.goals = goals
             self._store_idea(state, idea)
-        tool_events.append(ToolEvent("set_goals", f"Set {len(targets)} goals."))
-        labels = [target_label(target) for target in targets]
+        tool_events.append(ToolEvent("set_goals", f"Set {len(goals)} goals."))
+        labels = [goal_label(goal) for goal in goals]
         response = "The seal will now bias toward: " + (", ".join(labels) or "no specific goals")
         return self._result(normalized, corrections, response, state, tool_events, [], [], None, [], {})
 
@@ -371,7 +371,7 @@ class AdvisorEngine:
         if idea_id:
             for item in state.get("ideas", []):
                 if item.get("id") == idea_id:
-                    return self._with_session_targets(Idea(**item), state)
+                    return self._with_session_goals(Idea(**item), state)
         return self._current_idea(state)
 
     def _record_trace(
@@ -442,7 +442,7 @@ class AdvisorEngine:
         ranked: list[tuple[Idea, ScoreCard]] = []
         for item in state.get("ideas", []):
             try:
-                idea = self._with_session_targets(Idea(**item), state)
+                idea = self._with_session_goals(Idea(**item), state)
             except TypeError:
                 continue
             score, _event = self.tools.score_idea(idea)

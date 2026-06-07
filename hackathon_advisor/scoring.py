@@ -49,12 +49,12 @@ class ScoreCard:
         }
 
 
-def score_idea(index: ProjectIndex, title: str, pitch: str, targets: list[str] | None = None) -> ScoreCard:
+def score_idea(index: ProjectIndex, title: str, pitch: str, goals: list[str] | None = None) -> ScoreCard:
     text = f"{title} {pitch}".strip()
     hits = index.search(text, limit=4)
     top_overlap = hits[0].score if hits else 0.0
     tokens = set(tokenize(text))
-    targets = targets or []
+    goals = goals or []
 
     originality = clamp_score(10 - round(top_overlap * 18))
     delight = clamp_score(4 + _keyword_count(tokens, {"story", "visual", "game", "ritual", "share", "voice"}) * 2)
@@ -67,7 +67,7 @@ def score_idea(index: ProjectIndex, title: str, pitch: str, targets: list[str] |
     goal_fit = clamp_score(
         4
         + _keyword_count(tokens, {"local", "offline", "small", "llama", "fine", "trace", "gradio"}) * 2
-        + min(len(targets), 3)
+        + min(len(goals), 3)
     )
     verdict = "UNWRITTEN" if top_overlap < 0.16 else f"ECHO x{sum(1 for hit in hits if hit.score >= 0.12)}"
     return ScoreCard(

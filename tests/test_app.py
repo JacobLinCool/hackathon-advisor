@@ -40,10 +40,10 @@ def test_bootstrap_exposes_index_metadata() -> None:
     assert payload["snapshot_digest"]
     assert payload["runtime"]["tool_count"] >= 8
     assert payload["top_projects"]
-    assert payload["default_targets"] == payload["target_options"][:3]
-    assert [target["id"] for target in payload["target_profiles"]] == payload["target_options"]
-    assert payload["target_profiles"][0]["label"] == "Local-first"
-    assert "description" in payload["target_profiles"][0]
+    assert payload["default_goals"] == payload["goal_options"][:3]
+    assert [goal["id"] for goal in payload["goal_profiles"]] == payload["goal_options"]
+    assert payload["goal_profiles"][0]["label"] == "Local-first"
+    assert "description" in payload["goal_profiles"][0]
     assert "skills" in payload["profile_fields"]
     assert payload["prize_ledger"]["tiny_titan_eligible"] is True
 
@@ -61,7 +61,7 @@ def test_trace_artifact_endpoint_exports_jsonl() -> None:
 def test_field_notes_endpoint_exports_markdown() -> None:
     state = engine.turn(
         "A local-first archive cartographer for family photos",
-        {"profile": {"skills": "frontend"}, "targets": ["Field Notes"]},
+        {"profile": {"skills": "frontend"}, "goals": ["Field Notes"]},
     ).state
     state = engine.turn("make a build plan", state).state
 
@@ -92,7 +92,7 @@ def test_chapter_endpoint_exports_markdown() -> None:
 def test_lora_dataset_endpoint_exports_sft_jsonl() -> None:
     state = engine.turn(
         "A local-first archive cartographer for family photos",
-        {"targets": ["Well-Tuned"]},
+        {"goals": ["Well-Tuned"]},
     ).state
     state = engine.turn("make a build plan", state).state
 
@@ -109,7 +109,7 @@ def test_lora_dataset_endpoint_exports_sft_jsonl() -> None:
 def test_submission_packet_endpoint_exports_markdown() -> None:
     state = engine.turn(
         "A local-first archive cartographer for family photos",
-        {"targets": ["Field Notes"]},
+        {"goals": ["Field Notes"]},
     ).state
     state = engine.turn("make a build plan", state).state
 

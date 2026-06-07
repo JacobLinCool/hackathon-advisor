@@ -175,7 +175,7 @@ def test_planner_get_project_drives_project_response() -> None:
     assert result.tool_events[0].name == "get_project"
 
 
-def test_planner_profile_and_targets_update_state() -> None:
+def test_planner_profile_and_goals_update_state() -> None:
     index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
     profile_engine = AdvisorEngine(
         index,
@@ -189,32 +189,32 @@ def test_planner_profile_and_targets_update_state() -> None:
     targeted = target_engine.turn("set goals", profile.state)
 
     assert targeted.state["profile"]["skills"] == "frontend"
-    assert targeted.state["targets"] == ["Off the Grid", "Field Notes"]
+    assert targeted.state["goals"] == ["Off the Grid", "Field Notes"]
     assert "Local-first, Build notes" in targeted.response
 
 
-def test_session_targets_apply_to_new_and_current_ideas() -> None:
+def test_session_goals_apply_to_new_and_current_ideas() -> None:
     index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
     engine = AdvisorEngine(index)
-    state = {"targets": ["Field Notes"]}
+    state = {"goals": ["Field Notes"]}
 
     first = engine.turn("A local-first archive cartographer for family photos", state)
     first_idea = first.state["ideas"][0]
     planned = engine.turn("make a build plan", first.state)
 
-    assert first_idea["targets"] == ["Field Notes"]
+    assert first_idea["goals"] == ["Field Notes"]
     assert all("LoRA" not in step for step in planned.plan)
 
 
-def test_well_tuned_target_adds_training_step_to_plan() -> None:
+def test_well_tuned_goal_adds_training_step_to_plan() -> None:
     index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
     engine = AdvisorEngine(index)
-    state = {"targets": ["Well-Tuned"]}
+    state = {"goals": ["Well-Tuned"]}
 
     first = engine.turn("A local-first archive cartographer for family photos", state)
     planned = engine.turn("make a build plan", first.state)
 
-    assert first.state["ideas"][0]["targets"] == ["Well-Tuned"]
+    assert first.state["ideas"][0]["goals"] == ["Well-Tuned"]
     assert any("LoRA" in step for step in planned.plan)
 
 
