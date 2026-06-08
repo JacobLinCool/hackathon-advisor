@@ -85,7 +85,7 @@ def test_searchable_text_includes_main_app_file_signals() -> None:
     assert "Project idea" in searchable
 
 
-def test_searchable_text_bounds_readme_body_for_embedding() -> None:
+def test_searchable_text_excludes_refresh_readme_body_for_stable_reuse() -> None:
     project = Project(
         id="build-small-hackathon/long-readme",
         title="Long README",
@@ -105,8 +105,8 @@ def test_searchable_text_bounds_readme_body_for_embedding() -> None:
 
     searchable = project.searchable_text
 
+    assert "readme:" not in searchable
     assert "middle should not be embedded" not in searchable
-    assert len(searchable) < 1600
 
 
 def test_project_index_rejects_mismatched_snapshot(tmp_path: Path) -> None:
