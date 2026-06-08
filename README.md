@@ -86,9 +86,20 @@ then swaps the live app to the new dashboard. `GET /api/dashboard/refresh` polls
 
 Live refresh requires a writable dashboard cache directory at `ADVISOR_CACHE_DIR`. On Hugging Face Spaces this should be
 a mounted Storage Bucket; locally it can be a normal directory such as `.cache/advisor-dashboard`. The job writes
-`runs/{run_id}/projects.json`, `project_index.json`, `dashboard.json`, and `manifest.json`, then atomically updates
-`latest.json`. If the cache directory is missing, not writable, or quest analysis fails validation, refresh fails and the
-current validated dashboard stays active.
+`runs/{run_id}/projects.json`, `project_index.json`, `dashboard.json`, `quest_analysis.json`, and `manifest.json`, then
+atomically updates `latest.json`. Quest analysis also keeps validated per-project records under
+`quest-cache/v1/{prefix}/{cache_key}.json`, keyed by the rendered README+app-file prompt hash, taxonomy hash, MiniCPM
+model id, adapter id/revision, local adapter digest, and generation config. Refresh logs every cache hit, miss, and newly
+analyzed project. If the cache directory is missing, not writable, or quest analysis fails validation, refresh fails and
+the current validated dashboard stays active.
+
+When `ADVISOR_CACHE_DIR` is set, the app starts a scheduler thread that checks once per hour and starts a normal
+dashboard refresh if no refresh is already running. `ADVISOR_SCHEDULED_REFRESH=0` or
+`ADVISOR_DISABLE_SCHEDULED_REFRESH=1` disables it; `ADVISOR_REFRESH_INTERVAL_SECONDS`,
+`ADVISOR_REFRESH_INITIAL_DELAY_SECONDS`, and `ADVISOR_SCHEDULED_REFRESH_COMPUTE` tune the cadence and compute mode.
+Manual and scheduled refreshes both acquire `$ADVISOR_CACHE_DIR/refresh.lock` atomically before work starts, so multiple
+app processes do not analyze the same snapshot concurrently. Stale locks expire after `ADVISOR_REFRESH_LOCK_TTL_SECONDS`
+(default two hours).
 
 Set `ADVISOR_QUEST_ANALYZER_BACKEND=minicpm-transformers` for both local and deployed refresh runs. The local dashboard
 uses the same MiniCPM analyzer as the deployed Space; test doubles are only used inside pytest.
@@ -221,6 +232,11 @@ ADVISOR_QUEST_ANALYZER_BACKEND=minicpm-transformers
 ADVISOR_QUEST_ADAPTER_ID=artifacts/quest-lora
 ADVISOR_QUEST_ANALYSIS_BATCH_SIZE=8
 ADVISOR_CACHE_DIR=/data/advisor-cache
+ADVISOR_REFRESH_COMPUTE=cpu
+ADVISOR_SCHEDULED_REFRESH_COMPUTE=cpu
+ADVISOR_REFRESH_INTERVAL_SECONDS=3600
+ADVISOR_REFRESH_INITIAL_DELAY_SECONDS=300
+ADVISOR_REFRESH_LOCK_TTL_SECONDS=7200
 ADVISOR_REFRESH_EMBEDDING_TIMEOUT_SECONDS=1800
 ADVISOR_EMBEDDING_MODEL_REPO=ggml-org/embeddinggemma-300m-qat-q8_0-GGUF
 ADVISOR_EMBEDDING_MODEL_FILE=embeddinggemma-300m-qat-Q8_0.gguf

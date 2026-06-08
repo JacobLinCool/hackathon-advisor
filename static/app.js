@@ -300,13 +300,26 @@ function renderRefreshState(state) {
   }
   if (atlasRefreshProgressEl) {
     const show = status === "running" || status === "failed";
+    const cacheCopy = refreshQuestCacheCopy(state?.quest_cache || {});
     atlasRefreshProgressEl.hidden = !show;
     atlasRefreshProgressEl.textContent =
       status === "running"
-        ? `${stage || "Working"} · run ${state.run_id || ""}`
+        ? `${stage || "Working"}${cacheCopy ? ` · ${cacheCopy}` : ""} · run ${state.run_id || ""}`
         : state.error || "";
   }
   if (refreshDashboardButton) refreshDashboardButton.disabled = status === "running";
+}
+
+function refreshQuestCacheCopy(cache) {
+  const total = Number(cache.project_count || 0);
+  if (!total) return "";
+  const hits = Number(cache.hit_count || 0);
+  const misses = Number(cache.miss_count || 0);
+  const analyzed = Number(cache.analyzed_count || 0);
+  const remaining = Number(cache.remaining_count || 0);
+  if (!hits && !misses && !analyzed) return "";
+  if (remaining > 0) return `${hits} cached, ${analyzed}/${misses} analyzed`;
+  return `${hits} cached, ${analyzed} analyzed`;
 }
 
 function renderDashboard(data) {

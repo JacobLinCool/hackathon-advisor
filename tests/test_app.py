@@ -70,12 +70,15 @@ def _reset_refresh_state(status: str = "idle") -> None:
             {
                 "status": status,
                 "run_id": "test-run" if status == "running" else "",
+                "compute": "cpu" if status == "running" else "",
+                "reason": "test" if status == "running" else "",
                 "stage": "crawling" if status == "running" else "",
                 "stage_label": "Fetching public Spaces" if status == "running" else "",
                 "started_at": "",
                 "finished_at": "",
                 "error": "",
                 "result": None,
+                "quest_cache": app_module._empty_quest_cache_progress(),
             }
         )
 
@@ -179,6 +182,29 @@ def test_dashboard_refresh_rejects_concurrent_run(monkeypatch, tmp_path) -> None
         _reset_refresh_state()
 
 
+def test_dashboard_refresh_rejects_existing_bucket_lock(monkeypatch, tmp_path) -> None:
+    monkeypatch.setenv("ADVISOR_CACHE_DIR", str(tmp_path))
+    _reset_refresh_state()
+    (tmp_path / "refresh.lock").write_text(
+        json.dumps(
+            {
+                "run_id": "other-run",
+                "owner": "other-process",
+                "expires_at_epoch": time.time() + 3600,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    try:
+        dashboard_refresh_start()
+    except Exception as error:
+        assert getattr(error, "status_code", None) == 409
+        assert "other-run" in str(getattr(error, "detail", ""))
+    else:
+        raise AssertionError("dashboard refresh should honor an existing bucket lock")
+
+
 def test_dashboard_refresh_embedding_build_runs_in_subprocess(monkeypatch, tmp_path) -> None:
     project_path = tmp_path / "projects.json"
     index_path = tmp_path / "project_index.json"
@@ -237,7 +263,7 @@ def test_dashboard_refresh_persists_and_swaps_latest(monkeypatch, tmp_path) -> N
     monkeypatch.setenv("ADVISOR_CACHE_DIR", str(tmp_path))
     _reset_refresh_state()
 
-    def fake_refresh_payloads(run_id: str) -> tuple[dict, dict, dict]:
+    def fake_refresh_payloads(run_id: str, *, cache_dir, compute) -> tuple[dict, dict, dict, dict]:
         projects_payload = json.loads(app_module.DATA_PATH.read_text(encoding="utf-8"))
         index_payload = json.loads(app_module.INDEX_PATH.read_text(encoding="utf-8"))
         refreshed_index = ProjectIndex.from_files(app_module.DATA_PATH, app_module.INDEX_PATH)
@@ -245,7 +271,13 @@ def test_dashboard_refresh_persists_and_swaps_latest(monkeypatch, tmp_path) -> N
             refreshed_index,
             generated_at="2026-06-08T00:00:00+00:00",
         )
-        return projects_payload, index_payload, refreshed_dashboard
+        quest_analysis_payload = {
+            "schema_version": 1,
+            "run_id": run_id,
+            "summary": {"project_count": refreshed_dashboard["project_count"], "compute": compute},
+            "projects": [],
+        }
+        return projects_payload, index_payload, refreshed_dashboard, quest_analysis_payload
 
     monkeypatch.setattr(app_module, "_build_refresh_payloads", fake_refresh_payloads)
     response = dashboard_refresh_start()
@@ -254,11 +286,14 @@ def test_dashboard_refresh_persists_and_swaps_latest(monkeypatch, tmp_path) -> N
     state = _wait_for_refresh()
     assert state["status"] == "succeeded"
     assert (tmp_path / "latest.json").is_file()
+    assert (tmp_path / "refresh.lock").exists() is False
+    latest = json.loads((tmp_path / "latest.json").read_text(encoding="utf-8"))
+    assert (tmp_path / latest["quest_analysis"]).is_file()
     assert state["result"]["project_count"] == len(app_module.index.projects)
     assert dashboard()["provenance"]["snapshot_digest"] == state["result"]["snapshot_digest"]
 
 
-def test_dashboard_refresh_quest_analysis_uses_minicpm_analyzer(monkeypatch) -> None:
+def test_dashboard_refresh_quest_analysis_uses_minicpm_analyzer(monkeypatch, tmp_path) -> None:
     project = Project(
         id="build-small-hackathon/minicpm-refresh-smoke",
         title="MiniCPM Refresh Smoke",
@@ -301,14 +336,21 @@ def test_dashboard_refresh_quest_analysis_uses_minicpm_analyzer(monkeypatch) -> 
 
     monkeypatch.setattr(app_module, "create_quest_analyzer", lambda device: FakeMiniCPMAnalyzer())
 
-    result = app_module._analyze_dashboard_quests([project.to_refresh_snapshot_dict()])
+    result = app_module._analyze_dashboard_quests(
+        [project.to_refresh_snapshot_dict()],
+        cache_dir=tmp_path,
+        compute="cpu",
+        run_id="test-run",
+    )
 
     quests = {match["quest"] for match in result["matches_by_project"][project.id]}
     assert result["source"] == "minicpm-json-quest-analyzer"
     assert quests == {"Off the Grid", "Field Notes"}
+    assert result["quest_analysis_payload"]["summary"]["miss_count"] == 1
+    assert result["quest_analysis_payload"]["summary"]["analyzed_count"] == 1
 
 
-def test_dashboard_refresh_quest_analysis_batches_minicpm(monkeypatch) -> None:
+def test_dashboard_refresh_quest_analysis_batches_minicpm(monkeypatch, tmp_path) -> None:
     projects = [
         Project(
             id=f"build-small-hackathon/batched-{index}",
@@ -341,7 +383,12 @@ def test_dashboard_refresh_quest_analysis_batches_minicpm(monkeypatch) -> None:
     monkeypatch.setenv("ADVISOR_QUEST_ANALYSIS_BATCH_SIZE", "2")
     monkeypatch.setattr(app_module, "create_quest_analyzer", lambda device: FakeMiniCPMAnalyzer())
 
-    result = app_module._analyze_dashboard_quests([project.to_refresh_snapshot_dict() for project in projects])
+    result = app_module._analyze_dashboard_quests(
+        [project.to_refresh_snapshot_dict() for project in projects],
+        cache_dir=tmp_path,
+        compute="cpu",
+        run_id="test-run",
+    )
 
     assert calls == [
         ["build-small-hackathon/batched-0", "build-small-hackathon/batched-1"],
@@ -350,7 +397,69 @@ def test_dashboard_refresh_quest_analysis_batches_minicpm(monkeypatch) -> None:
     assert set(result["matches_by_project"]) == {project.id for project in projects}
 
 
-def test_dashboard_refresh_quest_analysis_requires_two_segment_snapshot() -> None:
+def test_dashboard_refresh_quest_analysis_caches_minicpm_results(monkeypatch, tmp_path) -> None:
+    project = Project(
+        id="build-small-hackathon/cached-quest",
+        title="Cached Quest",
+        summary="A small local project.",
+        tags=("gradio",),
+        models=("openbmb/MiniCPM5-1B",),
+        datasets=(),
+        likes=0,
+        sdk="gradio",
+        license="mit",
+        created_at="2026-06-01T00:00:00+00:00",
+        last_modified="2026-06-08T00:00:00+00:00",
+        host="https://cached-quest.hf.space",
+        url="https://huggingface.co/spaces/build-small-hackathon/cached-quest",
+        readme_body="Runs MiniCPM5-1B locally.",
+        app_file_source="from transformers import AutoModelForCausalLM",
+    )
+    calls = []
+
+    class FakeMiniCPMAnalyzer:
+        source = "minicpm-json-quest-analyzer"
+
+        def analyze(self, projects):
+            calls.append([item.id for item in projects])
+            return {
+                project.id: [
+                    {
+                        "quest": "OpenBMB",
+                        "confidence": 0.91,
+                        "evidence": "Runs MiniCPM5-1B locally",
+                        "source": "readme",
+                    }
+                ]
+            }
+
+    monkeypatch.setattr(app_module, "create_quest_analyzer", lambda device: FakeMiniCPMAnalyzer())
+
+    first = app_module._analyze_dashboard_quests(
+        [project.to_refresh_snapshot_dict()],
+        cache_dir=tmp_path,
+        compute="cpu",
+        run_id="first-run",
+    )
+
+    def fail_analyzer(device):
+        raise AssertionError("cached quest analysis should not load MiniCPM")
+
+    monkeypatch.setattr(app_module, "create_quest_analyzer", fail_analyzer)
+    second = app_module._analyze_dashboard_quests(
+        [project.to_refresh_snapshot_dict()],
+        cache_dir=tmp_path,
+        compute="cpu",
+        run_id="second-run",
+    )
+
+    assert calls == [[project.id]]
+    assert first["matches_by_project"] == second["matches_by_project"]
+    assert second["quest_analysis_payload"]["summary"]["hit_count"] == 1
+    assert second["quest_analysis_payload"]["projects"][0]["status"] == "cached"
+
+
+def test_dashboard_refresh_quest_analysis_requires_two_segment_snapshot(tmp_path) -> None:
     project = Project(
         id="build-small-hackathon/missing-evidence",
         title="Missing Evidence",
@@ -372,7 +481,7 @@ def test_dashboard_refresh_quest_analysis_requires_two_segment_snapshot() -> Non
     del row["readme_body"]
 
     try:
-        app_module._analyze_dashboard_quests([row])
+        app_module._analyze_dashboard_quests([row], cache_dir=tmp_path, compute="cpu", run_id="test-run")
     except RuntimeError as error:
         assert "readme_body and app_file_source" in str(error)
     else:

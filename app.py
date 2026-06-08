@@ -49,6 +49,13 @@ from hackathon_advisor.lora_dataset import build_lora_dataset_jsonl
 from hackathon_advisor.lora_training_kit import TRAINING_KIT_FILENAME, build_lora_training_kit_zip
 from hackathon_advisor.png_export import artifact_png_filename, render_artifact_png
 from hackathon_advisor.prize_ledger import prize_ledger
+from hackathon_advisor.quest_cache import (
+    build_quest_analysis_run_payload,
+    quest_analyzer_fingerprint_from_env,
+    quest_cache_run_record,
+    read_quest_cache_entry,
+    write_quest_cache_entry,
+)
 from hackathon_advisor.quest_analysis import create_quest_analyzer, validate_matches_by_project
 from hackathon_advisor.runtime_hooks import install_asyncio_cleanup_hook
 from hackathon_advisor.submission_packet import build_submission_packet_markdown
@@ -71,6 +78,11 @@ AUDIO_UPLOAD_SUFFIXES = {".aac", ".aif", ".aiff", ".flac", ".m4a", ".mp3", ".oga
 DEFAULT_HF_ORG = "build-small-hackathon"
 DEFAULT_REFRESH_EMBEDDING_TIMEOUT_SECONDS = 1800
 DEFAULT_QUEST_ANALYSIS_BATCH_SIZE = 8
+DEFAULT_REFRESH_COMPUTE = "cpu"
+DEFAULT_SCHEDULED_REFRESH_INTERVAL_SECONDS = 3600
+DEFAULT_SCHEDULED_REFRESH_INITIAL_DELAY_SECONDS = 300
+DEFAULT_REFRESH_LOCK_TTL_SECONDS = 7200
+REFRESH_LOCK_FILENAME = "refresh.lock"
 REFRESH_SUBPROCESS_LOG_TAIL_LINES = 80
 REFRESH_STAGE_LABELS = {
     "crawling": "Fetching public Spaces",
@@ -83,6 +95,19 @@ REFRESH_STAGE_LABELS = {
 
 _runtime_lock = Lock()
 _refresh_lock = Lock()
+_scheduler_lock = Lock()
+_scheduler_started = False
+
+
+def _empty_quest_cache_progress() -> dict[str, Any]:
+    return {
+        "project_count": 0,
+        "hit_count": 0,
+        "miss_count": 0,
+        "analyzed_count": 0,
+        "remaining_count": 0,
+        "last_project_id": "",
+    }
 
 
 def _load_initial_runtime() -> tuple[ProjectIndex, dict[str, Any]]:
@@ -107,12 +132,15 @@ _cpu_engine: AdvisorEngine | None = None
 _refresh_state: dict[str, Any] = {
     "status": "idle",
     "run_id": "",
+    "compute": "",
+    "reason": "",
     "stage": "",
     "stage_label": "",
     "started_at": "",
     "finished_at": "",
     "error": "",
     "result": None,
+    "quest_cache": _empty_quest_cache_progress(),
 }
 
 
@@ -140,7 +168,13 @@ def _transcribe_voice(audio_path: str) -> dict[str, Any]:
     return voice_transcriber.transcribe(Path(audio_path)).to_dict()
 
 
-def _analyze_dashboard_quests(project_rows: list[dict[str, Any]]) -> dict[str, Any]:
+def _analyze_dashboard_quests(
+    project_rows: list[dict[str, Any]],
+    *,
+    cache_dir: Path,
+    compute: str,
+    run_id: str,
+) -> dict[str, Any]:
     missing_evidence_keys = [
         str(item.get("id") or index)
         for index, item in enumerate(project_rows)
@@ -152,25 +186,144 @@ def _analyze_dashboard_quests(project_rows: list[dict[str, Any]]) -> dict[str, A
             f"missing evidence keys for {len(missing_evidence_keys)} projects"
         )
     projects = [Project.from_dict(item) for item in project_rows]
+    analyzer_fingerprint = quest_analyzer_fingerprint_from_env()
     matches_by_project: dict[str, list[dict[str, Any]]] = {}
-    source = "quest-analyzer"
+    record_by_project: dict[str, dict[str, Any]] = {}
+    misses: list[tuple[Project, dict[str, Any]]] = []
+    hit_count = 0
+    miss_count = 0
+    analyzed_count = 0
+    source = str(analyzer_fingerprint["source"])
     batch_size = _quest_analysis_batch_size()
-    for start in range(0, len(project_rows), batch_size):
-        batch_rows = project_rows[start : start + batch_size]
-        result = _analyze_dashboard_quest_batch(batch_rows)
+    _set_quest_cache_progress(
+        project_count=len(projects),
+        hit_count=0,
+        miss_count=0,
+        analyzed_count=0,
+        remaining_count=len(projects),
+        last_project_id="",
+    )
+
+    for project in projects:
+        lookup = read_quest_cache_entry(cache_dir, project, analyzer_fingerprint)
+        if lookup.entry is not None:
+            hit_count += 1
+            matches_by_project[project.id] = lookup.entry.matches
+            record_by_project[project.id] = quest_cache_run_record(
+                project=project,
+                identity=lookup.identity,
+                matches=lookup.entry.matches,
+                status="cached",
+                source=lookup.entry.source,
+                path=lookup.entry.path,
+            )
+            print(
+                f"[quest-cache] hit {project.id} key={lookup.identity.cache_key[:12]} "
+                f"matches={len(lookup.entry.matches)}",
+                flush=True,
+            )
+        else:
+            miss_count += 1
+            misses.append((project, lookup.identity.to_dict()))
+            print(
+                f"[quest-cache] miss {project.id} key={lookup.identity.cache_key[:12]} "
+                f"reason={lookup.reason}",
+                flush=True,
+            )
+        _set_quest_cache_progress(
+            project_count=len(projects),
+            hit_count=hit_count,
+            miss_count=miss_count,
+            analyzed_count=analyzed_count,
+            remaining_count=len(projects) - hit_count - analyzed_count,
+            last_project_id=project.id,
+        )
+
+    for start in range(0, len(misses), batch_size):
+        batch = misses[start : start + batch_size]
+        batch_projects = [item[0] for item in batch]
+        batch_rows = [project.to_refresh_snapshot_dict() for project in batch_projects]
+        result = _analyze_dashboard_quest_batch(batch_rows, compute=compute)
         source = str(result["source"])
-        matches_by_project.update(result["matches_by_project"])
+        validated_batch = validate_matches_by_project(
+            result["matches_by_project"],
+            batch_projects,
+            source=source,
+        )
+        for project, _identity_row in batch:
+            entry = write_quest_cache_entry(
+                cache_dir,
+                project,
+                analyzer_fingerprint,
+                validated_batch.matches_by_project[project.id],
+                source=source,
+            )
+            analyzed_count += 1
+            matches_by_project[project.id] = entry.matches
+            record_by_project[project.id] = quest_cache_run_record(
+                project=project,
+                identity=entry.identity,
+                matches=entry.matches,
+                status="analyzed",
+                source=entry.source,
+                path=entry.path,
+            )
+            print(
+                f"[quest-cache] analyzed {project.id} key={entry.identity.cache_key[:12]} "
+                f"matches={len(entry.matches)}",
+                flush=True,
+            )
+            _set_quest_cache_progress(
+                project_count=len(projects),
+                hit_count=hit_count,
+                miss_count=miss_count,
+                analyzed_count=analyzed_count,
+                remaining_count=len(projects) - hit_count - analyzed_count,
+                last_project_id=project.id,
+            )
     validated = validate_matches_by_project(matches_by_project, projects, source=source)
+    summary = {
+        "project_count": len(projects),
+        "hit_count": hit_count,
+        "miss_count": miss_count,
+        "analyzed_count": analyzed_count,
+        "remaining_count": 0,
+        "compute": compute,
+    }
+    project_records = [record_by_project[project.id] for project in projects]
     return {
         "source": validated.source,
         "matches_by_project": validated.matches_by_project,
+        "quest_analysis_payload": build_quest_analysis_run_payload(
+            run_id=run_id,
+            analyzer_fingerprint=analyzer_fingerprint,
+            summary=summary,
+            project_records=project_records,
+        ),
     }
 
 
 @gpu_task
-def _analyze_dashboard_quest_batch(project_rows: list[dict[str, Any]]) -> dict[str, Any]:
+def _analyze_dashboard_quest_batch_gpu(project_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    return _analyze_dashboard_quest_batch_with_device(
+        project_rows,
+        device="cuda" if zero_gpu_enabled() else "local",
+    )
+
+
+def _analyze_dashboard_quest_batch_cpu(project_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    return _analyze_dashboard_quest_batch_with_device(project_rows, device="cpu")
+
+
+def _analyze_dashboard_quest_batch(project_rows: list[dict[str, Any]], *, compute: str) -> dict[str, Any]:
+    if compute == "gpu":
+        return _analyze_dashboard_quest_batch_gpu(project_rows)
+    return _analyze_dashboard_quest_batch_cpu(project_rows)
+
+
+def _analyze_dashboard_quest_batch_with_device(project_rows: list[dict[str, Any]], *, device: str) -> dict[str, Any]:
     projects = [Project.from_dict(item) for item in project_rows]
-    analyzer = create_quest_analyzer(device="cuda" if zero_gpu_enabled() else "local")
+    analyzer = create_quest_analyzer(device=device)
     matches = analyzer.analyze(projects)
     source = getattr(analyzer, "source", "quest-analyzer")
     validated = validate_matches_by_project(matches, projects, source=source)
@@ -192,41 +345,191 @@ def _quest_analysis_batch_size() -> int:
 
 def _refresh_public_state() -> dict[str, Any]:
     with _refresh_lock:
-        return dict(_refresh_state)
+        state = dict(_refresh_state)
+        state["quest_cache"] = dict(_refresh_state.get("quest_cache") or _empty_quest_cache_progress())
+        return state
 
 
 def _set_refresh_state(**updates: Any) -> None:
     with _refresh_lock:
+        if "quest_cache" in updates:
+            updates["quest_cache"] = dict(updates["quest_cache"])
         _refresh_state.update(updates)
         stage = str(_refresh_state.get("stage") or "")
         _refresh_state["stage_label"] = REFRESH_STAGE_LABELS.get(stage, "")
 
 
-def _start_refresh_thread(cache_dir: Path) -> dict[str, Any]:
+def _set_quest_cache_progress(**updates: Any) -> None:
+    with _refresh_lock:
+        progress = dict(_refresh_state.get("quest_cache") or _empty_quest_cache_progress())
+        progress.update(updates)
+        _refresh_state["quest_cache"] = progress
+
+
+def _normalize_refresh_compute(value: Any) -> str:
+    compute = str(value or "").strip().lower() or DEFAULT_REFRESH_COMPUTE
+    if compute not in {"cpu", "gpu"}:
+        raise HTTPException(status_code=400, detail="Dashboard refresh compute must be 'cpu' or 'gpu'.")
+    return compute
+
+
+def _default_refresh_compute() -> str:
+    return _normalize_refresh_compute(os.environ.get("ADVISOR_REFRESH_COMPUTE", DEFAULT_REFRESH_COMPUTE))
+
+
+def _refresh_lock_ttl_seconds() -> int:
+    raw = os.environ.get("ADVISOR_REFRESH_LOCK_TTL_SECONDS", "").strip()
+    if not raw:
+        return DEFAULT_REFRESH_LOCK_TTL_SECONDS
+    ttl = int(raw)
+    if ttl <= 0:
+        raise RuntimeError("ADVISOR_REFRESH_LOCK_TTL_SECONDS must be a positive integer.")
+    return ttl
+
+
+def _refresh_lock_path(cache_dir: Path) -> Path:
+    return cache_dir / REFRESH_LOCK_FILENAME
+
+
+def _acquire_refresh_lease(cache_dir: Path, *, run_id: str, compute: str, reason: str) -> None:
+    lock_path = _refresh_lock_path(cache_dir)
+    now = time.time()
+    lease = {
+        "schema_version": 1,
+        "run_id": run_id,
+        "compute": compute,
+        "reason": reason,
+        "owner": _refresh_owner(),
+        "started_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "expires_at_epoch": now + _refresh_lock_ttl_seconds(),
+    }
+    while True:
+        try:
+            fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+        except FileExistsError as error:
+            existing = _read_refresh_lease(lock_path)
+            if existing is None or _refresh_lease_expired(existing):
+                run_label = str((existing or {}).get("run_id") or "unknown")
+                print(f"[dashboard-refresh] removing stale refresh lock run={run_label}", flush=True)
+                try:
+                    lock_path.unlink()
+                except FileNotFoundError:
+                    pass
+                except OSError as unlink_error:
+                    raise HTTPException(
+                        status_code=409,
+                        detail=f"Dashboard refresh lock exists and could not be removed: {unlink_error}",
+                    ) from unlink_error
+                continue
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Dashboard refresh is already running "
+                    f"(run {existing.get('run_id', 'unknown')}, owner {existing.get('owner', 'unknown')})."
+                ),
+            ) from error
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(json.dumps(lease, ensure_ascii=False) + "\n")
+        print(
+            f"[dashboard-refresh] acquired refresh lock run={run_id} compute={compute} reason={reason}",
+            flush=True,
+        )
+        return
+
+
+def _release_refresh_lease(cache_dir: Path, run_id: str) -> None:
+    lock_path = _refresh_lock_path(cache_dir)
+    existing = _read_refresh_lease(lock_path)
+    if existing is None:
+        return
+    if str(existing.get("run_id") or "") != run_id:
+        print(
+            f"[dashboard-refresh] refresh lock belongs to {existing.get('run_id', 'unknown')}; "
+            f"not releasing run={run_id}",
+            flush=True,
+        )
+        return
+    try:
+        lock_path.unlink()
+    except FileNotFoundError:
+        return
+    print(f"[dashboard-refresh] released refresh lock run={run_id}", flush=True)
+
+
+def _read_refresh_lease(lock_path: Path) -> dict[str, Any] | None:
+    try:
+        payload = json.loads(lock_path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return None
+    except (OSError, json.JSONDecodeError):
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def _refresh_lease_expired(lease: dict[str, Any]) -> bool:
+    try:
+        expires_at = float(lease.get("expires_at_epoch"))
+    except (TypeError, ValueError):
+        return True
+    return expires_at <= time.time()
+
+
+def _refresh_owner() -> str:
+    node = getattr(os, "uname", lambda: None)()
+    host = getattr(node, "nodename", "") if node is not None else ""
+    return f"{host or 'process'}:{os.getpid()}"
+
+
+def _start_refresh_thread(cache_dir: Path, *, compute: str, reason: str) -> dict[str, Any]:
+    compute = _normalize_refresh_compute(compute)
     with _refresh_lock:
         if _refresh_state.get("status") == "running":
             raise HTTPException(status_code=409, detail="Dashboard refresh is already running.")
         run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid4().hex[:8]
+        _acquire_refresh_lease(cache_dir, run_id=run_id, compute=compute, reason=reason)
         _refresh_state.update(
             {
                 "status": "running",
                 "run_id": run_id,
+                "compute": compute,
+                "reason": reason,
                 "stage": "crawling",
                 "stage_label": REFRESH_STAGE_LABELS["crawling"],
                 "started_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 "finished_at": "",
                 "error": "",
                 "result": None,
+                "quest_cache": _empty_quest_cache_progress(),
             }
         )
-    thread = Thread(target=_run_refresh_job, args=(run_id, cache_dir), daemon=True)
-    thread.start()
+    thread = Thread(target=_run_refresh_job, args=(run_id, cache_dir, compute), daemon=True)
+    try:
+        thread.start()
+    except Exception:
+        _release_refresh_lease(cache_dir, run_id)
+        _set_refresh_state(
+            status="idle",
+            run_id="",
+            compute="",
+            reason="",
+            stage="",
+            started_at="",
+            finished_at="",
+            error="",
+            result=None,
+            quest_cache=_empty_quest_cache_progress(),
+        )
+        raise
     return _refresh_public_state()
 
 
-def _run_refresh_job(run_id: str, cache_dir: Path) -> None:
+def _run_refresh_job(run_id: str, cache_dir: Path, compute: str) -> None:
     try:
-        projects_payload, index_payload, refreshed_dashboard = _build_refresh_payloads(run_id)
+        projects_payload, index_payload, refreshed_dashboard, quest_analysis_payload = _build_refresh_payloads(
+            run_id,
+            cache_dir=cache_dir,
+            compute=compute,
+        )
         _set_refresh_state(stage="persisting")
         artifacts = persist_refresh_artifacts(
             cache_dir,
@@ -234,9 +537,11 @@ def _run_refresh_job(run_id: str, cache_dir: Path) -> None:
             projects_payload=projects_payload,
             index_payload=index_payload,
             dashboard_payload=refreshed_dashboard,
+            quest_analysis_payload=quest_analysis_payload,
         )
         _set_refresh_state(stage="swapping")
         _replace_runtime_from_files(artifacts.projects_path, artifacts.index_path, artifacts.dashboard)
+        _release_refresh_lease(cache_dir, run_id)
         _set_refresh_state(
             status="succeeded",
             stage="",
@@ -246,11 +551,13 @@ def _run_refresh_job(run_id: str, cache_dir: Path) -> None:
                 "project_count": refreshed_dashboard["project_count"],
                 "snapshot_digest": refreshed_dashboard["provenance"]["snapshot_digest"],
                 "dashboard_generated_at": refreshed_dashboard["generated_at"],
+                "quest_cache": dict(quest_analysis_payload.get("summary") or {}),
             },
         )
     except Exception as error:  # noqa: BLE001 - background job must report every failure as state
         print("[dashboard-refresh] failed", flush=True)
         traceback.print_exception(type(error), error, error.__traceback__)
+        _release_refresh_lease(cache_dir, run_id)
         _set_refresh_state(
             status="failed",
             stage="",
@@ -258,9 +565,16 @@ def _run_refresh_job(run_id: str, cache_dir: Path) -> None:
             error=_format_refresh_error(error),
             result=None,
         )
+    finally:
+        _release_refresh_lease(cache_dir, run_id)
 
 
-def _build_refresh_payloads(run_id: str) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+def _build_refresh_payloads(
+    run_id: str,
+    *,
+    cache_dir: Path,
+    compute: str,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
     from scripts.crawl_hf_spaces import API, crawl_projects
 
     org = os.environ.get("ADVISOR_HF_ORG", DEFAULT_HF_ORG).strip() or DEFAULT_HF_ORG
@@ -294,14 +608,19 @@ def _build_refresh_payloads(run_id: str) -> tuple[dict[str, Any], dict[str, Any]
     )
 
     _set_refresh_state(stage="quest_analysis")
-    quest_analysis = _analyze_dashboard_quests([project.to_refresh_snapshot_dict() for project in projects])
+    quest_analysis = _analyze_dashboard_quests(
+        [project.to_refresh_snapshot_dict() for project in projects],
+        cache_dir=cache_dir,
+        compute=compute,
+        run_id=run_id,
+    )
     _set_refresh_state(stage="atlas")
     refreshed_dashboard = build_dashboard_payload(
         refreshed_index,
         quest_matches=quest_analysis["matches_by_project"],
         quest_source=str(quest_analysis["source"]),
     )
-    return projects_payload, index_payload, refreshed_dashboard
+    return projects_payload, index_payload, refreshed_dashboard, quest_analysis["quest_analysis_payload"]
 
 
 def _build_refresh_index_payload(
@@ -561,17 +880,116 @@ def dashboard() -> dict:
 
 
 @app.post("/api/dashboard/refresh")
-def dashboard_refresh_start() -> JSONResponse:
+def dashboard_refresh_start(payload: dict[str, Any] | None = None) -> JSONResponse:
     try:
         cache_dir = require_writable_cache_dir()
     except DashboardStorageError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error
-    return JSONResponse(_start_refresh_thread(cache_dir), status_code=202)
+    compute = _refresh_compute_from_payload(payload)
+    return JSONResponse(_start_refresh_thread(cache_dir, compute=compute, reason="manual"), status_code=202)
 
 
 @app.get("/api/dashboard/refresh")
 def dashboard_refresh_status() -> dict:
     return _refresh_public_state()
+
+
+def _refresh_compute_from_payload(payload: dict[str, Any] | None) -> str:
+    payload = payload or {}
+    return _normalize_refresh_compute(payload.get("compute") or _default_refresh_compute())
+
+
+def _start_scheduled_refresh_loop() -> None:
+    global _scheduler_started
+    if not _scheduled_refresh_enabled():
+        return
+    with _scheduler_lock:
+        if _scheduler_started:
+            return
+        _scheduler_started = True
+    interval = _scheduled_refresh_interval_seconds()
+    initial_delay = _scheduled_refresh_initial_delay_seconds()
+    compute = _scheduled_refresh_compute()
+    print(
+        "[dashboard-refresh scheduler] enabled "
+        f"interval={interval}s initial_delay={initial_delay}s compute={compute}",
+        flush=True,
+    )
+    Thread(
+        target=_scheduled_refresh_loop,
+        args=(interval, initial_delay),
+        daemon=True,
+        name="dashboard-refresh-scheduler",
+    ).start()
+
+
+def _scheduled_refresh_enabled() -> bool:
+    disabled = os.environ.get("ADVISOR_DISABLE_SCHEDULED_REFRESH", "").strip().lower()
+    if disabled in {"1", "true", "yes", "on"}:
+        return False
+    raw = os.environ.get("ADVISOR_SCHEDULED_REFRESH", "").strip().lower()
+    if raw:
+        return raw in {"1", "true", "yes", "on"}
+    return cache_dir_from_env() is not None
+
+
+def _scheduled_refresh_interval_seconds() -> int:
+    raw = (
+        os.environ.get("ADVISOR_REFRESH_INTERVAL_SECONDS", "").strip()
+        or os.environ.get("ADVISOR_SCHEDULED_REFRESH_INTERVAL_SECONDS", "").strip()
+    )
+    if not raw:
+        return DEFAULT_SCHEDULED_REFRESH_INTERVAL_SECONDS
+    interval = int(raw)
+    if interval <= 0:
+        raise RuntimeError("ADVISOR_REFRESH_INTERVAL_SECONDS must be a positive integer.")
+    return interval
+
+
+def _scheduled_refresh_initial_delay_seconds() -> int:
+    raw = os.environ.get("ADVISOR_REFRESH_INITIAL_DELAY_SECONDS", "").strip()
+    if not raw:
+        return DEFAULT_SCHEDULED_REFRESH_INITIAL_DELAY_SECONDS
+    delay = int(raw)
+    if delay < 0:
+        raise RuntimeError("ADVISOR_REFRESH_INITIAL_DELAY_SECONDS must not be negative.")
+    return delay
+
+
+def _scheduled_refresh_compute() -> str:
+    return _normalize_refresh_compute(
+        os.environ.get("ADVISOR_SCHEDULED_REFRESH_COMPUTE", "").strip() or _default_refresh_compute()
+    )
+
+
+def _scheduled_refresh_loop(interval_seconds: int, initial_delay_seconds: int) -> None:
+    if initial_delay_seconds:
+        time.sleep(initial_delay_seconds)
+    while True:
+        _run_scheduled_refresh_once()
+        time.sleep(interval_seconds)
+
+
+def _run_scheduled_refresh_once() -> None:
+    try:
+        cache_dir = require_writable_cache_dir()
+        state = _start_refresh_thread(
+            cache_dir,
+            compute=_scheduled_refresh_compute(),
+            reason="scheduled",
+        )
+        print(
+            f"[dashboard-refresh scheduler] started run={state.get('run_id', '')} "
+            f"compute={state.get('compute', '')}",
+            flush=True,
+        )
+    except HTTPException as error:
+        if error.status_code == 409:
+            print(f"[dashboard-refresh scheduler] skipped: {error.detail}", flush=True)
+            return
+        print(f"[dashboard-refresh scheduler] failed to start: {error.detail}", flush=True)
+    except Exception as error:  # noqa: BLE001 - scheduler must keep running after transient failures
+        print(f"[dashboard-refresh scheduler] failed to start: {_format_refresh_error(error)}", flush=True)
 
 
 @app.get("/health")
@@ -815,6 +1233,9 @@ def submission_packet_artifact(session_json: str = "{}") -> str:
 @app.api(name="agent_turn", concurrency_limit=4, stream_every=0.04)
 def agent_turn(message: str, session_json: str = "{}", compute: str = "gpu") -> Iterator[str]:
     yield from _agent_turn_events(message, session_json, _normalize_compute(compute))
+
+
+_start_scheduled_refresh_loop()
 
 
 if __name__ == "__main__":

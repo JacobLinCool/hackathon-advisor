@@ -27,6 +27,7 @@ class DashboardArtifacts:
     manifest_path: Path
     dashboard: dict[str, Any]
     manifest: dict[str, Any]
+    quest_analysis_path: Path | None = None
 
 
 def cache_dir_from_env(env: dict[str, str] | None = None) -> Path | None:
@@ -88,6 +89,7 @@ def persist_refresh_artifacts(
     projects_payload: dict[str, Any],
     index_payload: dict[str, Any],
     dashboard_payload: dict[str, Any],
+    quest_analysis_payload: dict[str, Any] | None = None,
 ) -> DashboardArtifacts:
     validate_dashboard_payload(dashboard_payload)
     relative_run_dir = Path("runs") / run_id
@@ -97,21 +99,27 @@ def persist_refresh_artifacts(
     projects_path = run_dir / "projects.json"
     index_path = run_dir / "project_index.json"
     dashboard_path = run_dir / "dashboard.json"
+    quest_analysis_path = run_dir / "quest_analysis.json" if quest_analysis_payload is not None else None
     manifest_path = run_dir / "manifest.json"
     _write_json(projects_path, projects_payload)
     _write_json(index_path, index_payload)
     _write_json(dashboard_path, dashboard_payload)
+    if quest_analysis_path is not None:
+        _write_json(quest_analysis_path, quest_analysis_payload)
+    artifact_paths = {
+        "projects": _relative(cache_dir, projects_path),
+        "index": _relative(cache_dir, index_path),
+        "dashboard": _relative(cache_dir, dashboard_path),
+    }
+    if quest_analysis_path is not None:
+        artifact_paths["quest_analysis"] = _relative(cache_dir, quest_analysis_path)
     manifest = {
         "schema_version": STORAGE_SCHEMA_VERSION,
         "run_id": run_id,
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "project_count": dashboard_payload["project_count"],
         "snapshot_digest": dashboard_payload["provenance"]["snapshot_digest"],
-        "artifacts": {
-            "projects": _relative(cache_dir, projects_path),
-            "index": _relative(cache_dir, index_path),
-            "dashboard": _relative(cache_dir, dashboard_path),
-        },
+        "artifacts": artifact_paths,
     }
     _write_json(manifest_path, manifest)
 
@@ -124,6 +132,8 @@ def persist_refresh_artifacts(
         "dashboard": _relative(cache_dir, dashboard_path),
         "manifest": _relative(cache_dir, manifest_path),
     }
+    if quest_analysis_path is not None:
+        latest["quest_analysis"] = _relative(cache_dir, quest_analysis_path)
     latest_path = cache_dir / LATEST_FILENAME
     tmp_path = cache_dir / f".{LATEST_FILENAME}.{run_id}.tmp"
     _write_json(tmp_path, latest)
@@ -135,6 +145,7 @@ def persist_refresh_artifacts(
         manifest_path=manifest_path,
         dashboard=dashboard_payload,
         manifest=manifest,
+        quest_analysis_path=quest_analysis_path,
     )
 
 
