@@ -223,6 +223,7 @@ ADVISOR_CACHE_DIR=/data/advisor-cache
 ADVISOR_REFRESH_EMBEDDING_TIMEOUT_SECONDS=1800
 ADVISOR_EMBEDDING_MODEL_REPO=ggml-org/embeddinggemma-300m-qat-q8_0-GGUF
 ADVISOR_EMBEDDING_MODEL_FILE=embeddinggemma-300m-qat-Q8_0.gguf
+ADVISOR_EMBEDDING_N_CTX=768
 ADVISOR_ASR_MODEL_ID=nvidia/nemotron-speech-streaming-en-0.6b
 ```
 

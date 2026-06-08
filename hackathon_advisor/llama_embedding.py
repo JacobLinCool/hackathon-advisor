@@ -19,7 +19,7 @@ from hackathon_advisor.data import (
 
 TRUE_VALUES = {"1", "true", "yes", "on"}
 FALSE_VALUES = {"0", "false", "no", "off"}
-DEFAULT_N_CTX = 2048
+DEFAULT_N_CTX = 768
 
 
 class LlamaCppEmbedder:
