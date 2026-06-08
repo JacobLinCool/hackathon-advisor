@@ -31,8 +31,8 @@ INDEX_ALGORITHM = "llama-cpp-embedding-v1"
 DEFAULT_EMBEDDING_MODEL_REPO = "ggml-org/embeddinggemma-300m-qat-q8_0-GGUF"
 DEFAULT_EMBEDDING_MODEL_FILE = "embeddinggemma-300m-qat-Q8_0.gguf"
 DEFAULT_EMBEDDING_RUNTIME = "llama.cpp via llama-cpp-python"
-APP_FILE_EMBEDDING_CHAR_LIMIT = 8000
-README_EMBEDDING_CHAR_LIMIT = 4000
+APP_FILE_EMBEDDING_CHAR_LIMIT = 2000
+README_EMBEDDING_CHAR_LIMIT = 1200
 
 
 EmbeddingFunction = Callable[[str], Sequence[float]]
@@ -99,7 +99,8 @@ class Project:
                 f"models: {' '.join(self.models)}",
                 f"datasets: {' '.join(self.datasets)}",
                 f"main app file: {self.app_file}" if self.app_file else "",
-                f"main app file content:\n{self.app_file_embedding_text}"
+                "main app file content:\n"
+                f"{bounded_embedding_text(self.app_file_embedding_text, APP_FILE_EMBEDDING_CHAR_LIMIT)}"
                 if self.app_file_embedding_text
                 else "",
             ]

@@ -106,7 +106,7 @@ def test_searchable_text_bounds_readme_body_for_embedding() -> None:
     searchable = project.searchable_text
 
     assert "middle should not be embedded" not in searchable
-    assert len(searchable) < 4300
+    assert len(searchable) < 1600
 
 
 def test_project_index_rejects_mismatched_snapshot(tmp_path: Path) -> None:
