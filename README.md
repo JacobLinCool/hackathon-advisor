@@ -17,27 +17,136 @@ tags:
   - agent
   - originality
   - off-the-grid
+models:
+  - openbmb/MiniCPM5-1B
+  - build-small-hackathon/hackathon-advisor-minicpm5-lora
+  - build-small-hackathon/hackathon-advisor-quest-minicpm5-lora
+  - ggml-org/embeddinggemma-300m-qat-q8_0-GGUF
+  - nvidia/nemotron-speech-streaming-en-0.6b
+datasets:
+  - build-small-hackathon/hackathon-advisor-quest-dataset
+  - build-small-hackathon/hackathon-advisor-codex-traces
 ---
 
 # Hackathon Advisor
 
-**Hackathon Advisor** is a text-first project advisor for the Build Small Hackathon. The user-facing experience is
-an atlas-first dashboard plus **The Unwritten Almanac**: the first screen maps real Spaces in the
-`build-small-hackathon` organization, while the advisor workspace compares your idea against that map, finds
-under-explored territory, scores the idea, and drafts a practical build plan.
+**Hackathon Advisor** is a live map of the Build Small Hackathon and a small-model originality coach for builders. It
+opens on an atlas of public `build-small-hackathon` Spaces, then lets a builder search the field, inspect project
+clusters, see quest evidence, and open **The Unwritten Almanac** to evaluate an idea against the work already on the
+trail.
 
-The current milestone is a deployed ZeroGPU + MiniCPM5 LoRA advisor:
+The [Build Small Hackathon](https://huggingface.co/build-small-hackathon) asks participants to build under a 32B
+parameter cap, solve a concrete problem for someone nearby or make a delightful AI-native experience, and submit a Space,
+demo video, and social post. Hackathon Advisor treats that setting as the data surface: every public Space becomes part
+of a continuously refreshed project atlas, and every advisor response is grounded in that shared map.
 
-- Local snapshot of public `build-small-hackathon` Spaces.
-- Modal-built EmbeddingGemma GGUF retrieval index, with runtime query embeddings computed through llama.cpp.
-- Full-screen t-SNE project atlas with clusters, nearest-neighbor links, quest coverage, and live refresh state.
-- Nemotron Speech Streaming voice input through NVIDIA NeMo ASR on ZeroGPU.
-- Jargon correction for hackathon/model terms.
-- MiniCPM5 tool-call planning with a published PEFT LoRA adapter.
-- One-turn advisor loop with overlap citations, whitespace suggestions, scoring, and plans.
-- Custom `gradio.Server` frontend focused on the builder's idea workflow, with submission evidence kept in API exports.
+## Demo
 
-See [DESIGN.md](DESIGN.md) for the full product and model plan.
+- Live app: <https://build-small-hackathon-hackathon-advisor.hf.space>
+- Hugging Face Space: <https://huggingface.co/spaces/build-small-hackathon/hackathon-advisor>
+- Source code (GitHub): <https://github.com/JacobLinCool/hackathon-advisor>
+- Demo video: _TODO — add the hosted demo video URL before submission._
+- Social post: _TODO — add the public X/LinkedIn post URL before submission._
+- Start at the Idea Map, search for a theme, click nearby projects, hover quest badges for evidence, and open the
+  advisor when you are ready to test an idea.
+
+## What This Establishes
+
+Builders enter a fast-moving hackathon with limited context. A promising idea can already be crowded, a quiet niche can
+be hard to see, and prize alignment can be scattered across READMEs, tags, and app files. Hackathon Advisor turns the
+field itself into the starting point. The app shows where projects cluster, which submissions sit near each other, which
+quests they appear to satisfy, and where a new idea may still have room to breathe.
+
+The atlas is the default experience because the map is the evidence. The advisor is available behind `Open advisor`,
+where it uses the same project snapshot to cite overlap, propose whitespace, score the idea, draft a build plan, and
+export the session evidence.
+
+## What You Can Do
+
+- Explore a full-screen t-SNE atlas of public hackathon Spaces, with KMeans clusters and nearest-neighbor links.
+- Search projects with BM25 over titles, slugs, summaries, tags, declared models, cluster labels, quest evidence, README
+  text, and declared app-file source.
+- Filter by cluster or quest, then inspect the selected project's summary, Space link, tags, quest matches, and evidence
+  hints.
+- Refresh the atlas from the Space backend; validated artifacts are written to the mounted cache directory and swapped
+  into the live app atomically.
+- Open the advisor workspace for idea comparison, gap exploration, score seals, profile-aware plans, voice input, and
+  shareable exports.
+- Export from the workspace UI: build notes, the Almanac chapter, and the page PNG. Further reviewer artifacts — trace
+  JSONL, demo bundle, submission packet, LoRA dataset, and LoRA training kit — are served through the API endpoints
+  listed below.
+
+## How It Works
+
+The refresh path snapshots public Spaces in the `build-small-hackathon` organization, reads each README and declared
+main app file, rebuilds the EmbeddingGemma project index, analyzes quest evidence with MiniCPM, and generates the
+dashboard payload. The active dashboard contains project points, nearest links, clusters, quest coverage, provenance,
+and refresh state.
+
+`ADVISOR_CACHE_DIR` is the artifact store. On Hugging Face Spaces it points to the mounted Storage Bucket; locally it can
+be a normal directory such as `.cache/advisor-dashboard`. Each refresh writes
+`runs/{run_id}/projects.json`, `project_index.json`, `dashboard.json`, `quest_analysis.json`, and `manifest.json`, then
+updates `latest.json` through an atomic swap. Quest analysis is cached per project using the rendered README+app-file
+prompt hash, taxonomy hash, MiniCPM model id, adapter id/revision, local adapter digest, and generation config.
+
+The app starts an hourly scheduler when `ADVISOR_CACHE_DIR` is configured. Manual and scheduled refreshes both acquire
+`$ADVISOR_CACHE_DIR/refresh.lock`, heartbeat while active, and leave the current validated dashboard in place if a new
+run fails validation.
+
+## Models And Data
+
+| Role | Model | Runtime | Evidence |
+| --- | --- | --- | --- |
+| Advisor | [`openbmb/MiniCPM5-1B`](https://huggingface.co/openbmb/MiniCPM5-1B) + [`build-small-hackathon/hackathon-advisor-minicpm5-lora`](https://huggingface.co/build-small-hackathon/hackathon-advisor-minicpm5-lora) | ZeroGPU, Transformers, PEFT | A 1.08B OpenBMB model plans which tool to call each turn; advisor prose is rendered from deterministic templates grounded in the retrieved tool results. |
+| Quest analysis | [`openbmb/MiniCPM5-1B`](https://huggingface.co/openbmb/MiniCPM5-1B) + [`build-small-hackathon/hackathon-advisor-quest-minicpm5-lora`](https://huggingface.co/build-small-hackathon/hackathon-advisor-quest-minicpm5-lora) | ZeroGPU, Transformers, PEFT | A task-specific MiniCPM LoRA classifies README and app-file evidence into strict quest JSON. |
+| Project retrieval | [`ggml-org/embeddinggemma-300m-qat-q8_0-GGUF`](https://huggingface.co/ggml-org/embeddinggemma-300m-qat-q8_0-GGUF) | Local llama.cpp index build plus llama.cpp query embeddings | The atlas and retrieval index use a GGUF embedding model through llama.cpp. |
+| Voice input | [`nvidia/nemotron-speech-streaming-en-0.6b`](https://huggingface.co/nvidia/nemotron-speech-streaming-en-0.6b) | ZeroGPU; NVIDIA NeMo ASR | Voice notes are transcribed with NVIDIA NeMo using the same Nemotron model in local and deployed runs. |
+
+MiniCPM is loaded following the official demo shape (`trust_remote_code=True`, `bfloat16`, and
+`apply_chat_template(..., enable_thinking=False)`) for stable tool calls and strict quest JSON.
+
+| Data / released material | Link | How it is used |
+| --- | --- | --- |
+| Hackathon project corpus | [`build-small-hackathon`](https://huggingface.co/build-small-hackathon) | Public Spaces are crawled as the live field for the atlas, search, advisor citations, and quest coverage. |
+| Project snapshot | [`data/projects.json`](https://huggingface.co/spaces/build-small-hackathon/hackathon-advisor/blob/main/data/projects.json) | Stores Space metadata, README text, declared models/datasets, tags, and declared app-file evidence. |
+| Project embedding index | [`data/project_index.json`](https://huggingface.co/spaces/build-small-hackathon/hackathon-advisor/blob/main/data/project_index.json) | Stores normalized EmbeddingGemma vectors and retrieval metadata for map construction and advisor search. |
+| Quest SFT dataset | [`build-small-hackathon/hackathon-advisor-quest-dataset`](https://huggingface.co/datasets/build-small-hackathon/hackathon-advisor-quest-dataset) | Trains the MiniCPM quest classifier from README/app-file prompts with source-attributed quest labels. |
+| Codex session traces | [`build-small-hackathon/hackathon-advisor-codex-traces`](https://huggingface.co/datasets/build-small-hackathon/hackathon-advisor-codex-traces) | Publishes real Codex session logs for this project after selection, minimization, and OpenAI Privacy Filter redaction. |
+| Advisor LoRA examples | `lora_dataset` and [`/api/lora-training-kit.zip`](https://build-small-hackathon-hackathon-advisor.hf.space/api/lora-training-kit.zip) | Regenerates chat JSONL examples, recipe metadata, and the adapter card from exact advisor sessions. |
+
+## How Codex Was Used
+
+[Codex](https://developers.openai.com/codex) served as the engineering partner for the project. It helped translate the
+hackathon requirements into implementation slices, inspect the existing codebase, build the atlas refresh/storage/cache
+path, add the dashboard search and quest-evidence UI, run local tests and browser checks, review deployed Space behavior,
+prepare commits and deployment updates, and revise the README into a submission narrative. The live app runtime uses the
+models and data listed above; Codex appears in the development record as the assistant that helped design, implement,
+validate, and document the system.
+
+The redacted session-level Codex traces are published as a Hugging Face dataset at
+[`build-small-hackathon/hackathon-advisor-codex-traces`](https://huggingface.co/datasets/build-small-hackathon/hackathon-advisor-codex-traces).
+
+The full development history is public at <https://github.com/JacobLinCool/hackathon-advisor>.
+
+## Prize Evidence
+
+This submission targets the **Thousand Token Wood** main track, plus the OpenBMB, OpenAI/Codex, NVIDIA, and Modal
+sponsor awards and the six bonus-quest badges.
+
+| Prize path | Implemented evidence |
+| --- | --- |
+| Thousand Token Wood | The Almanac and Idea Map make the AI output visible as a playful, evidence-grounded exploration surface; the embedding index and the MiniCPM tool loop are load-bearing for the whitespace and originality experience. |
+| Off the Grid | Every model runs from open weights on the Space's own GPU/CPU (or a local box); no third-party inference API is called at runtime, and retrieval vectors are local and embedded through llama.cpp. |
+| Well-Tuned | Two MiniCPM5-1B PEFT LoRA adapters (advisor + quest classifier) are published publicly on the Hub; the local quest adapter is byte-identical to its published repo, and the training kit reproduces them. |
+| Off-Brand | The custom `gradio.Server` frontend ships a bespoke atlas and Almanac experience, with no default Gradio UI in the runtime path. |
+| Llama Champion | EmbeddingGemma GGUF vectors and every runtime query embedding run through llama.cpp; the index validator rejects any non-llama.cpp runtime. |
+| Sharing is Caring | Real Codex session logs for this project are published on the Hub at [`build-small-hackathon/hackathon-advisor-codex-traces`](https://huggingface.co/datasets/build-small-hackathon/hackathon-advisor-codex-traces); the publisher selects project-relevant sessions, minimizes internal metadata, applies [`openai/privacy-filter`](https://huggingface.co/openai/privacy-filter), and records source hashes for audit. |
+| Field Notes | A build report on the quest-classifier fine-tune is published at [`docs/quest-classification-lora.md`](docs/quest-classification-lora.md), and the app exports session Field Notes as markdown. |
+| Tiny Titan | The largest single model is MiniCPM5-1B at ~1.08B — well under the 4B Tiny Titan ceiling; the full runtime stack totals ≈1.98B, far under the 32B cap. |
+| OpenBMB | MiniCPM5-1B is the central language model for both tool planning and quest classification. |
+| NVIDIA Nemotron | Voice input runs `nvidia/nemotron-speech-streaming-en-0.6b` through NVIDIA NeMo. |
+| Modal | Modal trains the quest-classifier LoRA (`scripts/modal_train_quest_lora.py`), and a Modal remote index-build path is provided; the index shipped in this repo was built locally. |
+| Best Agent | Each turn MiniCPM5 selects one tool; the engine then orchestrates the search → whitespace → score → plan chain over the live project field. |
 
 ## Run Locally
 
@@ -63,159 +172,66 @@ deployment. It writes refreshed runs under `.cache/advisor-dashboard/runs/` and 
 
 ```bash
 python scripts/crawl_hf_spaces.py --org build-small-hackathon --out data/projects.json
-.venv/bin/modal run scripts/modal_build_project_index.py --projects data/projects.json --out data/project_index.json
-python scripts/generate_sample_trace.py --projects data/projects.json --index data/project_index.json --out data/sample_trace.jsonl
+python scripts/build_project_index.py --location modal --projects data/projects.json --out data/project_index.json
 ```
 
-The app uses `data/projects.json` and `data/project_index.json` at runtime. The index validates the snapshot timestamp,
-source, project order, searchable text digest, embedding dimensions, and normalized vector shape before the app starts.
-The crawler snapshots every public Space in the org and, when README frontmatter declares `app_file`, includes that main
-app file as the highest-signal project evidence for embedding. The canonical index is built on Modal with
-`ggml-org/embeddinggemma-300m-qat-q8_0-GGUF` through llama.cpp; runtime search embeds the user query with the same GGUF
-model and performs local cosine search over the checked-in vectors.
+The checked-in development snapshot lives in `data/projects.json` and `data/project_index.json`. A configured
+`ADVISOR_CACHE_DIR` supplies the latest validated dashboard artifacts.
 
-## Live Project Atlas
+## Publish Codex Trace Dataset
 
-`/api/dashboard` exposes the first-screen atlas payload: t-SNE coordinates, KMeans clusters, nearest-neighbor links,
-quest coverage, provenance, and refresh status. The browser renders this as the default full-screen view; `#advisor`
-opens the existing idea workflow.
+Local privacy-filter run:
 
-`POST /api/dashboard/refresh` starts one background refresh job. The job snapshots public Spaces, rebuilds the GGUF
-embedding index, runs strict JSON MiniCPM quest analysis, creates the atlas, persists the validated artifacts, and only
-then swaps the live app to the new dashboard. `GET /api/dashboard/refresh` polls status.
+```bash
+uv run --with 'transformers>=5.6,<6' --with 'torch>=2.8,<3' \
+  python scripts/publish_codex_trace_dataset.py \
+  --project-root . \
+  --repo-id build-small-hackathon/hackathon-advisor-codex-traces \
+  --verbose
+```
 
-Live refresh requires a writable dashboard cache directory at `ADVISOR_CACHE_DIR`. On Hugging Face Spaces this should be
-a mounted Storage Bucket; locally it can be a normal directory such as `.cache/advisor-dashboard`. The job writes
-`runs/{run_id}/projects.json`, `project_index.json`, `dashboard.json`, `quest_analysis.json`, and `manifest.json`, then
-atomically updates `latest.json`. Quest analysis also keeps validated per-project records under
-`quest-cache/v1/{prefix}/{cache_key}.json`, keyed by the rendered README+app-file prompt hash, taxonomy hash, MiniCPM
-model id, adapter id/revision, local adapter digest, and generation config. Refresh logs every cache hit, miss, and newly
-analyzed project. If the cache directory is missing, not writable, or quest analysis fails validation, refresh fails and
-the current validated dashboard stays active.
+Faster Modal GPU run:
 
-When `ADVISOR_CACHE_DIR` is set, the app starts a scheduler thread that checks once per hour and starts a normal
-dashboard refresh if no refresh is already running. `ADVISOR_SCHEDULED_REFRESH=0` or
-`ADVISOR_DISABLE_SCHEDULED_REFRESH=1` disables it; `ADVISOR_REFRESH_INTERVAL_SECONDS`,
-`ADVISOR_REFRESH_INITIAL_DELAY_SECONDS`, and `ADVISOR_SCHEDULED_REFRESH_COMPUTE` tune the cadence and compute mode.
-Manual and scheduled refreshes both acquire `$ADVISOR_CACHE_DIR/refresh.lock` atomically before work starts, so multiple
-app processes do not analyze the same snapshot concurrently. Stale locks expire after `ADVISOR_REFRESH_LOCK_TTL_SECONDS`
-(default two hours), and active jobs heartbeat the lock while they progress.
+```bash
+python scripts/publish_codex_trace_dataset.py --location modal \
+  --project-root . \
+  --repo-id build-small-hackathon/hackathon-advisor-codex-traces
+```
 
-Set `ADVISOR_QUEST_ANALYZER_BACKEND=minicpm-transformers` for both local and deployed refresh runs. The local dashboard
-uses the same MiniCPM analyzer as the deployed Space; test doubles are only used inside pytest.
+The publisher scans `~/.codex/sessions` and `~/.codex/archived_sessions`, selects sessions that mention this project,
+keeps project-facing Codex events, removes system/developer prompts and compaction internals, normalizes local paths,
+caps long tool-output text with truncation counts in the manifest, applies OpenAI Privacy Filter to the published log
+text, writes `codex_sessions.jsonl` and `dataset_manifest.json`, then uploads the filtered data to the configured
+Hugging Face dataset. The Modal wrapper uploads the selected raw JSONL files to a private Modal Volume, runs the same
+publisher core on a GPU, returns the filtered dataset to local disk, and performs the Hugging Face upload from local
+credentials.
 
-## Trace Artifact
+## API And Artifacts
 
-The app exposes a `trace_artifact` Gradio API endpoint for submission evidence and debugging. It emits a manifest row
-followed by one row per agent turn. `data/sample_trace.jsonl` is a checked-in, Hub-published sample trace. This endpoint
-is intentionally kept out of the main user workflow.
+| Surface | Purpose |
+| --- | --- |
+| `GET /api/dashboard` | Atlas points, links, clusters, quest report, provenance, and refresh status. |
+| `GET /api/dashboard/search?q=...` | BM25 search over project, cluster, quest, README, and app-file text. |
+| `POST /api/dashboard/refresh` | Starts one background refresh job. |
+| `GET /api/dashboard/refresh` | Reports refresh stage, result, and status. |
+| `POST /api/transcribe` | Transcribes uploaded voice notes with NVIDIA NeMo and Nemotron ASR. |
+| `GET /api/prize-ledger` | Model stack, parameter budget, runtime status, and prize evidence. |
+| `GET /api/demo-bundle.zip` | Demo session JSON, prize ledger, trace, notes, chapter, LoRA files, submission packet, and PNG. |
+| `GET /api/lora-training-kit.zip` | SFT data, recipe, adapter card, and training command. |
 
-## Field Notes Artifact
+The Gradio API also exposes `trace_artifact`, `field_notes`, `chapter`, `lora_dataset`, and `submission_packet` for
+submission evidence and reviewer inspection.
 
-The `field_notes` Gradio API endpoint and `Notes` button export a Markdown build note from the exact session state:
-builder profile, selected goals, idea board, cited Spaces, latest build plan, advisor actions, and the share caption. This
-keeps the note tied to auditable app evidence instead of a separate hand-written summary.
+## Advisor Workspace
 
-## Chapter Artifact
+The advisor workspace preserves the working loop from the original app. `Ink` compares the current idea against the
+project index, `Gap` rotates through unused whitespace candidates, `Plan` drafts a practical build path, and `Compare`
+rescans the saved idea board to select the strongest page. The `Profile` panel adds skills, time, preferences, and
+constraints to the plan so the output can reflect "one evening", "frontend prototyping", or "CPU-only Space" as real
+scoping facts.
 
-The `chapter` Gradio API endpoint and `Chapter` button export the public-facing idea board as an Almanac chapter:
-one idea page per saved direction, each with verdict, score, selected goals, and closest cited pages. It is the
-shareable companion to the working notes artifact.
-
-## Idea Board Compare
-
-The `Compare` command rescans the saved idea board, recalculates each seal against the selected goals, selects the
-strongest page as the active idea, and drafts the next build step. The app then moves that page to the top of the Idea
-Board and refreshes the seal, wood map, plan, and PNG artifact around the chosen direction.
-Users can also click any Idea Board page to make it current before pressing `Plan`.
-If the board is empty, `Plan` and `Compare` do not create placeholder pages; they prompt the user to write an idea or
-press `Gap` first.
-
-## Voice Input
-
-The `Speak` and `Voice note` controls send audio to `/api/transcribe`. The backend normalizes the uploaded audio with
-ffmpeg, then transcribes it with `nvidia/nemotron-speech-streaming-en-0.6b` through NVIDIA NeMo inside the same ZeroGPU
-runtime used by the advisor. The transcript is placed back in the idea box so the user can edit it before pressing
-`Ink`.
-
-## Gap Exploration
-
-The `Gap` command walks through unused whitespace candidates instead of repeating the same first suggestion. Each chosen
-gap becomes a new Idea Board page, so users can compare several genuinely different directions before ranking or
-planning.
-
-## Profile-Aware Plans
-
-The `Profile` panel is part of the planning loop. Skills, time, preferences, and constraints are stored in the session
-and inserted into `Plan` and `Compare` build paths, so the app can turn "one evening", "frontend prototyping", or
-"CPU-only Space" into concrete scoping steps instead of generic advice.
-
-## LoRA Dataset Artifact
-
-The `lora_dataset` Gradio API endpoint exports a compact chat JSONL dataset from successful session turns. Each included
-turn yields a tool-call example and an advisor-response example for `openbmb/MiniCPM5-1B`, with the selected goals,
-parsed XML tool call, tool observations, and score context preserved. This is the dataset format used to train the
-published MiniCPM5 LoRA adapter.
-
-## LoRA Training Kit
-
-`/api/lora-training-kit.zip` exports the training kit for the deterministic demo session: SFT JSONL, training recipe,
-adapter model card, and the exact training command. The included `scripts/train_minicpm_lora.py` entrypoint supports a
-dependency-light `--dry-run` validation path and a real `transformers + PEFT` training path that can publish the adapter
-to `build-small-hackathon/hackathon-advisor-minicpm5-lora` with `--push-to-hub`.
-
-## Submission Packet
-
-The `submission_packet` Gradio API endpoint exports a Markdown submission bundle for the current session: live links,
-snapshot provenance, a timed demo script, artifact checklist, Prize Ledger evidence, model budget, session trace
-summary, social post draft, and open badge gaps. This keeps the final submission story tied to the same auditable state
-as the app instead of a separate hand-curated checklist.
-
-## Demo Rehearsal
-
-`/api/demo-session` and the `Example` button load a deterministic two-turn sample: a complete project idea, profile,
-selected goals, score seal, build plan, trace, and wood map. It is built by running the same advisor engine as a normal
-user session, so the visible app stays focused on the builder's idea while API exports remain available for submission
-evidence.
-
-## Demo Evidence Bundle
-
-`/api/demo-bundle.zip` downloads a server-built ZIP for the deterministic demo session. The bundle includes a manifest,
-demo session JSON, Prize Ledger JSON, trace JSONL, Field Notes, Almanac chapter, LoRA SFT JSONL, LoRA training kit,
-Submission Packet, and the rendered fate-page PNG. This gives judges or collaborators one auditable package without
-depending on browser `localStorage`.
-
-## Prize Ledger
-
-`/api/prize-ledger` exposes submission evidence: the documented model stack, total parameter budget, Tiny Titan
-eligibility, runtime backend, retrieval-index metadata, and badge readiness. It is kept as an API artifact rather than a
-primary in-app panel so the user-facing app stays centered on idea evaluation. The main `/api/bootstrap` payload does
-not include the ledger.
-
-## Wood Map
-
-Every scored fate page now carries a deterministic `wood_map` artifact: background dots for inked Spaces, red dots for
-the closest cited echoes, and a green/red "you" dot for the current idea. The live UI and PNG export render the same
-map, so the share artifact visually proves whether the page sits in an empty margin or near existing work.
-The `PNG` button posts the current artifact to `/api/artifact.png`, which uses the same Pillow renderer as
-`/api/demo-bundle.zip`, so browser downloads and bundled evidence cannot drift into different layouts.
-
-## Latency Watchdog
-
-The custom frontend shows optimistic ink immediately after submit. If the first streamed token is slow, a lightweight
-watchdog updates the page text so the demo never sits in a silent blank state during Space startup or model routing.
-
-## Session Persistence
-
-The frontend stores the current advisor session in browser `localStorage`: profile notes, selected goals, idea board,
-trace, latest build plan, and last share artifact. Refreshing the Space restores the same cockpit state; the `Reset`
-button clears the saved session and returns to the current snapshot defaults.
-
-## Tool-Call Contract
-
-`/api/tool-contracts` exposes the JSON schemas intended for MiniCPM-style tool calling. `tool_contract_check` accepts a
-MiniCPM XML call such as `<function name="search_projects">{"query":"lullaby audio"}</function>`, validates it against
-the schemas, and returns either the valid call or a safe default call for the UI watchdog path.
+Each scored page includes a deterministic `wood_map`: background dots for indexed Spaces, red dots for closest cited
+echoes, and a green/red point for the current idea. The live UI and PNG export use the same Pillow renderer.
 
 ## Runtime Backend
 
@@ -229,7 +245,7 @@ ADVISOR_MODEL_ID=openbmb/MiniCPM5-1B
 ADVISOR_ADAPTER_ID=build-small-hackathon/hackathon-advisor-minicpm5-lora
 ADVISOR_ADAPTER_REVISION=25de69bcde397e1bcdd852923b56a42f10222650
 ADVISOR_QUEST_ANALYZER_BACKEND=minicpm-transformers
-ADVISOR_QUEST_ADAPTER_ID=artifacts/quest-lora
+ADVISOR_QUEST_ADAPTER_ID=build-small-hackathon/hackathon-advisor-quest-minicpm5-lora
 ADVISOR_QUEST_ANALYSIS_BATCH_SIZE=8
 ADVISOR_CACHE_DIR=/data/advisor-cache
 ADVISOR_REFRESH_COMPUTE=cpu
@@ -244,20 +260,11 @@ ADVISOR_EMBEDDING_N_CTX=2048
 ADVISOR_ASR_MODEL_ID=nvidia/nemotron-speech-streaming-en-0.6b
 ```
 
-`agent_turn` wraps the engine call with `spaces.GPU` when `ADVISOR_ZERO_GPU=1`, so model loading and generation run on
-the ZeroGPU allocation. MiniCPM loading follows the official demo shape: tokenizer uses
-`AutoTokenizer.from_pretrained(..., trust_remote_code=True)`, CUDA/ZeroGPU model loading uses
-`AutoModelForCausalLM.from_pretrained(..., torch_dtype=torch.bfloat16, trust_remote_code=True).to("cuda")`, and prompts
-are rendered with `apply_chat_template(..., tokenize=False, add_generation_prompt=True, enable_thinking=False)` before
-tokenization. Generation follows the demo policy: temperature `> 0` uses `temperature=0.9`, `top_p=0.95`, and
-`do_sample=True`; temperature `0` uses `do_sample=False`. The advisor tool planner uses temperature `0` for stable XML
-tool calls, and dashboard quest analysis also uses temperature `0` so the MiniCPM LoRA emits strict JSON deterministically.
-
 The retrieval query embedder downloads the GGUF model through `huggingface_hub` unless
 `ADVISOR_EMBEDDING_MODEL_PATH` points to a local file. `/api/transcribe` uses the same ZeroGPU wrapper for Nemotron ASR.
 On macOS local runs, the app automatically runs llama.cpp query embedding in a worker process so the MiniCPM PyTorch
-runtime and llama.cpp do not load conflicting OpenMP runtimes in the same Python process. Dashboard refresh also builds
-the GGUF embedding index in a subprocess before returning to the app process for MiniCPM quest analysis. When
+runtime and llama.cpp stay isolated from each other's OpenMP runtime. Dashboard refresh also builds the GGUF embedding
+index in a subprocess before returning to the app process for MiniCPM quest analysis. When
 `ADVISOR_CACHE_DIR` is set and `HF_HOME` is not, the refresh subprocess stores Hugging Face downloads under
 `$ADVISOR_CACHE_DIR/huggingface` so the mounted bucket keeps the embedding model cache across refreshes and restarts.
 
