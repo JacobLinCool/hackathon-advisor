@@ -179,3 +179,19 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# macOS
+.DS_Store
+._*
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+
+# Editors
+.vscode/
+*.swp
+*~
+
+# Published LoRA adapter — lives on the Hugging Face Hub, not in git
+artifacts/quest-lora/
