@@ -669,7 +669,12 @@ function renderAtlasDetail(point) {
   const quests = (point.quest_matches || [])
     .map((match) => {
       const confidence = (Number(match.confidence) * 100).toFixed(0);
-      return `<span>${escapeHtml(atlasQuestLabel(match.quest))} ${confidence}%</span>`;
+      const label = atlasQuestLabel(match.quest);
+      const hint = questBadgeHint(match, label, confidence);
+      return (
+        `<span title="${escapeAttribute(hint)}" aria-label="${escapeAttribute(hint)}">` +
+        `${escapeHtml(label)} ${confidence}%</span>`
+      );
     })
     .join("");
   const tags = [...(point.models || []).slice(0, 3), ...visibleProjectTags(point.tags || []).slice(0, 3)]
@@ -683,6 +688,21 @@ function renderAtlasDetail(point) {
     <div class="atlas-tags">${quests || `<span>Quest analysis pending</span>`}</div>
     <div class="atlas-tags">${tags}</div>
   `;
+}
+
+function questBadgeHint(match, label, confidence) {
+  const evidence = String(match?.evidence || "").trim();
+  const source = questEvidenceSourceLabel(match?.source);
+  const parts = [`${label} ${confidence}% confidence`];
+  if (evidence) parts.push(`${source}: ${evidence}`);
+  return parts.join(". ");
+}
+
+function questEvidenceSourceLabel(source) {
+  const normalized = String(source || "").trim().toLowerCase();
+  if (normalized === "readme") return "README evidence";
+  if (normalized === "app_file") return "App file evidence";
+  return "Evidence";
 }
 
 function visibleProjectTags(tags) {

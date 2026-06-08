@@ -29,6 +29,10 @@ def test_main_interface_copy_is_builder_facing() -> None:
     assert "stopVoiceRecording" in app_js
     assert 'recording: "Stop"' in app_js
     assert 'stopping: "Stopping..."' in app_js
+    assert "questBadgeHint" in app_js
+    assert 'title="${escapeAttribute(hint)}"' in app_js
+    assert "README evidence" in app_js
+    assert "App file evidence" in app_js
     assert "readNdjson" in app_js
     assert "@gradio/client" not in app_js
     assert "renderArtifactCanvas" not in app_js
