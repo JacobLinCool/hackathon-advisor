@@ -12,6 +12,7 @@ from app import (
     chapter_api,
     chapter_artifact,
     dashboard,
+    dashboard_search,
     dashboard_refresh_start,
     dashboard_refresh_status,
     demo_bundle,
@@ -141,6 +142,29 @@ def test_dashboard_endpoint_exposes_atlas_payload() -> None:
         for point in payload["points"]
         for tag in point.get("tags", [])
     )
+
+
+def test_dashboard_search_endpoint_returns_bm25_matches() -> None:
+    payload = dashboard_search(q="surgical anatomy", limit=5)
+
+    assert payload["algorithm"] == "bm25-text-v1"
+    assert payload["query"] == "surgical anatomy"
+    assert payload["results"]
+    assert (
+        payload["results"][0]["project_id"]
+        == "build-small-hackathon/surgical-tissue-segmentation"
+    )
+    assert payload["results"][0]["point"]["id"] == payload["results"][0]["project_id"]
+    assert payload["results"][0]["snippets"]
+
+
+def test_dashboard_search_endpoint_rejects_empty_query() -> None:
+    try:
+        dashboard_search(q="   ")
+    except Exception as error:
+        assert getattr(error, "status_code", None) == 400
+    else:
+        raise AssertionError("dashboard search should reject an empty query")
 
 
 def test_refresh_error_format_includes_exception_chain() -> None:

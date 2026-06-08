@@ -9,8 +9,11 @@ def test_main_interface_copy_is_builder_facing() -> None:
     assert "Live project atlas" in html
     assert "Refresh map" in html
     assert "Open advisor" in html
+    assert 'id="atlas-search"' in html
+    assert "Search projects, ideas, quests..." in html
     assert 'id="advisor-view"' in html
     assert "/api/dashboard" in app_js
+    assert "/api/dashboard/search" in app_js
     assert "/api/dashboard/refresh" in app_js
     assert "renderAtlasSvg" in app_js
     assert "Directions to test" in html
@@ -37,6 +40,13 @@ def test_main_interface_copy_is_builder_facing() -> None:
     assert "Voice note" in html
     assert "ideaCardAriaLabel" in app_js
     assert "Select idea:" in app_js
+    assert "Hybrid" not in combined
+    assert "Keyword" not in combined
+    assert "Semantic" not in combined
+    assert "Refresh failed:" not in app_js
+    assert "Refresh could not start: ${error.message}" not in app_js
+    assert "Refresh status unavailable: ${error.message}" not in app_js
+    assert "atlasRefreshProgressEl.textContent = error.message" not in app_js
 
     stale_jargon = [
         "No wax path pressed.",

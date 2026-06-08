@@ -5,6 +5,12 @@ const openAdvisorButton = document.querySelector("#open-advisor");
 const openAtlasButton = document.querySelector("#open-atlas");
 const refreshDashboardButton = document.querySelector("#refresh-dashboard");
 const atlasStatusEl = document.querySelector("#atlas-status");
+const atlasSearchForm = document.querySelector("#atlas-search-form");
+const atlasSearchInput = document.querySelector("#atlas-search");
+const atlasSearchClearButton = document.querySelector("#atlas-search-clear");
+const atlasSearchSectionEl = document.querySelector("#atlas-search-section");
+const atlasSearchSummaryEl = document.querySelector("#atlas-search-summary");
+const atlasSearchResultsEl = document.querySelector("#atlas-search-results");
 const atlasStatsEl = document.querySelector("#atlas-stats");
 const atlasClustersEl = document.querySelector("#atlas-clusters");
 const atlasQuestsEl = document.querySelector("#atlas-quests");
@@ -79,6 +85,13 @@ let selectedClusterId = "";
 let selectedQuestId = "";
 let selectedProjectId = "";
 let dashboardRefreshTimer = null;
+let atlasSearchQuery = "";
+let atlasSearchResults = [];
+let atlasSearchResultIds = new Set();
+let atlasSearchTimer = null;
+let atlasSearchController = null;
+let atlasSearchUnavailable = false;
+let atlasSearchBusy = false;
 
 setVoiceRecordingState("idle");
 setupViewRouting();
@@ -138,6 +151,19 @@ openAtlasButton?.addEventListener("click", () => {
 
 refreshDashboardButton?.addEventListener("click", async () => {
   await startDashboardRefresh();
+});
+
+atlasSearchForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  runAtlasSearch(atlasSearchInput?.value || "");
+});
+
+atlasSearchInput?.addEventListener("input", () => {
+  scheduleAtlasSearch(atlasSearchInput.value || "");
+});
+
+atlasSearchClearButton?.addEventListener("click", () => {
+  clearAtlasSearch();
 });
 
 recordVoiceButton.addEventListener("click", async () => {
@@ -226,8 +252,9 @@ async function loadDashboard() {
 }
 
 function handleDashboardError(error) {
+  console.error("Atlas could not load.", error);
   dashboardData = null;
-  if (atlasStatusEl) atlasStatusEl.textContent = `Atlas could not load: ${error.message}`;
+  if (atlasStatusEl) atlasStatusEl.textContent = "Atlas could not load.";
   if (atlasSvgEl) atlasSvgEl.innerHTML = "";
   if (atlasStatsEl) atlasStatsEl.innerHTML = "";
   if (atlasDetailEl) atlasDetailEl.innerHTML = `<p>Reload the page to try again.</p>`;
@@ -244,11 +271,9 @@ async function startDashboardRefresh() {
     renderRefreshState(data);
     scheduleRefreshPoll();
   } catch (error) {
-    if (atlasStatusEl) atlasStatusEl.textContent = `Refresh could not start: ${error.message}`;
-    if (atlasRefreshProgressEl) {
-      atlasRefreshProgressEl.hidden = false;
-      atlasRefreshProgressEl.textContent = error.message;
-    }
+    console.error("Dashboard refresh could not start.", error);
+    if (atlasStatusEl) atlasStatusEl.textContent = "Refresh could not start.";
+    if (atlasRefreshProgressEl) atlasRefreshProgressEl.hidden = true;
     refreshDashboardButton.disabled = false;
   }
 }
@@ -272,7 +297,8 @@ async function pollDashboardRefresh() {
       await loadDashboard();
     }
   } catch (error) {
-    if (atlasStatusEl) atlasStatusEl.textContent = `Refresh status unavailable: ${error.message}`;
+    console.error("Dashboard refresh status unavailable.", error);
+    if (atlasStatusEl) atlasStatusEl.textContent = "Refresh status unavailable.";
   } finally {
     if (_refreshIsSettled()) refreshDashboardButton.disabled = false;
   }
@@ -293,19 +319,20 @@ function renderRefreshState(state) {
     } else if (status === "succeeded") {
       atlasStatusEl.textContent = `Atlas refreshed: ${state.result?.project_count || "current"} projects mapped.`;
     } else if (status === "failed") {
-      atlasStatusEl.textContent = `Refresh failed: ${state.error || "unknown error"}`;
+      if (state.error) console.error("Dashboard refresh failed.", state.error);
+      atlasStatusEl.textContent = "Refresh did not complete; current map is unchanged.";
     } else if (dashboardData) {
-      atlasStatusEl.textContent = atlasProvenanceCopy(dashboardData);
+      atlasStatusEl.textContent = atlasSearchQuery ? atlasSearchStatusCopy() : atlasProvenanceCopy(dashboardData);
     }
   }
   if (atlasRefreshProgressEl) {
-    const show = status === "running" || status === "failed";
+    const show = status === "running";
     const cacheCopy = refreshQuestCacheCopy(state?.quest_cache || {});
     atlasRefreshProgressEl.hidden = !show;
     atlasRefreshProgressEl.textContent =
       status === "running"
         ? `${stage || "Working"}${cacheCopy ? ` · ${cacheCopy}` : ""} · run ${state.run_id || ""}`
-        : state.error || "";
+        : "";
   }
   if (refreshDashboardButton) refreshDashboardButton.disabled = status === "running";
 }
@@ -322,6 +349,117 @@ function refreshQuestCacheCopy(cache) {
   return `${hits} cached, ${analyzed} analyzed`;
 }
 
+function scheduleAtlasSearch(rawQuery) {
+  const query = String(rawQuery || "").trim();
+  if (atlasSearchTimer) window.clearTimeout(atlasSearchTimer);
+  if (!query) {
+    clearAtlasSearch();
+    return;
+  }
+  atlasSearchTimer = window.setTimeout(() => runAtlasSearch(query), 260);
+}
+
+async function runAtlasSearch(rawQuery) {
+  const query = String(rawQuery || "").trim();
+  if (!query) {
+    clearAtlasSearch();
+    return;
+  }
+  atlasSearchQuery = query;
+  atlasSearchUnavailable = false;
+  atlasSearchBusy = true;
+  renderAtlasSearch();
+  if (atlasSearchController) atlasSearchController.abort();
+  atlasSearchController = new AbortController();
+  try {
+    const response = await fetch(`/api/dashboard/search?q=${encodeURIComponent(query)}&limit=12`, {
+      signal: atlasSearchController.signal,
+    });
+    if (!response.ok) throw new Error(`search failed with ${response.status}`);
+    const payload = await response.json();
+    if (query !== String(atlasSearchInput?.value || "").trim()) return;
+    atlasSearchResults = payload.results || [];
+    atlasSearchResultIds = new Set(atlasSearchResults.map((result) => result.project_id).filter(Boolean));
+    atlasSearchUnavailable = false;
+    atlasSearchBusy = false;
+    if (atlasSearchResults.length) selectedProjectId = atlasSearchResults[0].project_id || selectedProjectId;
+    if (dashboardData) renderDashboard(dashboardData);
+  } catch (error) {
+    if (error.name === "AbortError") return;
+    console.error("Atlas search failed.", error);
+    atlasSearchResults = [];
+    atlasSearchResultIds = new Set();
+    atlasSearchUnavailable = true;
+    atlasSearchBusy = false;
+    if (dashboardData) renderDashboard(dashboardData);
+  }
+}
+
+function clearAtlasSearch() {
+  if (atlasSearchTimer) window.clearTimeout(atlasSearchTimer);
+  atlasSearchTimer = null;
+  if (atlasSearchController) atlasSearchController.abort();
+  atlasSearchController = null;
+  atlasSearchQuery = "";
+  atlasSearchResults = [];
+  atlasSearchResultIds = new Set();
+  atlasSearchUnavailable = false;
+  atlasSearchBusy = false;
+  if (atlasSearchInput) atlasSearchInput.value = "";
+  if (dashboardData) renderDashboard(dashboardData);
+}
+
+function atlasSearchStatusCopy() {
+  if (!atlasSearchQuery) return dashboardData ? atlasProvenanceCopy(dashboardData) : "";
+  if (atlasSearchBusy) return "Searching.";
+  if (atlasSearchUnavailable) return "Search unavailable.";
+  if (!atlasSearchResults.length) return `No matches for "${atlasSearchQuery}".`;
+  return `${atlasSearchResults.length} matches for "${atlasSearchQuery}".`;
+}
+
+function renderAtlasSearch() {
+  if (!atlasSearchSectionEl || !atlasSearchResultsEl || !atlasSearchSummaryEl) return;
+  const active = Boolean(atlasSearchQuery);
+  atlasSearchSectionEl.hidden = !active;
+  if (atlasSearchClearButton) atlasSearchClearButton.hidden = !active;
+  if (!active) {
+    atlasSearchResultsEl.innerHTML = "";
+    atlasSearchSummaryEl.textContent = "";
+    return;
+  }
+  atlasSearchSummaryEl.textContent = atlasSearchStatusCopy();
+  atlasSearchResultsEl.innerHTML = "";
+  if (atlasSearchUnavailable || !atlasSearchResults.length) return;
+  for (const result of atlasSearchResults.slice(0, 8)) {
+    atlasSearchResultsEl.append(atlasSearchResultButton(result));
+  }
+}
+
+function atlasSearchResultButton(result) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `atlas-search-result ${result.project_id === selectedProjectId ? "active" : ""}`;
+  const title = result.title || result.project?.title || result.project_id || "Untitled project";
+  const terms = (result.matched_terms || []).slice(0, 4).join(", ");
+  const snippet = (result.snippets || [])[0];
+  const width = Math.max(8, Math.min(100, Number(result.score || 0) * 100)).toFixed(0);
+  button.innerHTML = `
+    <strong>${escapeHtml(title)}</strong>
+    <span class="atlas-search-meta">${escapeHtml(terms || "Related project")}</span>
+    <span class="atlas-search-score" aria-hidden="true"><i style="width: ${width}%"></i></span>
+    ${
+      snippet
+        ? `<span class="atlas-search-snippet">${escapeHtml(snippet.source)}: ${escapeHtml(snippet.text)}</span>`
+        : ""
+    }
+  `;
+  button.addEventListener("click", () => {
+    selectedProjectId = result.project_id || selectedProjectId;
+    if (dashboardData) renderDashboard(dashboardData);
+  });
+  return button;
+}
+
 function renderDashboard(data) {
   if (!data?.points?.length) {
     handleDashboardError(new Error("empty dashboard payload"));
@@ -334,7 +472,8 @@ function renderDashboard(data) {
   renderAtlasSvg(data);
   renderAtlasDetail(currentAtlasPoint(data));
   renderAtlasReport(data);
-  if (atlasStatusEl) atlasStatusEl.textContent = atlasProvenanceCopy(data);
+  renderAtlasSearch();
+  if (atlasStatusEl) atlasStatusEl.textContent = atlasSearchQuery ? atlasSearchStatusCopy() : atlasProvenanceCopy(data);
 }
 
 function atlasProvenanceCopy(data) {
@@ -446,6 +585,16 @@ function renderAtlasSvg(data) {
   }
 
   for (const point of data.points || []) {
+    if (!atlasSearchResultIds.has(point.id)) continue;
+    const ring = svgEl("circle");
+    ring.setAttribute("cx", point.x);
+    ring.setAttribute("cy", point.y);
+    ring.setAttribute("r", (atlasPointRadiusNumber(point) + 0.62).toFixed(3));
+    ring.setAttribute("class", `atlas-search-ring ${visible.has(point.id) ? "" : "dim"}`);
+    atlasSvgEl.append(ring);
+  }
+
+  for (const point of data.points || []) {
     const circle = svgEl("circle");
     circle.setAttribute("cx", point.x);
     circle.setAttribute("cy", point.y);
@@ -453,7 +602,9 @@ function renderAtlasSvg(data) {
     circle.setAttribute("fill", atlasColor(clusterIndex.get(point.cluster_id) || 0));
     circle.setAttribute(
       "class",
-      `atlas-dot ${visible.has(point.id) ? "" : "dim"} ${point.id === selectedProjectId ? "selected" : ""}`,
+      `atlas-dot ${visible.has(point.id) ? "" : "dim"} ${point.id === selectedProjectId ? "selected" : ""} ${
+        atlasSearchResultIds.has(point.id) ? "search-match" : ""
+      }`,
     );
     circle.setAttribute("tabindex", "0");
     circle.setAttribute("role", "button");
@@ -482,11 +633,21 @@ function visibleAtlasPoints(data) {
   return (data.points || []).filter((point) => {
     const clusterMatch = !selectedClusterId || point.cluster_id === selectedClusterId;
     const questMatch = !selectedQuestId || (point.quest_ids || []).includes(selectedQuestId);
-    return clusterMatch && questMatch;
+    const searchMatch = !atlasSearchQuery || atlasSearchResultIds.has(point.id);
+    return clusterMatch && questMatch && searchMatch;
   });
 }
 
 function labelAtlasPoints(data) {
+  if (atlasSearchQuery && atlasSearchResults.length) {
+    const pointsById = new Map((data.points || []).map((point) => [point.id, point]));
+    const visibleIds = new Set(visibleAtlasPoints(data).map((point) => point.id));
+    return atlasSearchResults
+      .map((result) => pointsById.get(result.project_id))
+      .filter(Boolean)
+      .filter((point) => visibleIds.has(point.id))
+      .slice(0, 16);
+  }
   const visible = visibleAtlasPoints(data);
   return [...visible].sort((left, right) => Number(right.likes || 0) - Number(left.likes || 0)).slice(0, 12);
 }
@@ -585,7 +746,11 @@ function atlasQuestLabel(questId) {
 }
 
 function atlasPointRadius(point) {
-  return (0.62 + Math.min(0.72, Math.sqrt(Number(point.likes || 0)) * 0.12)).toFixed(3);
+  return atlasPointRadiusNumber(point).toFixed(3);
+}
+
+function atlasPointRadiusNumber(point) {
+  return 0.62 + Math.min(0.72, Math.sqrt(Number(point.likes || 0)) * 0.12);
 }
 
 function atlasShortTitle(title) {

@@ -33,6 +33,13 @@
         <path d="M4 5v5h5" />
         <path d="M5.5 14a7 7 0 1 0 1.2-6.7L4 10" />
       </symbol>
+      <symbol id="icon-search" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="6" />
+        <path d="M16 16l4 4" />
+      </symbol>
+      <symbol id="icon-x" viewBox="0 0 24 24">
+        <path d="M6 6l12 12M18 6L6 18" />
+      </symbol>
       <symbol id="icon-check" viewBox="0 0 24 24">
         <path d="M5 12l4 4 10-11" />
       </symbol>
@@ -49,10 +56,24 @@
     <main id="atlas-view" class="atlas-shell" aria-label="Live project atlas">
       <section class="atlas-stage">
         <header class="atlas-topbar">
-          <div>
+          <div class="atlas-title-block">
             <p class="atlas-kicker">Live project atlas</p>
             <h1>Idea Map</h1>
           </div>
+          <form id="atlas-search-form" class="atlas-search" role="search">
+            <label class="sr-only" for="atlas-search">Search the project atlas</label>
+            <svg class="icon" aria-hidden="true"><use href="#icon-search"></use></svg>
+            <input
+              id="atlas-search"
+              type="search"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Search projects, ideas, quests..."
+            />
+            <button id="atlas-search-clear" class="atlas-search-clear" type="button" title="Clear search" hidden>
+              <svg class="icon" aria-hidden="true"><use href="#icon-x"></use></svg>
+            </button>
+          </form>
           <div class="atlas-actions">
             <span id="atlas-status" class="atlas-status" aria-live="polite">Loading atlas.</span>
             <button id="refresh-dashboard" class="btn btn-ghost" type="button" title="Refresh the project atlas">
@@ -69,6 +90,11 @@
         <section class="atlas-layout">
           <aside class="atlas-panel atlas-left" aria-label="Atlas filters">
             <div class="atlas-stat-grid" id="atlas-stats"></div>
+            <section id="atlas-search-section" class="atlas-section atlas-search-section" hidden>
+              <div class="eyebrow">Best matches</div>
+              <p id="atlas-search-summary" class="atlas-search-summary"></p>
+              <div id="atlas-search-results" class="atlas-list"></div>
+            </section>
             <section class="atlas-section">
               <div class="eyebrow">Clusters</div>
               <div id="atlas-clusters" class="atlas-list"></div>

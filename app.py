@@ -30,6 +30,12 @@ from hackathon_advisor.dashboard_storage import (
     persist_refresh_artifacts,
     require_writable_cache_dir,
 )
+from hackathon_advisor.dashboard_search import (
+    DEFAULT_SEARCH_LIMIT,
+    DashboardSearchIndex,
+    normalize_query,
+    normalize_search_limit,
+)
 from hackathon_advisor.data import (
     DEFAULT_EMBEDDING_MODEL_FILE,
     DEFAULT_EMBEDDING_MODEL_REPO,
@@ -120,6 +126,7 @@ def _load_initial_runtime() -> tuple[ProjectIndex, dict[str, Any]]:
 
 
 index, dashboard_payload = _load_initial_runtime()
+dashboard_search_index = DashboardSearchIndex(index.projects, dashboard_payload)
 
 # Acceleration is automatic: on a ZeroGPU Space the GPU path uses accelerate device_map inside
 # the @spaces.GPU fork; locally the device resolves CUDA -> Apple MPS -> CPU. CPU is only used
@@ -775,14 +782,16 @@ def _format_refresh_error(error: BaseException) -> str:
 
 
 def _replace_runtime_from_files(projects_path: Path, index_path: Path, refreshed_dashboard: dict[str, Any]) -> None:
-    global index, engine, _cpu_engine, dashboard_payload
+    global index, engine, _cpu_engine, dashboard_payload, dashboard_search_index
     new_index = ProjectIndex.from_files(projects_path, index_path)
+    new_search_index = DashboardSearchIndex(new_index.projects, refreshed_dashboard)
     with _runtime_lock:
         index = new_index
         engine = AdvisorEngine(new_index, engine.planner)
         if _cpu_engine is not None:
             _cpu_engine = AdvisorEngine(new_index, _cpu_engine.planner)
         dashboard_payload = refreshed_dashboard
+        dashboard_search_index = new_search_index
 
 
 def _public_dashboard_payload(payload: dict[str, Any]) -> dict[str, Any]:
@@ -897,6 +906,34 @@ def dashboard() -> dict:
     with _runtime_lock:
         payload = _public_dashboard_payload(dashboard_payload)
     payload["refresh"] = _refresh_public_state()
+    return payload
+
+
+@app.get("/api/dashboard/search")
+def dashboard_search(q: str = "", limit: int = DEFAULT_SEARCH_LIMIT) -> dict:
+    query = normalize_query(q)
+    if not query:
+        raise HTTPException(status_code=400, detail="Search query is required.")
+    try:
+        normalized_limit = normalize_search_limit(limit)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    with _runtime_lock:
+        search_index = dashboard_search_index
+        current_dashboard = dashboard_payload
+    payload = search_index.search(query, limit=normalized_limit)
+    public_points = {
+        str(point.get("id") or ""): _public_dashboard_point(point)
+        for point in current_dashboard.get("points") or []
+        if isinstance(point, dict)
+    }
+    for result in payload["results"]:
+        result["point"] = public_points.get(str(result.get("project_id") or ""), {})
+    provenance = current_dashboard.get("provenance", {})
+    payload["provenance"] = {
+        "snapshot_digest": str(provenance.get("snapshot_digest") or ""),
+        "snapshot_generated_at": str(provenance.get("snapshot_generated_at") or ""),
+    }
     return payload
 
 
