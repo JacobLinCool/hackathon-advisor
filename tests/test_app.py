@@ -290,6 +290,48 @@ def test_dashboard_refresh_quest_analysis_uses_minicpm_analyzer(monkeypatch) -> 
     assert quests == {"Off the Grid", "Field Notes"}
 
 
+def test_dashboard_refresh_quest_analysis_batches_minicpm(monkeypatch) -> None:
+    projects = [
+        Project(
+            id=f"build-small-hackathon/batched-{index}",
+            title=f"Batched {index}",
+            summary="Small local demo",
+            tags=("gradio",),
+            models=(),
+            datasets=(),
+            likes=0,
+            sdk="gradio",
+            license="mit",
+            created_at="2026-06-01T00:00:00+00:00",
+            last_modified="2026-06-08T00:00:00+00:00",
+            host=f"https://batched-{index}.hf.space",
+            url=f"https://huggingface.co/spaces/build-small-hackathon/batched-{index}",
+            readme_body="README evidence",
+            app_file_source="import gradio as gr",
+        )
+        for index in range(3)
+    ]
+    calls = []
+
+    class FakeMiniCPMAnalyzer:
+        source = "minicpm-json-quest-analyzer"
+
+        def analyze(self, batch):
+            calls.append([project.id for project in batch])
+            return {project.id: [] for project in batch}
+
+    monkeypatch.setenv("ADVISOR_QUEST_ANALYSIS_BATCH_SIZE", "2")
+    monkeypatch.setattr(app_module, "create_quest_analyzer", lambda device: FakeMiniCPMAnalyzer())
+
+    result = app_module._analyze_dashboard_quests([project.to_refresh_snapshot_dict() for project in projects])
+
+    assert calls == [
+        ["build-small-hackathon/batched-0", "build-small-hackathon/batched-1"],
+        ["build-small-hackathon/batched-2"],
+    ]
+    assert set(result["matches_by_project"]) == {project.id for project in projects}
+
+
 def test_dashboard_refresh_quest_analysis_requires_two_segment_snapshot() -> None:
     project = Project(
         id="build-small-hackathon/missing-evidence",

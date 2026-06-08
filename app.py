@@ -63,6 +63,7 @@ MAX_AUDIO_UPLOAD_BYTES = 25 * 1024 * 1024
 AUDIO_UPLOAD_SUFFIXES = {".aac", ".aif", ".aiff", ".flac", ".m4a", ".mp3", ".oga", ".ogg", ".opus", ".wav", ".webm"}
 DEFAULT_HF_ORG = "build-small-hackathon"
 DEFAULT_REFRESH_EMBEDDING_TIMEOUT_SECONDS = 1800
+DEFAULT_QUEST_ANALYSIS_BATCH_SIZE = 24
 REFRESH_SUBPROCESS_LOG_TAIL_LINES = 80
 REFRESH_STAGE_LABELS = {
     "crawling": "Fetching public Spaces",
@@ -132,7 +133,6 @@ def _transcribe_voice(audio_path: str) -> dict[str, Any]:
     return voice_transcriber.transcribe(Path(audio_path)).to_dict()
 
 
-@gpu_task
 def _analyze_dashboard_quests(project_rows: list[dict[str, Any]]) -> dict[str, Any]:
     missing_evidence_keys = [
         str(item.get("id") or index)
@@ -145,6 +145,24 @@ def _analyze_dashboard_quests(project_rows: list[dict[str, Any]]) -> dict[str, A
             f"missing evidence keys for {len(missing_evidence_keys)} projects"
         )
     projects = [Project.from_dict(item) for item in project_rows]
+    matches_by_project: dict[str, list[dict[str, Any]]] = {}
+    source = "quest-analyzer"
+    batch_size = _quest_analysis_batch_size()
+    for start in range(0, len(project_rows), batch_size):
+        batch_rows = project_rows[start : start + batch_size]
+        result = _analyze_dashboard_quest_batch(batch_rows)
+        source = str(result["source"])
+        matches_by_project.update(result["matches_by_project"])
+    validated = validate_matches_by_project(matches_by_project, projects, source=source)
+    return {
+        "source": validated.source,
+        "matches_by_project": validated.matches_by_project,
+    }
+
+
+@gpu_task
+def _analyze_dashboard_quest_batch(project_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    projects = [Project.from_dict(item) for item in project_rows]
     analyzer = create_quest_analyzer(device="cuda" if zero_gpu_enabled() else "local")
     matches = analyzer.analyze(projects)
     source = getattr(analyzer, "source", "quest-analyzer")
@@ -153,6 +171,16 @@ def _analyze_dashboard_quests(project_rows: list[dict[str, Any]]) -> dict[str, A
         "source": validated.source,
         "matches_by_project": validated.matches_by_project,
     }
+
+
+def _quest_analysis_batch_size() -> int:
+    raw = os.environ.get("ADVISOR_QUEST_ANALYSIS_BATCH_SIZE", "").strip()
+    if not raw:
+        return DEFAULT_QUEST_ANALYSIS_BATCH_SIZE
+    batch_size = int(raw)
+    if batch_size <= 0:
+        raise RuntimeError("ADVISOR_QUEST_ANALYSIS_BATCH_SIZE must be a positive integer.")
+    return batch_size
 
 
 def _refresh_public_state() -> dict[str, Any]:
