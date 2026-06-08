@@ -136,6 +136,10 @@ _QUEST_ALIASES: dict[str, str] = {}
 for _profile in QUEST_PROFILES:
     _QUEST_ALIASES[_quest_key(_profile["id"])] = _profile["id"]
     _QUEST_ALIASES[_quest_key(_profile["label"])] = _profile["id"]
+    _QUEST_ALIASES[_quest_key(f"Best {_profile['id']}")] = _profile["id"]
+    _QUEST_ALIASES[_quest_key(f"Best {_profile['label']}")] = _profile["id"]
+    _QUEST_ALIASES[_quest_key(f"Best Use of {_profile['id']}")] = _profile["id"]
+    _QUEST_ALIASES[_quest_key(f"Best Use of {_profile['label']}")] = _profile["id"]
 _QUEST_ALIASES.update(
     {
         _quest_key("Best MiniCPM Build"): "OpenBMB",

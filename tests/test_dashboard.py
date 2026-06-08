@@ -243,6 +243,52 @@ def test_quest_analysis_validation_expands_known_composite_quest_labels() -> Non
     assert quests == ["OpenBMB", "Tiny Titan", "Off-Brand", "Sharing is Caring"]
 
 
+def test_quest_analysis_validation_accepts_best_prefixed_known_labels() -> None:
+    projects = fake_projects(1)
+    raw = {
+        "projects": [
+            {
+                "project_id": projects[0].id,
+                "matches": [
+                    {
+                        "quest": "Best Well-Tuned",
+                        "confidence": 0.84,
+                        "evidence": "PEFT adapter",
+                        "source": "app_file",
+                    }
+                ],
+            }
+        ]
+    }
+
+    validated = validate_quest_analysis_payload(raw, projects, source="fake")
+
+    assert validated.matches_by_project[projects[0].id][0]["quest"] == "Well-Tuned"
+
+
+def test_quest_analysis_validation_accepts_best_use_of_known_labels() -> None:
+    projects = fake_projects(1)
+    raw = {
+        "projects": [
+            {
+                "project_id": projects[0].id,
+                "matches": [
+                    {
+                        "quest": "Best Use of Modal",
+                        "confidence": 0.84,
+                        "evidence": "modal.App background worker",
+                        "source": "app_file",
+                    }
+                ],
+            }
+        ]
+    }
+
+    validated = validate_quest_analysis_payload(raw, projects, source="fake")
+
+    assert validated.matches_by_project[projects[0].id][0]["quest"] == "Modal"
+
+
 def test_quest_analysis_validation_rejects_unknown_composite_quest_labels() -> None:
     projects = fake_projects(1)
     raw = {
