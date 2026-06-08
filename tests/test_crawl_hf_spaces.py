@@ -44,7 +44,7 @@ def test_project_from_space_downloads_frontmatter_app_file(monkeypatch) -> None:
             SimpleNamespace(rfilename="README.md"),
             SimpleNamespace(rfilename="app.py"),
         ],
-        tags=["gradio"],
+        tags=["gradio", "region:us"],
         models=[],
         datasets=[],
         likes=3,
@@ -61,6 +61,7 @@ def test_project_from_space_downloads_frontmatter_app_file(monkeypatch) -> None:
     assert project["app_file_source"] == "import gradio as gr\ngr.Textbox(label='Idea')\n"
     assert "gr.Textbox" in project["app_file_embedding_text"]
     assert "Idea" in project["app_file_embedding_text"]
+    assert project["tags"] == ["gradio"]
 
 
 def test_project_from_space_tolerates_stale_frontmatter_app_file(monkeypatch) -> None:

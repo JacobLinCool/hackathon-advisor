@@ -133,6 +133,24 @@ def test_dashboard_endpoint_exposes_atlas_payload() -> None:
     assert payload["links"]
     assert payload["quest_report"]["status"] in {"analyzed", "not_analyzed"}
     assert payload["refresh"]["status"] in {"idle", "running", "succeeded", "failed"}
+    assert all(
+        not str(tag).casefold().startswith("region:")
+        for point in payload["points"]
+        for tag in point.get("tags", [])
+    )
+
+
+def test_refresh_error_format_includes_exception_chain() -> None:
+    try:
+        try:
+            raise ValueError("bad quest")
+        except ValueError as cause:
+            raise RuntimeError("refresh failed") from cause
+    except RuntimeError as error:
+        message = app_module._format_refresh_error(error)
+
+    assert "RuntimeError: refresh failed" in message
+    assert "caused by ValueError: bad quest" in message
 
 
 def test_dashboard_refresh_requires_bucket(monkeypatch) -> None:

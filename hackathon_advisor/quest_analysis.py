@@ -7,7 +7,7 @@ import json
 import os
 from typing import Any, Protocol
 
-from hackathon_advisor.data import Project
+from hackathon_advisor.data import Project, normalize_project_tags
 from hackathon_advisor.model_runtime import (
     DEFAULT_MODEL_ID,
     _minicpm_generation_kwargs,
@@ -317,7 +317,7 @@ def render_project_quest_prompt(project: Project) -> str:
         title=project.title,
         sdk=project.sdk,
         declared_models=project.models,
-        tags=project.tags,
+        tags=normalize_project_tags(project.tags),
         readme_segment=build_readme_segment(project.readme_body),
         app_file_name=project.app_file,
         app_file_segment=build_app_segment(project.app_file_source, project.app_file_embedding_text),

@@ -498,7 +498,7 @@ function renderAtlasDetail(point) {
       return `<span>${escapeHtml(atlasQuestLabel(match.quest))} ${confidence}%</span>`;
     })
     .join("");
-  const tags = [...(point.models || []).slice(0, 3), ...(point.tags || []).slice(0, 3)]
+  const tags = [...(point.models || []).slice(0, 3), ...visibleProjectTags(point.tags || []).slice(0, 3)]
     .map((tag) => `<span>${escapeHtml(tag)}</span>`)
     .join("");
   atlasDetailEl.innerHTML = `
@@ -509,6 +509,10 @@ function renderAtlasDetail(point) {
     <div class="atlas-tags">${quests || `<span>Quest analysis pending</span>`}</div>
     <div class="atlas-tags">${tags}</div>
   `;
+}
+
+function visibleProjectTags(tags) {
+  return (tags || []).filter((tag) => !String(tag || "").toLowerCase().startsWith("region:"));
 }
 
 function renderAtlasReport(data) {

@@ -85,6 +85,23 @@ def test_searchable_text_includes_main_app_file_signals() -> None:
     assert "Project idea" in searchable
 
 
+def test_public_project_tags_exclude_hosting_metadata() -> None:
+    project = Project.from_dict(
+        {
+            "id": "build-small-hackathon/idea-canvas",
+            "title": "Idea Canvas",
+            "summary": "",
+            "tags": ["gradio", "region:us", "local-first", "region:eu", "gradio"],
+            "models": [],
+            "datasets": [],
+            "url": "https://example.test",
+        }
+    )
+
+    assert project.tags == ("gradio", "region:us", "local-first", "region:eu", "gradio")
+    assert project.to_public_dict()["tags"] == ["gradio", "local-first"]
+
+
 def test_searchable_text_excludes_refresh_readme_body_for_stable_reuse() -> None:
     project = Project(
         id="build-small-hackathon/long-readme",

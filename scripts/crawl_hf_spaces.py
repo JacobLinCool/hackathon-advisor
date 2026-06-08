@@ -19,7 +19,7 @@ from huggingface_hub.errors import EntryNotFoundError
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from hackathon_advisor.data import extract_app_file_embedding_text
+from hackathon_advisor.data import extract_app_file_embedding_text, normalize_project_tags
 
 
 API = "https://huggingface.co/api"
@@ -88,11 +88,12 @@ def project_from_space(space: Any) -> dict[str, Any]:
 
     title = str(card.get("title") or humanize_slug(space_id.rsplit("/", 1)[-1]))
     summary = str(card.get("short_description") or card.get("description") or "")
+    raw_tags = sorted(set(str(tag) for tag in (card.get("tags") or getattr(space, "tags", None) or [])))
     return {
         "id": space_id,
         "title": title,
         "summary": summary,
-        "tags": sorted(set(str(tag) for tag in (card.get("tags") or getattr(space, "tags", None) or []))),
+        "tags": list(normalize_project_tags(raw_tags)),
         "models": [str(model) for model in getattr(space, "models", None) or card.get("models") or []],
         "datasets": [
             str(dataset) for dataset in getattr(space, "datasets", None) or card.get("datasets") or []

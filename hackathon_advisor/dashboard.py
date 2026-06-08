@@ -6,7 +6,14 @@ from datetime import datetime, timezone
 import math
 from typing import Any
 
-from hackathon_advisor.data import Project, ProjectIndex, public_project_summary, public_project_title, tokenize
+from hackathon_advisor.data import (
+    Project,
+    ProjectIndex,
+    normalize_project_tags,
+    public_project_summary,
+    public_project_title,
+    tokenize,
+)
 from hackathon_advisor.quest_taxonomy import QUESTS, normalize_match, quest_profiles
 
 
@@ -14,12 +21,30 @@ DASHBOARD_SCHEMA_VERSION = 1
 TSNE_RANDOM_STATE = 42
 TSNE_MIN_PROJECTS = 3
 LINKS_PER_PROJECT = 2
+CLUSTER_LABEL_ALGORITHM = "distinctive-keywords-v1"
 
 STOPWORDS = {
+    "about",
     "agent",
     "app",
+    "apps",
+    "ai",
+    "all",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "before",
     "assistant",
+    "be",
+    "been",
+    "being",
     "build",
+    "build-small",
+    "build-small-hackathon",
+    "built",
+    "by",
     "demo",
     "face",
     "for",
@@ -27,13 +52,55 @@ STOPWORDS = {
     "gradio",
     "hackathon",
     "hugging",
+    "huggingface",
+    "in",
+    "is",
+    "it",
+    "its",
+    "first",
     "local",
+    "make",
+    "makes",
+    "made",
+    "me",
     "model",
+    "models",
+    "my",
+    "of",
+    "on",
+    "or",
+    "our",
+    "one",
     "project",
+    "projects",
+    "pro",
+    "region",
+    "run",
+    "runs",
     "small",
     "space",
+    "spaces",
+    "submission",
+    "the",
+    "their",
+    "them",
+    "these",
+    "they",
     "this",
+    "those",
+    "to",
+    "tool",
+    "tools",
+    "try",
+    "us",
+    "use",
+    "used",
+    "uses",
+    "using",
+    "we",
     "with",
+    "you",
+    "your",
 }
 
 
@@ -79,6 +146,7 @@ def build_dashboard_payload(
             "random_state": TSNE_RANDOM_STATE,
             "perplexity": _tsne_perplexity(len(projects)),
         },
+        "cluster_label_algorithm": CLUSTER_LABEL_ALGORITHM,
         "points": points,
         "links": links,
         "clusters": clusters,
@@ -205,15 +273,25 @@ def _cluster_payloads(
     )
     cluster_id_by_raw = {label: f"cluster-{position + 1}" for position, label in enumerate(ordered_raw_labels)}
     clusters: list[dict[str, Any]] = []
+    corpus_document_frequency = _corpus_document_frequency(projects)
     for raw_label in ordered_raw_labels:
         indexes = grouped[raw_label]
-        keywords = _cluster_keywords(projects[index] for index in indexes)
-        label = " / ".join(word.title() for word in keywords[:2]) if keywords else "Project cluster"
+        cluster_projects = [projects[index] for index in indexes]
         representatives = sorted(
-            (projects[index] for index in indexes),
+            cluster_projects,
             key=lambda project: (project.likes, project.last_modified, project.title.lower()),
             reverse=True,
         )[:4]
+        keywords = _cluster_keywords(
+            cluster_projects,
+            corpus_document_frequency=corpus_document_frequency,
+            corpus_project_count=len(projects),
+        )
+        label = (
+            " / ".join(word.title() for word in keywords[:2])
+            if keywords
+            else _representative_cluster_label(representatives)
+        )
         clusters.append(
             {
                 "id": cluster_id_by_raw[raw_label],
@@ -237,20 +315,89 @@ def _cluster_center(coordinates: Sequence[tuple[float, float]], indexes: Sequenc
     )
 
 
-def _cluster_keywords(projects: Sequence[Project]) -> list[str]:
-    counts: Counter[str] = Counter()
+def _corpus_document_frequency(projects: Sequence[Project]) -> Counter[str]:
+    document_frequency: Counter[str] = Counter()
     for project in projects:
-        text = " ".join(
-            [
-                project.title,
-                project.slug.replace("-", " ").replace("_", " "),
-                project.summary,
-                " ".join(project.tags),
-                " ".join(project.models),
-            ]
+        document_frequency.update(set(_project_keyword_tokens(project)))
+    return document_frequency
+
+
+def _cluster_keywords(
+    projects: Sequence[Project],
+    *,
+    corpus_document_frequency: Mapping[str, int],
+    corpus_project_count: int,
+) -> list[str]:
+    counts: Counter[str] = Counter()
+    document_frequency: Counter[str] = Counter()
+    project_list = list(projects)
+    for project in project_list:
+        tokens = _project_keyword_tokens(project)
+        counts.update(tokens)
+        document_frequency.update(set(tokens))
+
+    if not project_list:
+        return []
+
+    min_cluster_documents = 1 if len(project_list) <= 3 else 2
+    scored: list[tuple[float, int, int, str]] = []
+    for token, count in counts.items():
+        cluster_documents = document_frequency[token]
+        if cluster_documents < min_cluster_documents:
+            continue
+        corpus_documents = int(corpus_document_frequency.get(token) or 0)
+        if corpus_documents <= 0:
+            continue
+        inverse_document_frequency = math.log((1 + corpus_project_count) / (1 + corpus_documents))
+        if inverse_document_frequency <= 0.0:
+            continue
+        exclusivity = cluster_documents / corpus_documents
+        coverage = cluster_documents / len(project_list)
+        score = (
+            (1.0 + math.log(count))
+            * inverse_document_frequency
+            * (0.35 + 0.65 * exclusivity)
+            * (0.35 + 0.65 * coverage)
         )
-        counts.update(token for token in tokenize(text) if token not in STOPWORDS and not token.startswith("region"))
-    return [token for token, _count in counts.most_common(5)]
+        scored.append((score, cluster_documents, count, token))
+
+    scored.sort(key=lambda item: (-item[0], -item[1], -item[2], item[3]))
+    return [token for _score, _cluster_documents, _count, token in scored[:5]]
+
+
+def _project_keyword_tokens(project: Project) -> list[str]:
+    text = " ".join(
+        [
+            project.title,
+            project.slug.replace("-", " ").replace("_", " "),
+            project.summary,
+            " ".join(normalize_project_tags(project.tags)),
+            " ".join(project.models),
+        ]
+    )
+    return [token for token in tokenize(text) if _is_cluster_keyword(token)]
+
+
+def _is_cluster_keyword(token: str) -> bool:
+    if token in STOPWORDS:
+        return False
+    if token.startswith("region"):
+        return False
+    if token.isdigit():
+        return False
+    return True
+
+
+def _representative_cluster_label(projects: Sequence[Project]) -> str:
+    labels: list[str] = []
+    for project in projects:
+        title = public_project_title(project.title)
+        if title == "Untitled project":
+            continue
+        labels.append(title)
+        if len(labels) == 2:
+            break
+    return " / ".join(labels) if labels else "Mixed projects"
 
 
 def _normalize_quest_matches(
@@ -302,7 +449,7 @@ def _point_payloads(
                 "likes": project.likes,
                 "sdk": project.sdk,
                 "models": list(project.models),
-                "tags": list(project.tags),
+                "tags": list(normalize_project_tags(project.tags)),
                 "last_modified": project.last_modified,
                 "x": x,
                 "y": y,

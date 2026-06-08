@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from hackathon_advisor.dashboard import build_dashboard_payload, validate_dashboard_payload
+from hackathon_advisor.dashboard import (
+    CLUSTER_LABEL_ALGORITHM,
+    build_dashboard_payload,
+    validate_dashboard_payload,
+)
 from hackathon_advisor.data import Project, ProjectIndex, build_index_payload
 from hackathon_advisor.quest_analysis import (
     MiniCPMQuestAnalyzer,
@@ -45,6 +49,7 @@ def test_dashboard_builder_projects_embeddings_with_tsne_and_clusters() -> None:
     assert payload["quest_report"]["status"] == "analyzed"
     assert all(0 <= point["x"] <= 100 and 0 <= point["y"] <= 100 for point in payload["points"])
     assert all(point["quest_ids"] for point in payload["points"])
+    assert payload["cluster_label_algorithm"] == CLUSTER_LABEL_ALGORITHM
 
 
 def test_dashboard_builder_is_deterministic_for_fixed_vectors() -> None:
@@ -57,6 +62,18 @@ def test_dashboard_builder_is_deterministic_for_fixed_vectors() -> None:
         (point["id"], point["x"], point["y"]) for point in right["points"]
     ]
     assert left["clusters"] == right["clusters"]
+
+
+def test_dashboard_cluster_labels_ignore_hackathon_wide_noise() -> None:
+    index = noisy_cluster_label_index()
+
+    payload = build_dashboard_payload(index, generated_at="2026-06-08T00:00:00+00:00")
+
+    banned = {"ai", "build-small-hackathon", "gradio", "hackathon", "project", "region", "us"}
+    keywords = {keyword for cluster in payload["clusters"] for keyword in cluster["keywords"]}
+    assert keywords.isdisjoint(banned)
+    assert {"dream", "family", "garden", "notice", "order", "repair"} & keywords
+    assert all("region:us" not in point["tags"] for point in payload["points"])
 
 
 def test_quest_analysis_validation_accepts_strict_project_coverage() -> None:
@@ -343,7 +360,7 @@ def test_quest_prompt_uses_raw_readme_and_app_source_segments() -> None:
         id="build-small-hackathon/two-segment",
         title="Two Segment",
         summary="card summary should not drive quest analysis",
-        tags=("gradio",),
+        tags=("gradio", "region:us"),
         models=("openbmb/MiniCPM5-1B",),
         datasets=(),
         likes=1,
@@ -367,6 +384,7 @@ def test_quest_prompt_uses_raw_readme_and_app_source_segments() -> None:
     assert "from llama_cpp import Llama" in prompt
     assert "card summary should not drive quest analysis" not in prompt
     assert "compact app signals should not drive quest analysis" not in prompt
+    assert "region:us" not in prompt
 
 
 def test_quest_analyzer_rejects_non_minicpm_backend(monkeypatch) -> None:
@@ -389,6 +407,56 @@ def fake_index() -> ProjectIndex:
         vector[3 + index % 5] = 1.5
         vector[8 + index % 8] = 0.7
         embeddings.append(vector)
+    snapshot_generated_at = "2026-06-08T00:00:00+00:00"
+    source = "https://example.test/spaces"
+    payload = build_index_payload(projects, snapshot_generated_at, source, embeddings)
+    return ProjectIndex(
+        projects=projects,
+        generated_at=snapshot_generated_at,
+        source=source,
+        index_payload=payload,
+    )
+
+
+def noisy_cluster_label_index() -> ProjectIndex:
+    themes = [
+        ("dream", ("Dream Lantern", "Dream Atlas"), "dream journal symbolic oracle"),
+        ("family", ("Family Ledger", "Care Kinship"), "family care bill coordination"),
+        ("garden", ("Garden Notebook", "Seed Exchange"), "garden seed neighborhood plants"),
+        ("notice", ("Notice Helper", "Scam Screen"), "notice scam safety verification"),
+        ("order", ("Order Desk", "Inventory Voice"), "order inventory audio assistant"),
+        ("repair", ("Repair Coach", "Tool Shed"), "repair maintenance workshop"),
+    ]
+    projects: list[Project] = []
+    embeddings = []
+    for theme_index, (theme, titles, summary) in enumerate(themes):
+        for title in titles:
+            projects.append(
+                Project(
+                    id=f"build-small-hackathon/{title.lower().replace(' ', '-')}",
+                    title=title,
+                    summary=(
+                        f"{summary} for a build-small-hackathon AI project in the US region "
+                        "with a Gradio demo."
+                    ),
+                    tags=("build-small-hackathon", "ai", "gradio", "region:us", theme),
+                    models=("tiny-model",),
+                    datasets=(),
+                    likes=theme_index,
+                    sdk="gradio",
+                    license="mit",
+                    created_at="2026-06-01T00:00:00+00:00",
+                    last_modified=f"2026-06-{theme_index + 1:02d}T00:00:00+00:00",
+                    host=f"https://{title.lower().replace(' ', '-')}.hf.space",
+                    url=f"https://huggingface.co/spaces/build-small-hackathon/{title.lower().replace(' ', '-')}",
+                    app_file="app.py",
+                    app_file_embedding_text="shared local small model app",
+                )
+            )
+            vector = [0.0] * len(themes)
+            vector[theme_index] = 1.0
+            embeddings.append(vector)
+
     snapshot_generated_at = "2026-06-08T00:00:00+00:00"
     source = "https://example.test/spaces"
     payload = build_index_payload(projects, snapshot_generated_at, source, embeddings)

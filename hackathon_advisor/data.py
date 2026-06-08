@@ -32,6 +32,7 @@ DEFAULT_EMBEDDING_MODEL_REPO = "ggml-org/embeddinggemma-300m-qat-q8_0-GGUF"
 DEFAULT_EMBEDDING_MODEL_FILE = "embeddinggemma-300m-qat-Q8_0.gguf"
 DEFAULT_EMBEDDING_RUNTIME = "llama.cpp via llama-cpp-python"
 APP_FILE_EMBEDDING_CHAR_LIMIT = 2000
+HOSTING_METADATA_TAG_PREFIXES = ("region:",)
 
 
 EmbeddingFunction = Callable[[str], Sequence[float]]
@@ -108,7 +109,7 @@ class Project:
             "id": self.id,
             "title": public_project_title(self.title),
             "summary": public_project_summary(self.summary),
-            "tags": list(self.tags),
+            "tags": list(normalize_project_tags(self.tags)),
             "models": list(self.models),
             "datasets": list(self.datasets),
             "likes": self.likes,
@@ -150,6 +151,7 @@ class Project:
         )
         return payload
 
+
 @dataclass(frozen=True)
 class SearchHit:
     project: Project
@@ -183,6 +185,25 @@ def public_project_title(title: str) -> str:
     if GENERIC_PUBLIC_TITLE_RE.search(cleaned):
         return "Untitled project"
     return cleaned
+
+
+def normalize_project_tags(tags: Sequence[Any]) -> tuple[str, ...]:
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for raw_tag in tags or ():
+        tag = " ".join(str(raw_tag or "").split())
+        if not tag or is_hosting_metadata_tag(tag):
+            continue
+        if tag in seen:
+            continue
+        seen.add(tag)
+        cleaned.append(tag)
+    return tuple(cleaned)
+
+
+def is_hosting_metadata_tag(tag: str) -> bool:
+    folded = str(tag or "").strip().casefold()
+    return any(folded.startswith(prefix) for prefix in HOSTING_METADATA_TAG_PREFIXES)
 
 
 def public_project_summary(summary: str) -> str:

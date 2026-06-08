@@ -10,6 +10,7 @@ import sys
 import tempfile
 from threading import Lock, Thread
 import time
+import traceback
 from typing import Any, Iterator
 from uuid import uuid4
 
@@ -29,7 +30,13 @@ from hackathon_advisor.dashboard_storage import (
     persist_refresh_artifacts,
     require_writable_cache_dir,
 )
-from hackathon_advisor.data import DEFAULT_EMBEDDING_MODEL_FILE, DEFAULT_EMBEDDING_MODEL_REPO, Project, ProjectIndex
+from hackathon_advisor.data import (
+    DEFAULT_EMBEDDING_MODEL_FILE,
+    DEFAULT_EMBEDDING_MODEL_REPO,
+    Project,
+    ProjectIndex,
+    normalize_project_tags,
+)
 from hackathon_advisor.demo_rehearsal import build_demo_rehearsal
 from hackathon_advisor.model_runtime import create_tool_planner
 from hackathon_advisor.profiling import (
@@ -242,11 +249,13 @@ def _run_refresh_job(run_id: str, cache_dir: Path) -> None:
             },
         )
     except Exception as error:  # noqa: BLE001 - background job must report every failure as state
+        print("[dashboard-refresh] failed", flush=True)
+        traceback.print_exception(type(error), error, error.__traceback__)
         _set_refresh_state(
             status="failed",
             stage="",
             finished_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            error=str(error),
+            error=_format_refresh_error(error),
             result=None,
         )
 
@@ -414,6 +423,17 @@ def _format_output_tail(output_tail: list[str]) -> str:
     return "\n".join(output_tail) if output_tail else "(no output)"
 
 
+def _format_refresh_error(error: BaseException) -> str:
+    parts = [f"{type(error).__name__}: {error}"]
+    cause = error.__cause__
+    if cause is not None:
+        parts.append(f"caused by {type(cause).__name__}: {cause}")
+    context = error.__context__
+    if context is not None and context is not cause:
+        parts.append(f"context {type(context).__name__}: {context}")
+    return "; ".join(parts)
+
+
 def _replace_runtime_from_files(projects_path: Path, index_path: Path, refreshed_dashboard: dict[str, Any]) -> None:
     global index, engine, _cpu_engine, dashboard_payload
     new_index = ProjectIndex.from_files(projects_path, index_path)
@@ -423,6 +443,20 @@ def _replace_runtime_from_files(projects_path: Path, index_path: Path, refreshed
         if _cpu_engine is not None:
             _cpu_engine = AdvisorEngine(new_index, _cpu_engine.planner)
         dashboard_payload = refreshed_dashboard
+
+
+def _public_dashboard_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    public_payload = dict(payload)
+    public_payload["points"] = [_public_dashboard_point(point) for point in payload.get("points") or []]
+    return public_payload
+
+
+def _public_dashboard_point(point: Any) -> dict[str, Any]:
+    if not isinstance(point, dict):
+        return {}
+    public_point = dict(point)
+    public_point["tags"] = list(normalize_project_tags(public_point.get("tags") or []))
+    return public_point
 
 
 def _session_from_json(session_json: str = "{}") -> dict[str, Any]:
@@ -521,7 +555,7 @@ def static_file(path: str) -> FileResponse:
 @app.get("/api/dashboard")
 def dashboard() -> dict:
     with _runtime_lock:
-        payload = dict(dashboard_payload)
+        payload = _public_dashboard_payload(dashboard_payload)
     payload["refresh"] = _refresh_public_state()
     return payload
 
