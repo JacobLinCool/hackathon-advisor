@@ -355,6 +355,7 @@ class ProjectIndex:
         self.index_generated_at = str(index_payload["generated_at"])
         self.index_algorithm = str(index_payload["algorithm"])
         self.snapshot_digest = str(index_payload["snapshot_digest"])
+        self.index_payload = index_payload
         self.embedding_metadata = dict(index_payload["embedding"])
         self.embedding_dimensions = int(self.embedding_metadata["dimensions"])
         self._query_embedder = query_embedder

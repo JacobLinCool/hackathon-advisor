@@ -121,3 +121,11 @@ def test_project_index_rejects_mismatched_snapshot(tmp_path: Path) -> None:
         assert "different snapshot timestamp" in str(error)
     else:
         raise AssertionError("mismatched index should be rejected")
+
+
+def test_project_index_retains_validated_payload() -> None:
+    payload = json.loads(Path("data/project_index.json").read_text(encoding="utf-8"))
+    index = ProjectIndex.from_files(Path("data/projects.json"), Path("data/project_index.json"))
+
+    assert index.index_payload["snapshot_digest"] == payload["snapshot_digest"]
+    assert len(index.index_payload["documents"]) == len(index.projects)
