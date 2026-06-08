@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "algorithm": "llama-cpp-embedding-v1",
-  "generated_at": "2026-06-07T11:52:16+00:00",
+  "generated_at": "2026-06-08T00:28:50+00:00",
   "snapshot_generated_at": "2026-06-07T11:51:09+00:00",
   "snapshot_source": "https://huggingface.co/api/spaces?author=build-small-hackathon",
   "snapshot_digest": "a442d8146fa01965567a27e43d42587de7048b93352e016151a524d2ecbf2034",
@@ -14,7 +14,7 @@
     "normalized": true,
     "build_source": "local",
     "builder": "scripts/build_project_index.py",
-    "llama_cpp_python_version": "0.3.26",
+    "llama_cpp_python_version": "0.3.27",
     "n_ctx": 2048
   },
   "documents": [

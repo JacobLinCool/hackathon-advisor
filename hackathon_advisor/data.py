@@ -32,6 +32,7 @@ DEFAULT_EMBEDDING_MODEL_REPO = "ggml-org/embeddinggemma-300m-qat-q8_0-GGUF"
 DEFAULT_EMBEDDING_MODEL_FILE = "embeddinggemma-300m-qat-Q8_0.gguf"
 DEFAULT_EMBEDDING_RUNTIME = "llama.cpp via llama-cpp-python"
 APP_FILE_EMBEDDING_CHAR_LIMIT = 8000
+README_EMBEDDING_CHAR_LIMIT = 4000
 
 
 EmbeddingFunction = Callable[[str], Sequence[float]]
@@ -91,7 +92,9 @@ class Project:
                 f"title: {self.title}",
                 f"slug: {self.slug.replace('-', ' ').replace('_', ' ')}",
                 f"summary: {self.summary}",
-                f"readme:\n{self.readme_body}" if self.readme_body else "",
+                f"readme:\n{bounded_embedding_text(self.readme_body, README_EMBEDDING_CHAR_LIMIT)}"
+                if self.readme_body
+                else "",
                 f"tags: {' '.join(self.tags)}",
                 f"models: {' '.join(self.models)}",
                 f"datasets: {' '.join(self.datasets)}",

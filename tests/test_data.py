@@ -85,6 +85,30 @@ def test_searchable_text_includes_main_app_file_signals() -> None:
     assert "Project idea" in searchable
 
 
+def test_searchable_text_bounds_readme_body_for_embedding() -> None:
+    project = Project(
+        id="build-small-hackathon/long-readme",
+        title="Long README",
+        summary="",
+        tags=(),
+        models=(),
+        datasets=(),
+        likes=0,
+        sdk="gradio",
+        license="",
+        created_at="",
+        last_modified="",
+        host="",
+        url="https://example.test",
+        readme_body="a" * 2500 + "middle should not be embedded" + "b" * 2500,
+    )
+
+    searchable = project.searchable_text
+
+    assert "middle should not be embedded" not in searchable
+    assert len(searchable) < 4300
+
+
 def test_project_index_rejects_mismatched_snapshot(tmp_path: Path) -> None:
     payload = json.loads(Path("data/project_index.json").read_text(encoding="utf-8"))
     payload["snapshot_generated_at"] = "2000-01-01T00:00:00+00:00"
