@@ -63,7 +63,7 @@ MAX_AUDIO_UPLOAD_BYTES = 25 * 1024 * 1024
 AUDIO_UPLOAD_SUFFIXES = {".aac", ".aif", ".aiff", ".flac", ".m4a", ".mp3", ".oga", ".ogg", ".opus", ".wav", ".webm"}
 DEFAULT_HF_ORG = "build-small-hackathon"
 DEFAULT_REFRESH_EMBEDDING_TIMEOUT_SECONDS = 1800
-DEFAULT_QUEST_ANALYSIS_BATCH_SIZE = 24
+DEFAULT_QUEST_ANALYSIS_BATCH_SIZE = 8
 REFRESH_SUBPROCESS_LOG_TAIL_LINES = 80
 REFRESH_STAGE_LABELS = {
     "crawling": "Fetching public Spaces",
