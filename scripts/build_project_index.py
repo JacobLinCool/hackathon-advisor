@@ -73,7 +73,12 @@ def build_payload(
     data = json.loads(project_path.read_text(encoding="utf-8"))
     projects = [Project.from_dict(item) for item in data["projects"]]
     print(f"loaded {len(projects)} projects from {project_path}", flush=True)
-    reusable_vectors = load_reusable_vectors(reuse_index_path)
+    reusable_vectors = load_reusable_vectors(
+        reuse_index_path,
+        model_repo=model_repo,
+        model_file=model_file,
+        n_ctx=n_ctx,
+    )
     if reusable_vectors:
         print(f"loaded {len(reusable_vectors)} reusable vectors from {reuse_index_path}", flush=True)
     print(
@@ -128,10 +133,41 @@ def build_payload(
     )
 
 
-def load_reusable_vectors(reuse_index_path: Path | None) -> dict[tuple[str, str], list[float]]:
+def load_reusable_vectors(
+    reuse_index_path: Path | None,
+    *,
+    model_repo: str,
+    model_file: str,
+    n_ctx: int,
+) -> dict[tuple[str, str], list[float]]:
     if reuse_index_path is None:
         return {}
     payload = json.loads(reuse_index_path.read_text(encoding="utf-8"))
+    embedding = payload.get("embedding")
+    if not isinstance(embedding, dict):
+        print(f"skipping reusable vectors from {reuse_index_path}: missing embedding metadata", flush=True)
+        return {}
+    expected = {
+        "model_repo": model_repo,
+        "model_file": model_file,
+        "n_ctx": n_ctx,
+    }
+    try:
+        actual_n_ctx = int(embedding.get("n_ctx") or 0)
+    except (TypeError, ValueError):
+        actual_n_ctx = 0
+    actual = {
+        "model_repo": str(embedding.get("model_repo") or ""),
+        "model_file": str(embedding.get("model_file") or ""),
+        "n_ctx": actual_n_ctx,
+    }
+    if actual != expected:
+        print(
+            f"skipping reusable vectors from {reuse_index_path}: "
+            f"embedding config changed from {actual} to {expected}",
+            flush=True,
+        )
+        return {}
     documents = payload.get("documents")
     if not isinstance(documents, list):
         return {}
