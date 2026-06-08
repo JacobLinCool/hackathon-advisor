@@ -7,6 +7,7 @@ import json
 import os
 from typing import Any, Protocol
 
+from hackathon_advisor.config import first_nonempty_env
 from hackathon_advisor.data import Project, normalize_project_tags
 from hackathon_advisor.model_runtime import (
     DEFAULT_MODEL_ID,
@@ -27,7 +28,7 @@ from hackathon_advisor.quest_taxonomy import (
 
 
 MAX_QUEST_TOKENS = 1024
-DEFAULT_QUEST_ADAPTER_ID = "artifacts/quest-lora"
+DEFAULT_QUEST_ADAPTER_ID = "build-small-hackathon/hackathon-advisor-quest-minicpm5-lora"
 DEFAULT_QUEST_ADAPTER_REVISION = ""
 
 
@@ -74,9 +75,12 @@ class MiniCPMQuestAnalyzer:
             try:
                 raw = self._generate_json(render_project_quest_prompt(project))
                 validated = self._validate_or_repair_project(project, raw).matches_by_project
+                matches.update(validated)
             except QuestAnalysisError as error:
-                raise QuestAnalysisError(f"{project.id}: {error}") from error
-            matches.update(validated)
+                # Tolerate a single unparseable project: record empty matches and continue, so one
+                # malformed model output never aborts a whole-org refresh.
+                print(f"[quest-analysis] skipped {project.id}: {error}", flush=True)
+                matches[project.id] = []
         return matches
 
     def _validate_or_repair_project(self, project: Project, raw: Mapping[str, Any]) -> ValidatedQuestAnalysis:
@@ -130,15 +134,21 @@ class MiniCPMQuestAnalyzer:
         try:
             parsed = _extract_json_object(text)
         except QuestAnalysisError as error:
-            repaired = self._repair_invalid_json(text)
             try:
-                parsed = _extract_json_object(repaired)
-            except QuestAnalysisError as repair_error:
-                preview = " ".join(text.split())[:280]
-                repair_preview = " ".join(repaired.split())[:280]
-                raise QuestAnalysisError(
-                    f"{error}: {preview}; MiniCPM JSON repair failed: {repair_error}: {repair_preview}"
-                ) from repair_error
+                # Deterministic repair first: escape unescaped double quotes inside string values
+                # (the model copies snippets like class="x" verbatim). Avoids an LLM round-trip and
+                # preserves the evidence text exactly.
+                parsed = _extract_json_object(_escape_unescaped_quotes(text))
+            except QuestAnalysisError:
+                repaired = self._repair_invalid_json(text)
+                try:
+                    parsed = _extract_json_object(repaired)
+                except QuestAnalysisError as repair_error:
+                    preview = " ".join(text.split())[:280]
+                    repair_preview = " ".join(repaired.split())[:280]
+                    raise QuestAnalysisError(
+                        f"{error}: {preview}; MiniCPM JSON repair failed: {repair_error}: {repair_preview}"
+                    ) from repair_error
         if not isinstance(parsed, dict):
             raise QuestAnalysisError("quest analyzer did not return a JSON object")
         return parsed
@@ -229,16 +239,33 @@ class MiniCPMQuestAnalyzer:
         return token_id
 
 
+def resolve_quest_identity(env: Mapping[str, str] | None = None) -> tuple[str, str, str]:
+    """Resolve ``(model_id, adapter_id, adapter_revision)`` for the quest analyzer.
+
+    Shared by ``create_quest_analyzer`` (the live load) and the quest-cache fingerprint so
+    the serving runtime and the cache key resolve identically (e.g. on whitespace-padded env).
+    """
+    model_id = first_nonempty_env(
+        "ADVISOR_QUEST_MODEL_ID", "ADVISOR_MODEL_ID", default=DEFAULT_MODEL_ID, env=env
+    )
+    adapter_id = first_nonempty_env("ADVISOR_QUEST_ADAPTER_ID", default=DEFAULT_QUEST_ADAPTER_ID, env=env)
+    adapter_revision = first_nonempty_env(
+        "ADVISOR_QUEST_ADAPTER_REVISION", default=DEFAULT_QUEST_ADAPTER_REVISION, env=env
+    )
+    return model_id, adapter_id, adapter_revision
+
+
 def create_quest_analyzer(device: str = "auto") -> QuestAnalyzer:
     backend = os.environ.get("ADVISOR_QUEST_ANALYZER_BACKEND", "").strip().lower()
     if not backend:
         backend = os.environ.get("ADVISOR_MODEL_BACKEND", "").strip().lower()
     if backend in {"minicpm", "minicpm-transformers"}:
+        model_id, adapter_id, adapter_revision = resolve_quest_identity()
         return MiniCPMQuestAnalyzer(
-            os.environ.get("ADVISOR_QUEST_MODEL_ID", os.environ.get("ADVISOR_MODEL_ID", DEFAULT_MODEL_ID)),
+            model_id,
             device=device,
-            adapter_id=os.environ.get("ADVISOR_QUEST_ADAPTER_ID", DEFAULT_QUEST_ADAPTER_ID),
-            adapter_revision=os.environ.get("ADVISOR_QUEST_ADAPTER_REVISION", DEFAULT_QUEST_ADAPTER_REVISION),
+            adapter_id=adapter_id,
+            adapter_revision=adapter_revision,
         )
     raise QuestAnalysisError(
         "Dashboard refresh requires ADVISOR_QUEST_ANALYZER_BACKEND=minicpm-transformers. "
@@ -346,6 +373,50 @@ def _validate_project_matches(raw_matches: Any, project_id: str) -> list[dict[st
             seen.add(match["quest"])
             matches.append(match)
     return matches
+
+
+def _escape_unescaped_quotes(text: str) -> str:
+    """Escape double quotes inside JSON string values that are not string terminators.
+
+    The quest model sometimes copies code verbatim into a free-text field, e.g.
+    ``"evidence":"class="x" ..."``. A quote closes a string only when the next
+    non-whitespace character is a JSON structural token (``: , } ]``) or end of input;
+    any other in-string quote is escaped so ``json.loads`` can parse the value.
+    """
+    out: list[str] = []
+    in_string = False
+    i = 0
+    length = len(text)
+    while i < length:
+        char = text[i]
+        if not in_string:
+            out.append(char)
+            if char == '"':
+                in_string = True
+            i += 1
+            continue
+        if char == "\\":
+            out.append(char)
+            if i + 1 < length:
+                out.append(text[i + 1])
+                i += 2
+            else:
+                i += 1
+            continue
+        if char == '"':
+            nxt = i + 1
+            while nxt < length and text[nxt] in " \t\r\n":
+                nxt += 1
+            if nxt >= length or text[nxt] in ":,}]":
+                out.append(char)
+                in_string = False
+            else:
+                out.append('\\"')
+            i += 1
+            continue
+        out.append(char)
+        i += 1
+    return "".join(out)
 
 
 def _extract_json_object(text: str) -> Any:

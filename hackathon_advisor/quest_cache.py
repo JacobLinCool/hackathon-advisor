@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from hashlib import sha256
 import json
 import os
@@ -11,13 +10,11 @@ from typing import Any
 from uuid import uuid4
 
 from hackathon_advisor.data import Project
-from hackathon_advisor.model_runtime import DEFAULT_MODEL_ID
 from hackathon_advisor.quest_analysis import (
-    DEFAULT_QUEST_ADAPTER_ID,
-    DEFAULT_QUEST_ADAPTER_REVISION,
     MAX_QUEST_TOKENS,
     QuestAnalysisError,
     render_project_quest_prompt,
+    resolve_quest_identity,
     validate_matches_by_project,
 )
 from hackathon_advisor.quest_taxonomy import (
@@ -26,6 +23,7 @@ from hackathon_advisor.quest_taxonomy import (
     QUEST_SYSTEM_PROMPT,
     README_PROMPT_CHAR_LIMIT,
 )
+from hackathon_advisor._text import utc_now
 
 
 QUEST_CACHE_SCHEMA_VERSION = 1
@@ -75,10 +73,7 @@ class QuestCacheLookup:
 
 
 def quest_analyzer_fingerprint_from_env(env: Mapping[str, str] | None = None) -> dict[str, Any]:
-    values = env or os.environ
-    model_id = _first_env(values, "ADVISOR_QUEST_MODEL_ID", "ADVISOR_MODEL_ID") or DEFAULT_MODEL_ID
-    adapter_id = values.get("ADVISOR_QUEST_ADAPTER_ID", DEFAULT_QUEST_ADAPTER_ID).strip()
-    adapter_revision = values.get("ADVISOR_QUEST_ADAPTER_REVISION", DEFAULT_QUEST_ADAPTER_REVISION).strip()
+    model_id, adapter_id, adapter_revision = resolve_quest_identity(env)
     return {
         "source": QUEST_ANALYZER_SOURCE,
         "model_id": model_id,
@@ -161,7 +156,7 @@ def write_quest_cache_entry(
 ) -> QuestCacheEntry:
     identity = build_quest_cache_identity(project, analyzer_fingerprint)
     validated = validate_matches_by_project({project.id: list(matches)}, [project], source=source)
-    generated_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    generated_at = utc_now()
     payload = {
         "schema_version": QUEST_CACHE_SCHEMA_VERSION,
         "generated_at": generated_at,
@@ -214,7 +209,7 @@ def build_quest_analysis_run_payload(
     return {
         "schema_version": QUEST_CACHE_SCHEMA_VERSION,
         "run_id": run_id,
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": utc_now(),
         "source": QUEST_ANALYZER_SOURCE,
         "analyzer_fingerprint": json.loads(_canonical_json(analyzer_fingerprint)),
         "taxonomy_hash": quest_taxonomy_hash(),
@@ -244,14 +239,6 @@ def _validate_cache_payload(
         path=path,
         generated_at=generated_at,
     )
-
-
-def _first_env(env: Mapping[str, str], *names: str) -> str:
-    for name in names:
-        value = env.get(name, "").strip()
-        if value:
-            return value
-    return ""
 
 
 def _local_artifact_digest(raw_path: str) -> str:

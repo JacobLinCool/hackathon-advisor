@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 from hackathon_advisor.dashboard import (
     CLUSTER_LABEL_ALGORITHM,
     build_dashboard_payload,
@@ -350,7 +348,8 @@ def test_minicpm_quest_analyzer_repairs_invalid_json_with_base_model(monkeypatch
     analyzer = MiniCPMQuestAnalyzer()
     monkeypatch.setattr(analyzer, "_ensure_loaded", lambda: None)
     outputs = [
-        '{"matches":[{"quest":"Off-Brand","confidence":0.8,"evidence":"app = Server(title="Broken")","source":"app_file"}]}',
+        # truncated output the deterministic quote-escaper cannot fix -> falls through to base-model repair
+        '{"matches":[{"quest":"Off-Brand","confidence":0.8,"evidence":"truncated',
         '{"matches":[{"quest":"Off-Brand","confidence":0.8,"evidence":"custom Server title","source":"app_file"}]}',
     ]
     calls: list[bool] = []
@@ -365,6 +364,40 @@ def test_minicpm_quest_analyzer_repairs_invalid_json_with_base_model(monkeypatch
 
     assert calls == [False, True]
     assert result["build-small-hackathon/project-0"][0]["evidence"] == "custom Server title"
+
+
+def test_minicpm_quest_analyzer_escapes_inner_quotes_without_repair(monkeypatch) -> None:
+    analyzer = MiniCPMQuestAnalyzer()
+    monkeypatch.setattr(analyzer, "_ensure_loaded", lambda: None)
+    calls: list[bool] = []
+
+    def fake_generate(_system: str, _prompt: str, *, disable_adapter: bool = False) -> str:
+        calls.append(disable_adapter)
+        return (
+            '{"matches":[{"quest":"Off-Brand","confidence":0.8,'
+            '"evidence":"app = Server(title="Broken")","source":"app_file"}]}'
+        )
+
+    monkeypatch.setattr(analyzer, "_generate_text", fake_generate)
+
+    result = analyzer.analyze([fake_projects(1)[0]])
+
+    assert calls == [False]  # deterministic escape; no base-model repair round-trip
+    assert result["build-small-hackathon/project-0"][0]["evidence"] == 'app = Server(title="Broken")'
+
+
+def test_minicpm_quest_analyzer_tolerates_unparseable_project(monkeypatch) -> None:
+    analyzer = MiniCPMQuestAnalyzer()
+    monkeypatch.setattr(analyzer, "_ensure_loaded", lambda: None)
+
+    def fail(_prompt: str) -> dict:
+        raise QuestAnalysisError("quest analyzer returned invalid JSON")
+
+    monkeypatch.setattr(analyzer, "_generate_json", fail)
+
+    result = analyzer.analyze([fake_projects(1)[0]])
+
+    assert result == {"build-small-hackathon/project-0": []}
 
 
 def test_minicpm_quest_analyzer_repairs_schema_errors_with_base_model(monkeypatch) -> None:
