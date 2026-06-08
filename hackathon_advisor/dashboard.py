@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from collections.abc import Mapping, Sequence
-from datetime import datetime, timezone
 import math
 from typing import Any
 
@@ -15,6 +14,7 @@ from hackathon_advisor.data import (
     tokenize,
 )
 from hackathon_advisor.quest_taxonomy import QUESTS, normalize_match, quest_profiles
+from hackathon_advisor._text import utc_now
 
 
 DASHBOARD_SCHEMA_VERSION = 1
@@ -129,7 +129,7 @@ def build_dashboard_payload(
     quest_report = _quest_report(points, normalized_quest_matches, quest_source)
     payload = {
         "schema_version": DASHBOARD_SCHEMA_VERSION,
-        "generated_at": generated_at or datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": generated_at or utc_now(),
         "project_count": len(projects),
         "provenance": {
             "snapshot_generated_at": index.generated_at,

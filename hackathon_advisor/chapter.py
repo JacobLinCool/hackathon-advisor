@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Any
 
 from hackathon_advisor.tools import goal_label
+from hackathon_advisor._text import clean as _clean, list_of_dicts as _list_of_dicts, utc_now
 
 
 def build_chapter_markdown(session: dict[str, Any], metadata: dict[str, Any]) -> str:
@@ -13,7 +13,7 @@ def build_chapter_markdown(session: dict[str, Any], metadata: dict[str, Any]) ->
     lines = [
         "# The Unwritten Almanac Chapter",
         "",
-        f"Generated: {datetime.now(timezone.utc).isoformat(timespec='seconds')}",
+        f"Generated: {utc_now()}",
         f"Snapshot: {_clean(metadata.get('snapshot_generated_at'))} · {_clean(metadata.get('project_count'))} pages",
         f"Goals: {', '.join(goals) if goals else 'No specific goals'}",
         "",
@@ -65,19 +65,7 @@ def _idea_page(index: int, idea: dict[str, Any]) -> list[str]:
     return lines
 
 
-def _list_of_dicts(value: Any) -> list[dict[str, Any]]:
-    if not isinstance(value, list):
-        return []
-    return [item for item in value if isinstance(item, dict)]
-
-
 def _goal_labels(value: Any) -> list[str]:
     if not isinstance(value, list):
         return []
     return [goal_label(str(goal)) for goal in value]
-
-
-def _clean(value: Any) -> str:
-    if value is None:
-        return ""
-    return " ".join(str(value).split())

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from io import BytesIO
 import json
 from typing import Any
@@ -13,6 +12,7 @@ from hackathon_advisor.lora_training_kit import build_lora_training_kit_zip
 from hackathon_advisor.png_export import artifact_png_filename, render_artifact_png
 from hackathon_advisor.submission_packet import build_submission_packet_markdown
 from hackathon_advisor.trace_export import build_trace_jsonl
+from hackathon_advisor._text import clean as _clean, utc_now
 
 
 BUNDLE_SCHEMA_VERSION = 1
@@ -69,7 +69,7 @@ def _manifest(
     return {
         "type": "demo_bundle_manifest",
         "schema_version": BUNDLE_SCHEMA_VERSION,
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": utc_now(),
         "app": "hackathon-advisor",
         "turn_count": int(demo.get("turn_count") or 0),
         "file_count": len(files),
@@ -87,8 +87,3 @@ def _manifest(
             "snapshot_digest": _clean(metadata.get("snapshot_digest")),
         },
     }
-
-def _clean(value: Any) -> str:
-    if value is None:
-        return ""
-    return " ".join(str(value).split())

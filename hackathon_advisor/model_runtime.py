@@ -503,10 +503,3 @@ def _project_reference_id(text: str) -> str:
         return ""
     raw = re.sub(r"^https?://huggingface\.co/spaces/", "", raw, flags=re.IGNORECASE)
     return raw.split()[0].strip(".,;:!?\"'")
-
-
-def _title(text: str) -> str:
-    title = text[:64].strip(" .") or "Unwritten Page"
-    if any(char.isupper() or char.isdigit() for char in title):
-        return title[0].upper() + title[1:]
-    return title.capitalize()

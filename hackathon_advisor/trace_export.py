@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import json
 from typing import Any
+
+from hackathon_advisor._text import utc_now
 
 
 TRACE_SCHEMA_VERSION = 1
@@ -15,13 +16,13 @@ def build_trace_jsonl(session: dict[str, Any], metadata: dict[str, Any]) -> str:
         {
             "type": "trace_manifest",
             "schema_version": TRACE_SCHEMA_VERSION,
-            "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "generated_at": utc_now(),
             "app": "hackathon-advisor",
             "index": {
-                "algorithm": metadata["index_algorithm"],
-                "snapshot_generated_at": metadata["snapshot_generated_at"],
-                "index_generated_at": metadata["index_generated_at"],
-                "snapshot_digest": metadata["snapshot_digest"],
+                "algorithm": metadata.get("index_algorithm", ""),
+                "snapshot_generated_at": metadata.get("snapshot_generated_at", ""),
+                "index_generated_at": metadata.get("index_generated_at", ""),
+                "snapshot_digest": metadata.get("snapshot_digest", ""),
             },
             "idea_count": len(ideas),
             "turn_count": len(trace),

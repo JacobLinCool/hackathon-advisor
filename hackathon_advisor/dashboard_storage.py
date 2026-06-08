@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -9,6 +8,7 @@ from typing import Any
 import uuid
 
 from hackathon_advisor.dashboard import validate_dashboard_payload
+from hackathon_advisor._text import utc_now
 
 
 LATEST_FILENAME = "latest.json"
@@ -116,7 +116,7 @@ def persist_refresh_artifacts(
     manifest = {
         "schema_version": STORAGE_SCHEMA_VERSION,
         "run_id": run_id,
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": utc_now(),
         "project_count": dashboard_payload["project_count"],
         "snapshot_digest": dashboard_payload["provenance"]["snapshot_digest"],
         "artifacts": artifact_paths,

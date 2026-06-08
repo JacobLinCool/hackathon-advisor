@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from io import BytesIO
 import json
 from pathlib import Path
@@ -8,6 +7,7 @@ from typing import Any
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from hackathon_advisor.lora_dataset import BASE_MODEL, build_lora_dataset_jsonl
+from hackathon_advisor._text import utc_now
 
 
 TRAINING_RECIPE_SCHEMA_VERSION = 1
@@ -47,7 +47,7 @@ def build_training_recipe(
     return {
         "type": "lora_training_recipe",
         "schema_version": TRAINING_RECIPE_SCHEMA_VERSION,
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": utc_now(),
         "base_model": dataset_manifest.get("base_model") or BASE_MODEL,
         "adapter_repo": adapter_repo,
         "adapter_task": dataset_manifest.get("adapter_task") or "hackathon_advisor_tool_call_and_voice",
@@ -143,7 +143,7 @@ def build_lora_training_kit_zip(session: dict[str, Any], metadata: dict[str, Any
     manifest = {
         "type": "lora_training_kit_manifest",
         "schema_version": TRAINING_RECIPE_SCHEMA_VERSION,
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": utc_now(),
         "file_count": len(files),
         "files": list(files),
         "example_count": len(examples),

@@ -3,7 +3,6 @@ from __future__ import annotations
 import ast
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from hashlib import sha256
 import json
 import math
@@ -11,6 +10,8 @@ from pathlib import Path
 from pathlib import PurePosixPath
 import re
 from typing import Any
+
+from hackathon_advisor._text import utc_now
 
 
 TOKEN_RE = re.compile(r"[a-z0-9][a-z0-9.+_-]*", re.IGNORECASE)
@@ -544,7 +545,7 @@ def build_index_payload(
     return {
         "schema_version": INDEX_SCHEMA_VERSION,
         "algorithm": INDEX_ALGORITHM,
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": utc_now(),
         "snapshot_generated_at": snapshot_generated_at,
         "snapshot_source": source,
         "snapshot_digest": project_snapshot_digest(projects, snapshot_generated_at, source),

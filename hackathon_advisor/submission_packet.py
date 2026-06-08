@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Any
+
+from hackathon_advisor._text import clean as _clean, list_of_dicts as _list_of_dicts, utc_now
 
 
 SPACE_URL = "https://huggingface.co/spaces/build-small-hackathon/hackathon-advisor"
@@ -27,7 +28,7 @@ def build_submission_packet_markdown(
     lines = [
         "# Hackathon Advisor Submission Packet",
         "",
-        f"Generated: {datetime.now(timezone.utc).isoformat(timespec='seconds')}",
+        f"Generated: {utc_now()}",
         "",
         "## Links",
         "",
@@ -240,15 +241,3 @@ def _current_idea(session: dict[str, Any], ideas: list[dict[str, Any]]) -> dict[
 def _echoes(idea: dict[str, Any]) -> list[dict[str, Any]]:
     score = idea.get("score") if isinstance(idea.get("score"), dict) else {}
     return _list_of_dicts(score.get("echoes"))
-
-
-def _list_of_dicts(value: Any) -> list[dict[str, Any]]:
-    if not isinstance(value, list):
-        return []
-    return [item for item in value if isinstance(item, dict)]
-
-
-def _clean(value: Any) -> str:
-    if value is None:
-        return ""
-    return " ".join(str(value).split())

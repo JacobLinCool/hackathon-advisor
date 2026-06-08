@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import json
 from typing import Any
+
+from hackathon_advisor._text import clean as _clean, list_of_dicts as _list_of_dicts, utc_now
 
 
 LORA_DATASET_SCHEMA_VERSION = 1
@@ -29,7 +30,7 @@ def build_lora_dataset_jsonl(session: dict[str, Any], metadata: dict[str, Any]) 
         {
             "type": "lora_sft_manifest",
             "schema_version": LORA_DATASET_SCHEMA_VERSION,
-            "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "generated_at": utc_now(),
             "app": "hackathon-advisor",
             "base_model": BASE_MODEL,
             "adapter_task": ADAPTER_TASK,
@@ -169,15 +170,3 @@ def _index_metadata(metadata: dict[str, Any]) -> dict[str, str]:
         "index_generated_at": _clean(metadata.get("index_generated_at")),
         "snapshot_digest": _clean(metadata.get("snapshot_digest")),
     }
-
-
-def _list_of_dicts(value: Any) -> list[dict[str, Any]]:
-    if not isinstance(value, list):
-        return []
-    return [item for item in value if isinstance(item, dict)]
-
-
-def _clean(value: Any) -> str:
-    if value is None:
-        return ""
-    return " ".join(str(value).split())
