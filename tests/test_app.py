@@ -164,10 +164,12 @@ def test_dashboard_refresh_rejects_concurrent_run(monkeypatch, tmp_path) -> None
 def test_dashboard_refresh_embedding_build_runs_in_subprocess(monkeypatch, tmp_path) -> None:
     project_path = tmp_path / "projects.json"
     index_path = tmp_path / "project_index.json"
+    reuse_index_path = tmp_path / "reuse_project_index.json"
     project_path.write_text(
         json.dumps({"generated_at": "2026-06-08T00:00:00+00:00", "source": "test", "projects": []}),
         encoding="utf-8",
     )
+    reuse_index_path.write_text(json.dumps({"documents": []}), encoding="utf-8")
     monkeypatch.setenv("ADVISOR_EMBEDDING_MODEL_REPO", "test/repo")
     monkeypatch.setenv("ADVISOR_EMBEDDING_MODEL_FILE", "model.gguf")
     monkeypatch.setenv("ADVISOR_EMBEDDING_MODEL_PATH", "/tmp/model.gguf")
@@ -179,7 +181,7 @@ def test_dashboard_refresh_embedding_build_runs_in_subprocess(monkeypatch, tmp_p
 
     monkeypatch.setattr(app_module, "_run_refresh_index_command", fake_run_refresh_index_command)
 
-    payload = app_module._build_refresh_index_payload(project_path, index_path)
+    payload = app_module._build_refresh_index_payload(project_path, index_path, reuse_index_path=reuse_index_path)
 
     command = captured["command"]
     assert payload == {"schema": "ok"}
@@ -187,6 +189,7 @@ def test_dashboard_refresh_embedding_build_runs_in_subprocess(monkeypatch, tmp_p
     assert command[command.index("--model-repo") + 1] == "test/repo"
     assert command[command.index("--model-file") + 1] == "model.gguf"
     assert command[command.index("--model-path") + 1] == "/tmp/model.gguf"
+    assert command[command.index("--reuse-index") + 1] == str(reuse_index_path)
     assert command[command.index("--build-source") + 1] == "space dashboard refresh"
     assert command[command.index("--builder") + 1] == "app.py:/api/dashboard/refresh"
 

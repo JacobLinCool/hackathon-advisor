@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from hashlib import sha256
 import importlib.metadata
 import json
 from pathlib import Path
@@ -32,6 +33,7 @@ def main() -> None:
     parser.add_argument("--n-threads", type=int, default=0)
     parser.add_argument("--build-source", default="local")
     parser.add_argument("--builder", default="scripts/build_project_index.py")
+    parser.add_argument("--reuse-index", default="")
     args = parser.parse_args()
 
     payload = build_payload(
@@ -43,6 +45,7 @@ def main() -> None:
         n_threads=args.n_threads or None,
         build_source=args.build_source,
         builder=args.builder,
+        reuse_index_path=Path(args.reuse_index) if args.reuse_index else None,
     )
     output = Path(args.out)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -65,28 +68,47 @@ def build_payload(
     build_source: str,
     builder: str,
     modal_app: str = "",
+    reuse_index_path: Path | None = None,
 ) -> dict:
     data = json.loads(project_path.read_text(encoding="utf-8"))
     projects = [Project.from_dict(item) for item in data["projects"]]
     print(f"loaded {len(projects)} projects from {project_path}", flush=True)
-    embedder = LlamaCppEmbedder(
-        model_repo=model_repo,
-        model_file=model_file,
-        model_path=model_path,
-        n_ctx=n_ctx,
-        n_threads=n_threads,
-        verbose=False,
-    )
+    reusable_vectors = load_reusable_vectors(reuse_index_path)
+    if reusable_vectors:
+        print(f"loaded {len(reusable_vectors)} reusable vectors from {reuse_index_path}", flush=True)
     print(
         "embedding projects with "
         f"{model_repo}/{model_file}; first vector may download and load the GGUF model",
         flush=True,
     )
     embeddings = []
+    embedder = None
+    reused_count = 0
+    embedded_count = 0
     for index, project in enumerate(projects, start=1):
-        embeddings.append(embedder.embed(project.searchable_text))
+        digest = sha256(project.searchable_text.encode("utf-8")).hexdigest()
+        reusable_vector = reusable_vectors.get((project.id, digest))
+        if reusable_vector is not None:
+            embeddings.append(reusable_vector)
+            reused_count += 1
+        else:
+            if embedder is None:
+                embedder = LlamaCppEmbedder(
+                    model_repo=model_repo,
+                    model_file=model_file,
+                    model_path=model_path,
+                    n_ctx=n_ctx,
+                    n_threads=n_threads,
+                    verbose=False,
+                )
+            embeddings.append(embedder.embed(project.searchable_text))
+            embedded_count += 1
         if index == 1 or index % 10 == 0 or index == len(projects):
-            print(f"embedded {index}/{len(projects)} projects", flush=True)
+            print(
+                f"indexed {index}/{len(projects)} projects "
+                f"(reused={reused_count}, embedded={embedded_count})",
+                flush=True,
+            )
     metadata = {
         "model_repo": model_repo,
         "model_file": model_file,
@@ -104,6 +126,25 @@ def build_payload(
         embeddings=embeddings,
         embedding_metadata=metadata,
     )
+
+
+def load_reusable_vectors(reuse_index_path: Path | None) -> dict[tuple[str, str], list[float]]:
+    if reuse_index_path is None:
+        return {}
+    payload = json.loads(reuse_index_path.read_text(encoding="utf-8"))
+    documents = payload.get("documents")
+    if not isinstance(documents, list):
+        return {}
+    reusable: dict[tuple[str, str], list[float]] = {}
+    for document in documents:
+        if not isinstance(document, dict):
+            continue
+        project_id = str(document.get("project_id") or "")
+        text_digest = str(document.get("text_digest") or "")
+        vector = document.get("vector")
+        if project_id and text_digest and isinstance(vector, list) and vector:
+            reusable[(project_id, text_digest)] = [float(value) for value in vector]
+    return reusable
 
 
 if __name__ == "__main__":

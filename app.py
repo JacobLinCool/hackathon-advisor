@@ -239,7 +239,14 @@ def _build_refresh_payloads(run_id: str) -> tuple[dict[str, Any], dict[str, Any]
     with tempfile.TemporaryDirectory(prefix="advisor-refresh-") as directory:
         project_path = Path(directory) / "projects.json"
         project_path.write_text(json.dumps(projects_payload, ensure_ascii=False), encoding="utf-8")
-        index_payload = _build_refresh_index_payload(project_path, Path(directory) / "project_index.json")
+        reuse_index_path = Path(directory) / "reuse_project_index.json"
+        with _runtime_lock:
+            reuse_index_path.write_text(json.dumps(index.index_payload, ensure_ascii=False), encoding="utf-8")
+        index_payload = _build_refresh_index_payload(
+            project_path,
+            Path(directory) / "project_index.json",
+            reuse_index_path=reuse_index_path,
+        )
 
     projects = [Project.from_dict(item) for item in projects_payload["projects"]]
     refreshed_index = ProjectIndex(
@@ -260,7 +267,12 @@ def _build_refresh_payloads(run_id: str) -> tuple[dict[str, Any], dict[str, Any]
     return projects_payload, index_payload, refreshed_dashboard
 
 
-def _build_refresh_index_payload(project_path: Path, index_path: Path) -> dict[str, Any]:
+def _build_refresh_index_payload(
+    project_path: Path,
+    index_path: Path,
+    *,
+    reuse_index_path: Path | None = None,
+) -> dict[str, Any]:
     command = [
         sys.executable,
         str(ROOT / "scripts" / "build_project_index.py"),
@@ -277,6 +289,8 @@ def _build_refresh_index_payload(project_path: Path, index_path: Path) -> dict[s
         "--builder",
         "app.py:/api/dashboard/refresh",
     ]
+    if reuse_index_path is not None:
+        command.extend(["--reuse-index", str(reuse_index_path)])
     model_path = os.environ.get("ADVISOR_EMBEDDING_MODEL_PATH", "").strip()
     if model_path:
         command.extend(["--model-path", model_path])
