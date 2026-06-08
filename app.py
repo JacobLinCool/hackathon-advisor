@@ -22,6 +22,7 @@ from hackathon_advisor.agent import AdvisorEngine
 from hackathon_advisor.artifact_bundle import BUNDLE_FILENAME, build_demo_bundle_zip
 from hackathon_advisor.asr_runtime import create_asr_transcriber
 from hackathon_advisor.chapter import build_chapter_markdown
+from hackathon_advisor.config import int_env
 from hackathon_advisor.dashboard import build_dashboard_payload
 from hackathon_advisor.dashboard_storage import (
     DashboardStorageError,
@@ -68,7 +69,7 @@ from hackathon_advisor.submission_packet import build_submission_packet_markdown
 from hackathon_advisor.tool_contracts import resolve_tool_call, tool_schemas
 from hackathon_advisor.tools import GOALS, goal_profiles
 from hackathon_advisor.trace_export import build_trace_jsonl, trace_metadata
-from hackathon_advisor.zerogpu import gpu_task, is_gpu_quota_error, zero_gpu_enabled
+from hackathon_advisor.zerogpu import gpu_device, gpu_task, is_gpu_quota_error, zero_gpu_enabled
 
 
 configure_logging()
@@ -131,7 +132,7 @@ dashboard_search_index = DashboardSearchIndex(index.projects, dashboard_payload)
 # Acceleration is automatic: on a ZeroGPU Space the GPU path uses accelerate device_map inside
 # the @spaces.GPU fork; locally the device resolves CUDA -> Apple MPS -> CPU. CPU is only used
 # as an explicit override or a quota fallback.
-engine = AdvisorEngine(index, create_tool_planner(device="cuda" if zero_gpu_enabled() else "local"))
+engine = AdvisorEngine(index, create_tool_planner(device=gpu_device()))
 voice_transcriber = create_asr_transcriber()
 app = Server()
 
@@ -317,7 +318,7 @@ def _analyze_dashboard_quests(
 def _analyze_dashboard_quest_batch_gpu(project_rows: list[dict[str, Any]]) -> dict[str, Any]:
     return _analyze_dashboard_quest_batch_with_device(
         project_rows,
-        device="cuda" if zero_gpu_enabled() else "local",
+        device=gpu_device(),
     )
 
 
@@ -344,13 +345,11 @@ def _analyze_dashboard_quest_batch_with_device(project_rows: list[dict[str, Any]
 
 
 def _quest_analysis_batch_size() -> int:
-    raw = os.environ.get("ADVISOR_QUEST_ANALYSIS_BATCH_SIZE", "").strip()
-    if not raw:
-        return DEFAULT_QUEST_ANALYSIS_BATCH_SIZE
-    batch_size = int(raw)
-    if batch_size <= 0:
-        raise RuntimeError("ADVISOR_QUEST_ANALYSIS_BATCH_SIZE must be a positive integer.")
-    return batch_size
+    return int_env(
+        "ADVISOR_QUEST_ANALYSIS_BATCH_SIZE",
+        DEFAULT_QUEST_ANALYSIS_BATCH_SIZE,
+        minimum=1,
+    )
 
 
 def _refresh_public_state() -> dict[str, Any]:
@@ -388,13 +387,11 @@ def _default_refresh_compute() -> str:
 
 
 def _refresh_lock_ttl_seconds() -> int:
-    raw = os.environ.get("ADVISOR_REFRESH_LOCK_TTL_SECONDS", "").strip()
-    if not raw:
-        return DEFAULT_REFRESH_LOCK_TTL_SECONDS
-    ttl = int(raw)
-    if ttl <= 0:
-        raise RuntimeError("ADVISOR_REFRESH_LOCK_TTL_SECONDS must be a positive integer.")
-    return ttl
+    return int_env(
+        "ADVISOR_REFRESH_LOCK_TTL_SECONDS",
+        DEFAULT_REFRESH_LOCK_TTL_SECONDS,
+        minimum=1,
+    )
 
 
 def _refresh_lock_path(cache_dir: Path) -> Path:
@@ -748,13 +745,11 @@ def _refresh_subprocess_env() -> dict[str, str]:
 
 
 def _refresh_embedding_timeout_seconds() -> int:
-    raw = os.environ.get("ADVISOR_REFRESH_EMBEDDING_TIMEOUT_SECONDS", "").strip()
-    if not raw:
-        return DEFAULT_REFRESH_EMBEDDING_TIMEOUT_SECONDS
-    timeout = int(raw)
-    if timeout <= 0:
-        raise RuntimeError("ADVISOR_REFRESH_EMBEDDING_TIMEOUT_SECONDS must be a positive integer.")
-    return timeout
+    return int_env(
+        "ADVISOR_REFRESH_EMBEDDING_TIMEOUT_SECONDS",
+        DEFAULT_REFRESH_EMBEDDING_TIMEOUT_SECONDS,
+        minimum=1,
+    )
 
 
 def _record_refresh_subprocess_line(output_tail: list[str], raw_line: str) -> None:

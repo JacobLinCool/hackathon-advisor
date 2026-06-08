@@ -11,14 +11,12 @@ import sys
 import threading
 from typing import Any
 
+from hackathon_advisor.config import bool_env, int_env, optional_int_env, tri_state_env
 from hackathon_advisor.data import (
     DEFAULT_EMBEDDING_MODEL_FILE,
     DEFAULT_EMBEDDING_MODEL_REPO,
 )
 
-
-TRUE_VALUES = {"1", "true", "yes", "on"}
-FALSE_VALUES = {"0", "false", "no", "off"}
 DEFAULT_N_CTX = 2048
 
 
@@ -198,40 +196,18 @@ def create_llama_cpp_embedder(metadata: dict[str, Any]) -> LlamaCppEmbedder | Su
             str(metadata.get("model_file") or DEFAULT_EMBEDDING_MODEL_FILE),
         ),
         model_path=os.environ.get("ADVISOR_EMBEDDING_MODEL_PATH", ""),
-        n_ctx=_int_env("ADVISOR_EMBEDDING_N_CTX", DEFAULT_N_CTX),
-        n_batch=_optional_int_env("ADVISOR_EMBEDDING_BATCH"),
-        n_threads=_optional_int_env("ADVISOR_EMBEDDING_THREADS"),
-        n_gpu_layers=_int_env("ADVISOR_EMBEDDING_GPU_LAYERS", 0),
-        verbose=os.environ.get("ADVISOR_EMBEDDING_VERBOSE", "").strip().lower() in TRUE_VALUES,
+        n_ctx=int_env("ADVISOR_EMBEDDING_N_CTX", DEFAULT_N_CTX, minimum=0),
+        n_batch=optional_int_env("ADVISOR_EMBEDDING_BATCH"),
+        n_threads=optional_int_env("ADVISOR_EMBEDDING_THREADS"),
+        n_gpu_layers=int_env("ADVISOR_EMBEDDING_GPU_LAYERS", 0, minimum=0),
+        verbose=bool_env("ADVISOR_EMBEDDING_VERBOSE"),
     )
 
 
-def _int_env(name: str, default: int) -> int:
-    raw = os.environ.get(name, "").strip()
-    if not raw:
-        return default
-    value = int(raw)
-    if value < 0:
-        raise RuntimeError(f"{name} must be a non-negative integer.")
-    return value
-
-
-def _optional_int_env(name: str) -> int | None:
-    raw = os.environ.get(name, "").strip()
-    if not raw:
-        return None
-    value = int(raw)
-    if value <= 0:
-        raise RuntimeError(f"{name} must be a positive integer.")
-    return value
-
-
 def _use_subprocess_embedder() -> bool:
-    raw = os.environ.get("ADVISOR_EMBEDDING_SUBPROCESS", "").strip().lower()
-    if raw in TRUE_VALUES:
-        return True
-    if raw in FALSE_VALUES:
-        return False
+    forced = tri_state_env("ADVISOR_EMBEDDING_SUBPROCESS")
+    if forced is not None:
+        return forced
     backend = os.environ.get("ADVISOR_MODEL_BACKEND", "").strip().lower()
     return platform.system() == "Darwin" and backend in {"minicpm", "minicpm-transformers"}
 

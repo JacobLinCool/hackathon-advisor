@@ -1,33 +1,34 @@
 from __future__ import annotations
 
-import os
 from collections.abc import Callable
 from typing import ParamSpec, TypeVar
 
+from hackathon_advisor.config import bool_env, int_env
 
 P = ParamSpec("P")
 R = TypeVar("R")
 
 
-TRUE_VALUES = {"1", "true", "yes", "on"}
 DEFAULT_GPU_DURATION_SECONDS = 60
 MAX_GPU_DURATION_SECONDS = 120
 
 
 def zero_gpu_enabled() -> bool:
-    return os.environ.get("ADVISOR_ZERO_GPU", "").strip().lower() in TRUE_VALUES
+    return bool_env("ADVISOR_ZERO_GPU")
+
+
+def gpu_device() -> str:
+    """torch device for the GPU path: 'cuda' under ZeroGPU, else 'local' (auto-resolved at load)."""
+    return "cuda" if zero_gpu_enabled() else "local"
 
 
 def zero_gpu_duration_seconds() -> int:
-    raw = os.environ.get("ADVISOR_ZERO_GPU_DURATION", "").strip()
-    if not raw:
-        return DEFAULT_GPU_DURATION_SECONDS
-    duration = int(raw)
-    if duration <= 0:
-        raise RuntimeError("ADVISOR_ZERO_GPU_DURATION must be a positive integer.")
-    if duration > MAX_GPU_DURATION_SECONDS:
-        raise RuntimeError(f"ADVISOR_ZERO_GPU_DURATION must be at most {MAX_GPU_DURATION_SECONDS} seconds.")
-    return duration
+    return int_env(
+        "ADVISOR_ZERO_GPU_DURATION",
+        DEFAULT_GPU_DURATION_SECONDS,
+        minimum=1,
+        maximum=MAX_GPU_DURATION_SECONDS,
+    )
 
 
 def gpu_task(function: Callable[P, R]) -> Callable[P, R]:
