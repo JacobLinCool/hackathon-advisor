@@ -39,14 +39,17 @@ train and inference time, with the same `QUEST_SYSTEM_PROMPT`.
    evidence is not in the cited segment, fixes `source`, kills Off-the-Grid on a
    cloud-API app, kills Tiny Titan on >4B models. Output: `data/quest_labels/labeled.json`.
 4. `scripts/build_quest_sft.py` — one natural example per project plus targeted
-   augmentations so every case is represented:
-   app-only, readme-only / missing app file, README↔app contradictions, empty
-   matches, and noisy metadata. Writes `data/quest_sft.jsonl`
-   (`hackathon_advisor/quest_dataset.py` formats and validates it).
+   augmentations so every case is represented: app-only, readme-only / missing app
+   file, README↔app contradictions, empty matches, noisy metadata, app-only variants
+   of the real remote-inference projects, and hand-authored contrastive **hard
+   negatives** (a remote inference call — `InferenceClient`, HF Inference Endpoints,
+   replicate, `*.modal.run` — must not earn Off the Grid; OpenBMB belongs only to
+   `openbmb`/MiniCPM models; Tiny Titan only to ≤4B). `_check_invariants` fails the
+   build on either crisp violation. Writes `data/quest_sft.jsonl`.
 
-156 chat-JSONL examples (108 natural + 48 augmented), 14 with empty matches, all 13
-quests covered; ~93% of match evidence is literally present in its cited segment
-(the rest is Off-the-Grid absence-of-cloud-API reasoning).
+185 chat-JSONL examples (108 natural + 77 augmented), 27 with empty matches, all 13
+quests covered. The contrastive negatives are up-weighted in training so they outweigh
+the strong Off-the-Grid prior that, untreated, mislabels remote-API chatbots as local.
 
 Published as a Hub dataset:
 [`build-small-hackathon/hackathon-advisor-quest-dataset`](https://huggingface.co/datasets/build-small-hackathon/hackathon-advisor-quest-dataset)
@@ -57,14 +60,16 @@ Published as a Hub dataset:
 
 ```bash
 modal run scripts/modal_train_quest_lora.py::smoke              # check the GPU
-modal run scripts/modal_train_quest_lora.py --dataset data/quest_sft.jsonl --epochs 6
+modal run scripts/modal_train_quest_lora.py --dataset data/quest_sft.jsonl --epochs 16
 ```
 
-LoRA SFT on an A10G: rank 16, alpha 32, completion-only loss (the prompt is masked
-to -100 so only the strict JSON is supervised), `max_seq_length=2560`, chat template
-with `enable_thinking=False` to match inference. The container self-evaluates on a
-held-out slice (does the adapter emit schema-valid JSON?) and returns the adapter as
-a zip that the local entrypoint unpacks under `artifacts/quest-lora/`.
+LoRA SFT on an **L40S**: rank 64, alpha 128, dropout 0, completion-only loss (the
+prompt is masked to -100 so only the strict JSON is supervised), `max_seq_length=3072`,
+chat template with `enable_thinking=False` to match inference. The dataset is the spec,
+so the container **evaluates on the whole dataset** — quest-set exact match, micro
+P/R/F1, and a mismatch list — and returns the adapter as a zip unpacked under
+`artifacts/quest-lora/`. The shipped adapter scores quest-set exact match 185/185
+(F1 1.0): every dataset project, including the remote-inference ones, is judged correctly.
 
 ## Serving
 

@@ -43,7 +43,7 @@ BADGE_LEDGER = [
     {
         "name": "Sharing is Caring",
         "status": "ready",
-        "evidence": "JSONL trace export and checked-in sample trace are published with the Space.",
+        "evidence": "Real Codex session logs are published as a redacted Hugging Face dataset with source hashes and a reusable publisher script.",
     },
     {
         "name": "Field Notes",

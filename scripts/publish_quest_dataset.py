@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 """Publish the quest-classification SFT dataset to the Hub as a dataset repo.
 
-Uploads data/quest_sft.jsonl (manifest + examples), the per-project verified teacher
-labels, and a generated dataset card. Prints the dataset URL and commit revision.
+The Hub layout is kept viewer-clean: `quest_sft.jsonl` holds only the homogeneous
+example rows (the manifest lives in `dataset_manifest.json`, the per-project verified
+teacher labels in `provenance/labeled.json`), and the dataset card pins the viewer to
+the examples file with a `configs:` block. The local training file keeps its leading
+manifest row; `parse_quest_dataset_jsonl` reads either layout.
 """
 from __future__ import annotations
 
 import argparse
 import json
 from pathlib import Path
+import tempfile
 
 from huggingface_hub import HfApi
 
@@ -25,9 +29,13 @@ def dataset_card(manifest: dict) -> str:
     return "\n".join(
         [
             "---",
+            "configs:",
+            "- config_name: default",
+            "  data_files:",
+            "  - split: train",
+            "    path: quest_sft.jsonl",
             "license: apache-2.0",
             "task_categories:",
-            "- text-classification",
             "- text-generation",
             "language:",
             "- en",
@@ -48,11 +56,16 @@ def dataset_card(manifest: dict) -> str:
             "prompt, emitting strict JSON with short, source-attributed evidence. Trains the LoRA at",
             f"[`{ADAPTER_REPO}`](https://huggingface.co/{ADAPTER_REPO}).",
             "",
-            "## Format (`quest_sft.jsonl`)",
+            "## Files",
             "",
-            "Chat-JSONL. The **first line** is a `lora_sft_manifest`; every following line is a",
-            "`lora_sft_example` with a `messages` list (system / user / assistant). The assistant",
-            "turn is exactly one JSON object:",
+            "- `quest_sft.jsonl` — the dataset (one `lora_sft_example` per line; the viewer split).",
+            "- `dataset_manifest.json` — build manifest and per-quest / per-variant counts.",
+            "- `provenance/labeled.json` — the per-project verified teacher labels.",
+            "",
+            "## Row format (`quest_sft.jsonl`)",
+            "",
+            "Each line is a chat example with a `messages` list (system / user / assistant). The",
+            "assistant turn is exactly one JSON object:",
             "",
             "```json",
             '{"matches":[{"quest":"...","confidence":0.0,"evidence":"...","source":"readme|app_file"}]}',
@@ -87,9 +100,8 @@ def dataset_card(manifest: dict) -> str:
             "projects → deduped + length-filtered to 108 content-rich ones → labelled by a",
             "teacher-then-adversarial-verifier multi-agent workflow → plus targeted augmentations",
             "(app-only, readme-only / missing app file, README↔app contradictions, empty matches,",
-            "noisy metadata). `labeled.json` holds the per-project verified labels. Examples are",
-            "derived from public hackathon submissions for research and hackathon use; each project",
-            "remains under its own Space license.",
+            "noisy metadata). Examples are derived from public hackathon submissions for research",
+            "and hackathon use; each project remains under its own Space license.",
             "",
         ]
     )
@@ -102,23 +114,36 @@ def main() -> None:
     parser.add_argument("--repo-id", default=DEFAULT_REPO)
     args = parser.parse_args()
 
-    manifest = json.loads(next(line for line in args.dataset.read_text(encoding="utf-8").splitlines() if line.strip()))
-    card_path = ROOT / "data" / "quest_dataset_card.md"
-    card_path.write_text(dataset_card(manifest), encoding="utf-8")
+    records = [line for line in args.dataset.read_text(encoding="utf-8").splitlines() if line.strip()]
+    manifest = json.loads(records[0])
+    example_lines = records[1:] if manifest.get("type") == "lora_sft_manifest" else records
+    if manifest.get("type") != "lora_sft_manifest":
+        manifest = {"type": "lora_sft_manifest", "example_count": len(example_lines)}
 
     api = HfApi()
     api.create_repo(repo_id=args.repo_id, repo_type="dataset", exist_ok=True)
-    api.upload_file(path_or_fileobj=str(args.dataset), path_in_repo="quest_sft.jsonl",
-                    repo_id=args.repo_id, repo_type="dataset")
-    if args.labels.exists():
-        api.upload_file(path_or_fileobj=str(args.labels), path_in_repo="labeled.json",
-                        repo_id=args.repo_id, repo_type="dataset")
-    commit = api.upload_file(path_or_fileobj=str(card_path), path_in_repo="README.md",
-                             repo_id=args.repo_id, repo_type="dataset",
-                             commit_message="Publish Hackathon Advisor quest-classification SFT dataset")
+    with tempfile.TemporaryDirectory() as tmp:
+        staging = Path(tmp)
+        (staging / "quest_sft.jsonl").write_text("\n".join(example_lines) + "\n", encoding="utf-8")
+        (staging / "dataset_manifest.json").write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+        (staging / "README.md").write_text(dataset_card(manifest), encoding="utf-8")
+        if args.labels.exists():
+            (staging / "provenance").mkdir()
+            (staging / "provenance" / "labeled.json").write_text(
+                args.labels.read_text(encoding="utf-8"), encoding="utf-8"
+            )
+        commit = api.upload_folder(
+            folder_path=str(staging),
+            repo_id=args.repo_id,
+            repo_type="dataset",
+            commit_message="Restructure dataset for the Hub viewer (examples-only split + sidecar manifest)",
+            delete_patterns=["labeled.json", "*.parquet"],
+        )
     revision = getattr(commit, "oid", None) or getattr(commit, "commit_id", None) or str(commit)
     print(f"published dataset https://huggingface.co/datasets/{args.repo_id}")
-    print(f"revision: {revision}")
+    print(f"examples: {len(example_lines)} | revision: {revision}")
 
 
 if __name__ == "__main__":

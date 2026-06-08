@@ -46,8 +46,13 @@ QUEST_PROFILES: tuple[dict[str, str], ...] = (
     {
         "id": "Off the Grid",
         "label": "Local-first",
-        "description": "Runs entirely on local or open-weight models with no proprietary cloud inference APIs.",
-        "signals": "local transformers/llama.cpp/vLLM model load, GGUF weights, no openai/anthropic/gemini/cohere API client.",
+        "description": "Runs the model on-device with no remote inference call: weights load locally and "
+        "inference happens in-process, not over a hosted API.",
+        "signals": "AWARD on a local in-process load: from_pretrained / pipeline / llama_cpp / diffusers / "
+        "vLLM / ONNX, GGUF weights, @spaces.GPU. DISQUALIFY (do NOT award) on ANY remote inference call, even "
+        "via huggingface_hub: InferenceClient, HF Inference API/Endpoints, gradio_client to a remote Space, "
+        "replicate/together/openrouter/fal/groq, a *.modal.run or other HTTP inference endpoint, or "
+        "openai/anthropic/gemini/cohere clients. A remote call disqualifies regardless of which model it names.",
     },
     {
         "id": "Well-Tuned",
@@ -94,8 +99,10 @@ QUEST_PROFILES: tuple[dict[str, str], ...] = (
     {
         "id": "OpenBMB",
         "label": "OpenBMB model",
-        "description": "Uses an OpenBMB model such as the MiniCPM family.",
-        "signals": "model repo openbmb/..., MiniCPM, MiniCPM-V, MiniCPM5, OpenCPM.",
+        "description": "Uses a model published by OpenBMB (the openbmb org), such as the MiniCPM family.",
+        "signals": "The model id org prefix must be exactly openbmb/ (openbmb/MiniCPM*, OpenCPM). A model from "
+        "any other org is NOT OpenBMB: openai/gpt-oss, Qwen/..., meta-llama/..., google/..., nvidia/..., "
+        "microsoft/..., mistralai/... do NOT count just because a model id is present.",
     },
     {
         "id": "Nemotron",
@@ -113,7 +120,9 @@ QUEST_PROFILES: tuple[dict[str, str], ...] = (
         "id": "Tiny Titan",
         "label": "Small model (<=4B)",
         "description": "Runs on a genuinely small model of about four billion parameters or fewer.",
-        "signals": "declared model is 0.5B/1B/1.5B/2B/3B/4B or labelled tiny/small/nano/mini (e.g. Qwen2.5-1.5B, MiniCPM5-1B, gemma-2b).",
+        "signals": "AWARD when the model name says <=4B: 0.5B/1B/1.5B/2B/3B/4B or tiny/small/nano/mini "
+        "(Qwen2.5-1.5B, MiniCPM5-1B, gemma-2b). Do NOT award for 7B/8B/12B/13B/20B/27B/35B+ models "
+        "(e.g. gpt-oss-20b, Qwen2.5-7B); a version number like V-4.6 is not a parameter count.",
     },
     {
         "id": "Best Agent",

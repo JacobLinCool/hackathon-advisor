@@ -16,8 +16,9 @@ DEFAULT_REPO = "build-small-hackathon/hackathon-advisor-quest-minicpm5-lora"
 
 
 def model_card(recipe: dict, eval_report: dict) -> str:
-    valid = eval_report.get("valid")
-    total = eval_report.get("total")
+    n = eval_report.get("n")
+    exact = eval_report.get("quest_set_exact")
+    f1 = eval_report.get("f1")
     return "\n".join(
         [
             "---",
@@ -65,7 +66,10 @@ def model_card(recipe: dict, eval_report: dict) -> str:
             "readme-only / missing app file, README↔app contradictions, empty matches, noisy",
             "metadata). All 13 quests covered.",
             "",
-            f"## Self-eval at training time: {valid}/{total} held-out prompts produced schema-valid JSON.",
+            f"## Full-dataset eval at training time: quest-set exact match {exact}/{n}, micro-F1 {f1}.",
+            "",
+            "Evaluated by reproducing the gold quest set for every example in the training dataset",
+            "(the dataset is the spec — it is built from the real `build-small-hackathon` projects).",
             "",
         ]
     )

@@ -9,7 +9,6 @@ Two responsibilities:
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import json
 from typing import Any
 
@@ -21,6 +20,7 @@ from hackathon_advisor.quest_taxonomy import (
     normalize_match,
     render_quest_prompt,
 )
+from hackathon_advisor._text import utc_now
 
 
 LORA_DATASET_SCHEMA_VERSION = 1
@@ -86,7 +86,7 @@ def build_dataset_jsonl(examples: list[dict[str, Any]], *, source_note: str = ""
     manifest = {
         "type": "lora_sft_manifest",
         "schema_version": LORA_DATASET_SCHEMA_VERSION,
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": utc_now(),
         "app": "hackathon-advisor",
         "base_model": BASE_MODEL,
         "adapter_task": ADAPTER_TASK,
@@ -107,10 +107,21 @@ def parse_quest_dataset_jsonl(text: str) -> tuple[dict[str, Any], list[dict[str,
     records = [json.loads(line) for line in text.splitlines() if line.strip()]
     if not records:
         raise ValueError("quest dataset is empty")
-    manifest = records[0]
-    examples = records[1:]
-    if manifest.get("type") != "lora_sft_manifest":
-        raise ValueError("first row must be a lora_sft_manifest")
+    # Tolerate both layouts: a leading manifest row (local training file), or an
+    # examples-only file (the Hub dataset, where the manifest lives in a sidecar so
+    # the rows stay homogeneous for the dataset viewer). Synthesize a manifest when absent.
+    if records[0].get("type") == "lora_sft_manifest":
+        manifest, examples = records[0], records[1:]
+    else:
+        examples = records
+        manifest = {
+            "type": "lora_sft_manifest",
+            "schema_version": LORA_DATASET_SCHEMA_VERSION,
+            "base_model": BASE_MODEL,
+            "adapter_task": ADAPTER_TASK,
+            "format": "chat-jsonl",
+            "example_count": len(examples),
+        }
     for index, example in enumerate(examples, start=1):
         if example.get("type") != "lora_sft_example":
             raise ValueError(f"record {index} is not a lora_sft_example")

@@ -20,7 +20,7 @@ import modal
 
 APP_NAME = "hackathon-advisor-quest-lora"
 BASE_MODEL = "openbmb/MiniCPM5-1B"
-GPU = "A10G"
+GPU = "L40S"
 
 app = modal.App(APP_NAME)
 image = (
@@ -49,18 +49,20 @@ def smoke() -> dict:
     }
 
 
-@app.function(image=image, gpu=GPU, timeout=5400)
+@app.function(image=image, gpu=GPU, timeout=7800)
 def train_remote(
     dataset_text: str,
     *,
     base_model: str = BASE_MODEL,
-    rank: int = 16,
-    alpha: int = 32,
-    dropout: float = 0.05,
+    rank: int = 64,
+    alpha: int = 128,
+    dropout: float = 0.0,
     learning_rate: float = 2e-4,
-    epochs: float = 4.0,
-    max_seq_length: int = 2560,
-    eval_holdout: int = 10,
+    epochs: float = 16.0,
+    max_seq_length: int = 3072,
+    eval_holdout: int = 0,
+    upweight_variants: tuple = ("hard_negative", "remote_app_only", "contradiction", "empty"),
+    upweight_factor: int = 3,
 ) -> dict:
     import io
     import json
@@ -80,8 +82,13 @@ def train_remote(
     manifest, examples = parse_quest_dataset_jsonl(dataset_text)
     random.Random(42).shuffle(examples)  # representative holdout; keep edge cases mostly in train
     holdout = examples[-eval_holdout:] if eval_holdout and len(examples) > eval_holdout * 2 else []
-    train_examples = examples[: len(examples) - len(holdout)] if holdout else examples
-    print(f"examples: total={len(examples)} train={len(train_examples)} holdout={len(holdout)}", flush=True)
+    base_train = examples[: len(examples) - len(holdout)] if holdout else list(examples)
+    # Up-weight the contrastive negatives so they outweigh the strong Off-the-Grid prior.
+    upweighted = [ex for ex in base_train for _ in range(upweight_factor - 1) if ex.get("variant") in upweight_variants]
+    train_examples = base_train + upweighted
+    random.Random(43).shuffle(train_examples)
+    print(f"examples: total={len(examples)} base_train={len(base_train)} +upweighted={len(upweighted)} "
+          f"-> train={len(train_examples)} holdout={len(holdout)}", flush=True)
 
     tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
     if tokenizer.pad_token is None:
@@ -171,8 +178,8 @@ def train_remote(
     args = TrainingArguments(
         output_dir="/tmp/quest-lora",
         num_train_epochs=epochs,
-        per_device_train_batch_size=1,
-        gradient_accumulation_steps=8,
+        per_device_train_batch_size=2,
+        gradient_accumulation_steps=4,
         gradient_checkpointing=True,
         gradient_checkpointing_kwargs={"use_reentrant": False},
         learning_rate=learning_rate,
@@ -213,8 +220,8 @@ def train_remote(
         encoding="utf-8",
     )
 
-    # --- self-eval on the held-out slice: does the adapter emit valid, schema-clean JSON? ---
-    # Guarded so a generation hiccup never discards the trained adapter.
+    # --- full-dataset eval: does the adapter reproduce the gold quest set for EVERY example? ---
+    # The goal is correct judgement across the whole dataset, so we score all of it.
     import gc
 
     loss_history = [h.get("loss") for h in trainer.state.log_history if "loss" in h]
@@ -227,29 +234,51 @@ def train_remote(
     except Exception:  # noqa: BLE001
         pass
     model.eval()
-    evals = []
+
+    def gold_quests(ex):
+        return {m["quest"] for m in json.loads(ex["messages"][-1]["content"]).get("matches", [])}
+
+    valid = exact = 0
+    tp = fp = fn = 0
+    mismatches = []
+    eval_set = holdout if holdout else examples
     try:
-        for ex in holdout:
-            messages = ex["messages"]
-            prompt_text = template(messages[:-1], add_generation_prompt=True)
+        for ex in eval_set:
+            prompt_text = template(ex["messages"][:-1], add_generation_prompt=True)
             inputs = tokenizer(prompt_text, return_tensors="pt").to("cuda")
-            inputs.pop("token_type_ids", None)  # MiniCPM tokenizer emits it; generate() rejects it
+            inputs.pop("token_type_ids", None)
             with torch.inference_mode():
-                gen = model.generate(**inputs, max_new_tokens=384, do_sample=False, eos_token_id=im_end_id)
+                gen = model.generate(**inputs, max_new_tokens=512, do_sample=False, eos_token_id=im_end_id)
             text = tokenizer.decode(gen[0, inputs["input_ids"].shape[-1]:], skip_special_tokens=True).strip()
-            ok, detail = False, ""
+            gold = gold_quests(ex)
             try:
                 payload = json.loads(text)
+                pred = set()
                 for m in payload["matches"]:
                     normalize_match(m)
-                ok = True
-            except Exception as error:  # noqa: BLE001
-                detail = f"{type(error).__name__}: {error}"
-            evals.append({"project_id": ex.get("project_id", ""), "valid_json": ok, "detail": detail, "output": text[:400]})
+                    pred.add(m["quest"])
+                valid += 1
+            except Exception:  # noqa: BLE001
+                mismatches.append({"project_id": ex.get("project_id", ""), "variant": ex.get("variant", ""),
+                                   "gold": sorted(gold), "pred": "INVALID_JSON", "output": text[:300]})
+                fn += len(gold)
+                continue
+            tp += len(gold & pred)
+            fp += len(pred - gold)
+            fn += len(gold - pred)
+            if pred == gold:
+                exact += 1
+            else:
+                mismatches.append({"project_id": ex.get("project_id", ""), "variant": ex.get("variant", ""),
+                                   "gold": sorted(gold), "pred": sorted(pred)})
     except Exception as error:  # noqa: BLE001 - keep the adapter even if eval breaks
-        print(f"self-eval aborted: {type(error).__name__}: {error}", flush=True)
-    valid = sum(1 for e in evals if e["valid_json"])
-    print(f"self-eval: {valid}/{len(evals)} produced schema-valid JSON", flush=True)
+        print(f"eval aborted: {type(error).__name__}: {error}", flush=True)
+    n = len(eval_set)
+    precision = tp / (tp + fp) if (tp + fp) else 1.0
+    recall = tp / (tp + fn) if (tp + fn) else 1.0
+    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) else 0.0
+    print(f"full-eval: valid_json {valid}/{n} | quest-set exact {exact}/{n} "
+          f"| micro P/R/F1 {precision:.3f}/{recall:.3f}/{f1:.3f} | mismatches {len(mismatches)}", flush=True)
 
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -258,14 +287,22 @@ def train_remote(
                 zf.write(path, path.relative_to(out).as_posix())
     return {
         "adapter_zip": buffer.getvalue(),
-        "eval": {"valid": valid, "total": len(evals), "samples": evals},
+        "eval": {
+            "n": n,
+            "valid_json": valid,
+            "quest_set_exact": exact,
+            "precision": round(precision, 4),
+            "recall": round(recall, 4),
+            "f1": round(f1, 4),
+            "mismatches": mismatches,
+        },
         "train_examples": len(train_examples),
         "loss_history": loss_history,
     }
 
 
 @app.local_entrypoint()
-def main(dataset: str = "data/quest_sft.jsonl", out_dir: str = "artifacts/quest-lora", epochs: float = 4.0) -> None:
+def main(dataset: str = "data/quest_sft.jsonl", out_dir: str = "artifacts/quest-lora", epochs: float = 8.0) -> None:
     import io
     import json
     import zipfile
@@ -276,9 +313,11 @@ def main(dataset: str = "data/quest_sft.jsonl", out_dir: str = "artifacts/quest-
     out.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(io.BytesIO(result["adapter_zip"])) as zf:
         zf.extractall(out)
-    (out / "self-eval.json").write_text(json.dumps(result["eval"], ensure_ascii=False, indent=2), encoding="utf-8")
+    ev = result["eval"]
+    (out / "self-eval.json").write_text(json.dumps(ev, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"adapter written to {out}")
-    print(f"self-eval: {result['eval']['valid']}/{result['eval']['total']} schema-valid JSON")
+    print(f"full-eval: valid_json {ev['valid_json']}/{ev['n']} | quest-set exact {ev['quest_set_exact']}/{ev['n']} "
+          f"| micro F1 {ev['f1']} | mismatches {len(ev['mismatches'])}")
     print(f"loss history: {result['loss_history']}")
 
 
