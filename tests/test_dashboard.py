@@ -196,6 +196,62 @@ def test_quest_analysis_validation_canonicalizes_known_label_suffixes() -> None:
     assert validated.matches_by_project[projects[0].id][0]["quest"] == "Off the Grid"
 
 
+def test_quest_analysis_validation_expands_known_composite_quest_labels() -> None:
+    projects = fake_projects(1)
+    raw = {
+        "projects": [
+            {
+                "project_id": projects[0].id,
+                "matches": [
+                    {
+                        "quest": "Best MiniCPM Build / Tiny Titan",
+                        "confidence": 0.84,
+                        "evidence": "MiniCPM5-1B model",
+                        "source": "app_file",
+                    },
+                    {
+                        "quest": "Off-Brand / Sharing is Caring",
+                        "confidence": 0.72,
+                        "evidence": "custom UI exports a card",
+                        "source": "readme",
+                    },
+                ],
+            }
+        ]
+    }
+
+    validated = validate_quest_analysis_payload(raw, projects, source="fake")
+
+    quests = [match["quest"] for match in validated.matches_by_project[projects[0].id]]
+    assert quests == ["OpenBMB", "Tiny Titan", "Off-Brand", "Sharing is Caring"]
+
+
+def test_quest_analysis_validation_rejects_unknown_composite_quest_labels() -> None:
+    projects = fake_projects(1)
+    raw = {
+        "projects": [
+            {
+                "project_id": projects[0].id,
+                "matches": [
+                    {
+                        "quest": "Mystery Award / Tiny Titan",
+                        "confidence": 0.84,
+                        "evidence": "tiny model",
+                        "source": "app_file",
+                    }
+                ],
+            }
+        ]
+    }
+
+    try:
+        validate_quest_analysis_payload(raw, projects, source="fake")
+    except QuestAnalysisError as error:
+        assert "unknown quest in composite" in str(error)
+    else:
+        raise AssertionError("unknown composite quest labels must be rejected")
+
+
 def test_quest_json_extractor_accepts_fenced_object() -> None:
     payload = _extract_json_object('```json\n{"projects":[]}\n```')
 

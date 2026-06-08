@@ -127,6 +127,33 @@ QUESTS: tuple[str, ...] = tuple(profile["id"] for profile in QUEST_PROFILES)
 QUEST_PROFILE_BY_ID: dict[str, dict[str, str]] = {profile["id"]: profile for profile in QUEST_PROFILES}
 
 
+def _quest_key(raw: Any) -> str:
+    text = " ".join(str(raw or "").replace("&", " and ").casefold().split())
+    return re.sub(r"[^a-z0-9]+", " ", text).strip()
+
+
+_QUEST_ALIASES: dict[str, str] = {}
+for _profile in QUEST_PROFILES:
+    _QUEST_ALIASES[_quest_key(_profile["id"])] = _profile["id"]
+    _QUEST_ALIASES[_quest_key(_profile["label"])] = _profile["id"]
+_QUEST_ALIASES.update(
+    {
+        _quest_key("Best MiniCPM Build"): "OpenBMB",
+        _quest_key("MiniCPM Build"): "OpenBMB",
+        _quest_key("MiniCPM"): "OpenBMB",
+        _quest_key("OpenBMB / MiniCPM"): "OpenBMB",
+        _quest_key("Small model <=4B"): "Tiny Titan",
+        _quest_key("Small model under 4B"): "Tiny Titan",
+        _quest_key("Shareable output"): "Sharing is Caring",
+        _quest_key("Custom UI"): "Off-Brand",
+        _quest_key("Custom interface"): "Off-Brand",
+        _quest_key("Local first"): "Off the Grid",
+        _quest_key("Fine tuned"): "Well-Tuned",
+        _quest_key("Fine tune"): "Well-Tuned",
+    }
+)
+
+
 def quest_profiles() -> list[dict[str, str]]:
     return [
         {"id": profile["id"], "label": profile["label"], "description": profile["description"]}
@@ -142,6 +169,9 @@ def canonical_quest_id(raw_quest: Any) -> str:
     quest = " ".join(str(raw_quest or "").split())
     if quest in QUEST_PROFILE_BY_ID:
         return quest
+    alias = _QUEST_ALIASES.get(_quest_key(quest))
+    if alias:
+        return alias
     folded = quest.casefold()
     for known in QUESTS:
         known_folded = known.casefold()
@@ -150,6 +180,25 @@ def canonical_quest_id(raw_quest: Any) -> str:
         if folded.startswith(f"{known_folded} (") or folded.startswith(f"{known_folded} - "):
             return known
     raise ValueError(f"unknown quest: {quest!r}")
+
+
+def canonical_quest_ids(raw_quest: Any) -> tuple[str, ...]:
+    quest = " ".join(str(raw_quest or "").split())
+    try:
+        return (canonical_quest_id(quest),)
+    except ValueError as original_error:
+        parts = [part.strip() for part in re.split(r"\s*/\s*", quest) if part.strip()]
+        if len(parts) <= 1:
+            raise original_error
+    canonical: list[str] = []
+    for part in parts:
+        try:
+            quest_id = canonical_quest_id(part)
+        except ValueError as error:
+            raise ValueError(f"unknown quest in composite {quest!r}: {part!r}") from error
+        if quest_id not in canonical:
+            canonical.append(quest_id)
+    return tuple(canonical)
 
 
 def _clip(text: str, limit: int) -> str:

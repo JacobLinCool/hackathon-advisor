@@ -20,6 +20,7 @@ from hackathon_advisor.quest_taxonomy import (
     QUESTS,
     build_app_segment,
     build_readme_segment,
+    canonical_quest_ids,
     normalize_match,
     render_quest_prompt,
 )
@@ -332,13 +333,18 @@ def _validate_project_matches(raw_matches: Any, project_id: str) -> list[dict[st
         if not isinstance(raw_match, dict):
             raise QuestAnalysisError(f"quest matches for {project_id} must be objects")
         try:
-            match = normalize_match(raw_match)
+            quest_ids = canonical_quest_ids(raw_match.get("quest"))
         except ValueError as error:
             raise QuestAnalysisError(f"quest match for {project_id}: {error}") from error
-        if match["quest"] in seen:
-            raise QuestAnalysisError(f"duplicate quest for {project_id}: {match['quest']}")
-        seen.add(match["quest"])
-        matches.append(match)
+        for quest_id in quest_ids:
+            try:
+                match = normalize_match({**raw_match, "quest": quest_id})
+            except ValueError as error:
+                raise QuestAnalysisError(f"quest match for {project_id}: {error}") from error
+            if match["quest"] in seen:
+                raise QuestAnalysisError(f"duplicate quest for {project_id}: {match['quest']}")
+            seen.add(match["quest"])
+            matches.append(match)
     return matches
 
 
