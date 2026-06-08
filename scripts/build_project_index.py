@@ -24,6 +24,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Build the offline project retrieval index with llama.cpp embeddings."
     )
+    parser.add_argument(
+        "--location",
+        choices=("local", "modal"),
+        default="local",
+        help="Where to run the embedding build (default: local).",
+    )
     parser.add_argument("--projects", default="data/projects.json")
     parser.add_argument("--out", default="data/project_index.json")
     parser.add_argument("--model-repo", default=DEFAULT_EMBEDDING_MODEL_REPO)
@@ -36,18 +42,36 @@ def main() -> None:
     parser.add_argument("--reuse-index", default="")
     args = parser.parse_args()
 
-    payload = build_payload(
-        Path(args.projects),
-        model_repo=args.model_repo,
-        model_file=args.model_file,
-        model_path=args.model_path,
-        n_ctx=args.n_ctx,
-        n_threads=args.n_threads or None,
-        build_source=args.build_source,
-        builder=args.builder,
-        reuse_index_path=Path(args.reuse_index) if args.reuse_index else None,
-    )
-    output = Path(args.out)
+    if args.location == "modal":
+        if args.reuse_index:
+            parser.error("--reuse-index is not supported with --location modal")
+        # Imported lazily so the local path never requires the `modal` package.
+        from scripts.modal_build_project_index import run_remote_build
+
+        payload = run_remote_build(
+            Path(args.projects),
+            model_repo=args.model_repo,
+            model_file=args.model_file,
+            model_path=args.model_path,
+            n_ctx=args.n_ctx,
+            n_threads=args.n_threads or None,
+        )
+    else:
+        payload = build_payload(
+            Path(args.projects),
+            model_repo=args.model_repo,
+            model_file=args.model_file,
+            model_path=args.model_path,
+            n_ctx=args.n_ctx,
+            n_threads=args.n_threads or None,
+            build_source=args.build_source,
+            builder=args.builder,
+            reuse_index_path=Path(args.reuse_index) if args.reuse_index else None,
+        )
+    write_payload(Path(args.out), payload)
+
+
+def write_payload(output: Path, payload: dict) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(

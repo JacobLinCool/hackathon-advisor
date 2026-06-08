@@ -1,13 +1,27 @@
 #!/usr/bin/env python3
+"""Modal wiring for the project index build.
+
+The user-facing entrypoint is `scripts/build_project_index.py --location modal`,
+which calls `run_remote_build` below. The shared embedding logic lives in
+`scripts.build_project_index.build_payload`; this module only owns the Modal
+app/image/remote-function definitions. `modal run scripts/modal_build_project_index.py`
+also works for callers who prefer the Modal CLI directly.
+"""
 from __future__ import annotations
 
-import argparse
 import json
 from pathlib import Path
+import sys
 from typing import Any
 
 import modal
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from hackathon_advisor.data import DEFAULT_EMBEDDING_MODEL_FILE, DEFAULT_EMBEDDING_MODEL_REPO
+from hackathon_advisor.llama_embedding import DEFAULT_N_CTX
 
 APP_NAME = "hackathon-advisor-llama-index"
 
@@ -28,9 +42,12 @@ def build_project_index_remote(
     project_snapshot: dict[str, Any],
     model_repo: str,
     model_file: str,
+    model_path: str = "",
+    n_ctx: int = DEFAULT_N_CTX,
+    n_threads: int | None = None,
 ) -> dict[str, Any]:
-    from pathlib import Path
     import tempfile
+    from pathlib import Path
 
     from scripts.build_project_index import build_payload
 
@@ -44,9 +61,38 @@ def build_project_index_remote(
             project_path,
             model_repo=model_repo,
             model_file=model_file,
+            model_path=model_path,
+            n_ctx=n_ctx,
+            n_threads=n_threads,
             build_source="modal remote function",
             builder="scripts/modal_build_project_index.py",
             modal_app=APP_NAME,
+        )
+
+
+def run_remote_build(
+    projects_path: Path,
+    *,
+    model_repo: str = DEFAULT_EMBEDDING_MODEL_REPO,
+    model_file: str = DEFAULT_EMBEDDING_MODEL_FILE,
+    model_path: str = "",
+    n_ctx: int = DEFAULT_N_CTX,
+    n_threads: int | None = None,
+) -> dict[str, Any]:
+    """Build the index on Modal and return the payload.
+
+    Used by `scripts/build_project_index.py --location modal`, which runs as a plain
+    Python process, so this opens its own ephemeral Modal app context.
+    """
+    project_snapshot = json.loads(projects_path.read_text(encoding="utf-8"))
+    with app.run():
+        return build_project_index_remote.remote(
+            project_snapshot,
+            model_repo,
+            model_file,
+            model_path,
+            n_ctx,
+            n_threads,
         )
 
 
@@ -54,39 +100,15 @@ def build_project_index_remote(
 def main(
     projects: str = "data/projects.json",
     out: str = "data/project_index.json",
-    model_repo: str = "ggml-org/embeddinggemma-300m-qat-q8_0-GGUF",
-    model_file: str = "embeddinggemma-300m-qat-Q8_0.gguf",
+    model_repo: str = DEFAULT_EMBEDDING_MODEL_REPO,
+    model_file: str = DEFAULT_EMBEDDING_MODEL_FILE,
 ) -> None:
-    project_snapshot = json.loads(Path(projects).read_text(encoding="utf-8"))
-    payload = build_project_index_remote.remote(project_snapshot, model_repo, model_file)
-    output = Path(out)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(
-        "wrote "
-        f"{payload['document_count']} docs, {payload['embedding']['dimensions']} dims "
-        f"to {output}"
-    )
+    # Runs under `modal run`, which already manages the app context.
+    from scripts.build_project_index import write_payload
 
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Build the llama.cpp embedding index on Modal.")
-    parser.add_argument("--projects", default="data/projects.json")
-    parser.add_argument("--out", default="data/project_index.json")
-    parser.add_argument("--model-repo", default="ggml-org/embeddinggemma-300m-qat-q8_0-GGUF")
-    parser.add_argument("--model-file", default="embeddinggemma-300m-qat-Q8_0.gguf")
-    args = parser.parse_args()
-    with app.run():
-        payload = build_project_index_remote.remote(
-            json.loads(Path(args.projects).read_text(encoding="utf-8")),
-            args.model_repo,
-            args.model_file,
-        )
-    output = Path(args.out)
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(
-        "wrote "
-        f"{payload['document_count']} docs, {payload['embedding']['dimensions']} dims "
-        f"to {output}"
+    payload = build_project_index_remote.remote(
+        json.loads(Path(projects).read_text(encoding="utf-8")),
+        model_repo,
+        model_file,
     )
+    write_payload(Path(out), payload)
