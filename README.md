@@ -99,7 +99,7 @@ dashboard refresh if no refresh is already running. `ADVISOR_SCHEDULED_REFRESH=0
 `ADVISOR_REFRESH_INITIAL_DELAY_SECONDS`, and `ADVISOR_SCHEDULED_REFRESH_COMPUTE` tune the cadence and compute mode.
 Manual and scheduled refreshes both acquire `$ADVISOR_CACHE_DIR/refresh.lock` atomically before work starts, so multiple
 app processes do not analyze the same snapshot concurrently. Stale locks expire after `ADVISOR_REFRESH_LOCK_TTL_SECONDS`
-(default two hours).
+(default two hours), and active jobs heartbeat the lock while they progress.
 
 Set `ADVISOR_QUEST_ANALYZER_BACKEND=minicpm-transformers` for both local and deployed refresh runs. The local dashboard
 uses the same MiniCPM analyzer as the deployed Space; test doubles are only used inside pytest.

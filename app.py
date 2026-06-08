@@ -203,6 +203,7 @@ def _analyze_dashboard_quests(
         remaining_count=len(projects),
         last_project_id="",
     )
+    _refresh_lease_heartbeat(cache_dir, run_id)
 
     for project in projects:
         lookup = read_quest_cache_entry(cache_dir, project, analyzer_fingerprint)
@@ -238,6 +239,7 @@ def _analyze_dashboard_quests(
             remaining_count=len(projects) - hit_count - analyzed_count,
             last_project_id=project.id,
         )
+        _refresh_lease_heartbeat(cache_dir, run_id)
 
     for start in range(0, len(misses), batch_size):
         batch = misses[start : start + batch_size]
@@ -281,6 +283,7 @@ def _analyze_dashboard_quests(
                 remaining_count=len(projects) - hit_count - analyzed_count,
                 last_project_id=project.id,
             )
+            _refresh_lease_heartbeat(cache_dir, run_id)
     validated = validate_matches_by_project(matches_by_project, projects, source=source)
     summary = {
         "project_count": len(projects),
@@ -456,6 +459,18 @@ def _release_refresh_lease(cache_dir: Path, run_id: str) -> None:
     print(f"[dashboard-refresh] released refresh lock run={run_id}", flush=True)
 
 
+def _refresh_lease_heartbeat(cache_dir: Path, run_id: str) -> None:
+    lock_path = _refresh_lock_path(cache_dir)
+    existing = _read_refresh_lease(lock_path)
+    if existing is None or str(existing.get("run_id") or "") != run_id:
+        return
+    existing["heartbeat_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    existing["expires_at_epoch"] = time.time() + _refresh_lock_ttl_seconds()
+    tmp_path = lock_path.with_name(f".{REFRESH_LOCK_FILENAME}.{run_id}.heartbeat.tmp")
+    tmp_path.write_text(json.dumps(existing, ensure_ascii=False) + "\n", encoding="utf-8")
+    os.replace(tmp_path, lock_path)
+
+
 def _read_refresh_lease(lock_path: Path) -> dict[str, Any] | None:
     try:
         payload = json.loads(lock_path.read_text(encoding="utf-8"))
@@ -531,6 +546,7 @@ def _run_refresh_job(run_id: str, cache_dir: Path, compute: str) -> None:
             compute=compute,
         )
         _set_refresh_state(stage="persisting")
+        _refresh_lease_heartbeat(cache_dir, run_id)
         artifacts = persist_refresh_artifacts(
             cache_dir,
             run_id,
@@ -540,6 +556,7 @@ def _run_refresh_job(run_id: str, cache_dir: Path, compute: str) -> None:
             quest_analysis_payload=quest_analysis_payload,
         )
         _set_refresh_state(stage="swapping")
+        _refresh_lease_heartbeat(cache_dir, run_id)
         _replace_runtime_from_files(artifacts.projects_path, artifacts.index_path, artifacts.dashboard)
         _release_refresh_lease(cache_dir, run_id)
         _set_refresh_state(
@@ -579,6 +596,7 @@ def _build_refresh_payloads(
 
     org = os.environ.get("ADVISOR_HF_ORG", DEFAULT_HF_ORG).strip() or DEFAULT_HF_ORG
     _set_refresh_state(stage="crawling")
+    _refresh_lease_heartbeat(cache_dir, run_id)
     project_rows = sorted(crawl_projects(org), key=lambda project: project["id"].lower())
     projects_payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -587,6 +605,7 @@ def _build_refresh_payloads(
     }
 
     _set_refresh_state(stage="embedding")
+    _refresh_lease_heartbeat(cache_dir, run_id)
     with tempfile.TemporaryDirectory(prefix="advisor-refresh-") as directory:
         project_path = Path(directory) / "projects.json"
         project_path.write_text(json.dumps(projects_payload, ensure_ascii=False), encoding="utf-8")
@@ -608,6 +627,7 @@ def _build_refresh_payloads(
     )
 
     _set_refresh_state(stage="quest_analysis")
+    _refresh_lease_heartbeat(cache_dir, run_id)
     quest_analysis = _analyze_dashboard_quests(
         [project.to_refresh_snapshot_dict() for project in projects],
         cache_dir=cache_dir,
@@ -615,6 +635,7 @@ def _build_refresh_payloads(
         run_id=run_id,
     )
     _set_refresh_state(stage="atlas")
+    _refresh_lease_heartbeat(cache_dir, run_id)
     refreshed_dashboard = build_dashboard_payload(
         refreshed_index,
         quest_matches=quest_analysis["matches_by_project"],

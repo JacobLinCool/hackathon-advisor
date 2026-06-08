@@ -205,6 +205,28 @@ def test_dashboard_refresh_rejects_existing_bucket_lock(monkeypatch, tmp_path) -
         raise AssertionError("dashboard refresh should honor an existing bucket lock")
 
 
+def test_dashboard_refresh_heartbeat_extends_bucket_lock(monkeypatch, tmp_path) -> None:
+    monkeypatch.setenv("ADVISOR_REFRESH_LOCK_TTL_SECONDS", "120")
+    lock_path = tmp_path / "refresh.lock"
+    lock_path.write_text(
+        json.dumps(
+            {
+                "run_id": "heartbeat-run",
+                "owner": "test",
+                "expires_at_epoch": time.time() - 10,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    app_module._refresh_lease_heartbeat(tmp_path, "heartbeat-run")
+    updated = json.loads(lock_path.read_text(encoding="utf-8"))
+
+    assert updated["run_id"] == "heartbeat-run"
+    assert updated["expires_at_epoch"] > time.time() + 100
+    assert updated["heartbeat_at"]
+
+
 def test_dashboard_refresh_embedding_build_runs_in_subprocess(monkeypatch, tmp_path) -> None:
     project_path = tmp_path / "projects.json"
     index_path = tmp_path / "project_index.json"
