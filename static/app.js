@@ -548,16 +548,16 @@ function svgTitle(text) {
 
 function atlasColor(index) {
   const palette = [
-    "#67c7b6",
-    "#e3b84c",
-    "#dd4a54",
-    "#83a7ff",
-    "#9bd66f",
-    "#d386e8",
-    "#ff8f5f",
-    "#61d7ef",
-    "#c9c45f",
-    "#f071a8",
+    "#9a2b22",
+    "#b07d12",
+    "#2f6b41",
+    "#6f4b1d",
+    "#3f8453",
+    "#74201b",
+    "#8a714c",
+    "#d8a226",
+    "#5d4528",
+    "#7c6849",
   ];
   return palette[index % palette.length];
 }
