@@ -4,10 +4,12 @@ from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
+import selectors
 import subprocess
 import sys
 import tempfile
 from threading import Lock, Thread
+import time
 from typing import Any, Iterator
 from uuid import uuid4
 
@@ -60,6 +62,8 @@ PROFILE_FIELDS = ["skills", "time", "preferences", "constraints"]
 MAX_AUDIO_UPLOAD_BYTES = 25 * 1024 * 1024
 AUDIO_UPLOAD_SUFFIXES = {".aac", ".aif", ".aiff", ".flac", ".m4a", ".mp3", ".oga", ".ogg", ".opus", ".wav", ".webm"}
 DEFAULT_HF_ORG = "build-small-hackathon"
+DEFAULT_REFRESH_EMBEDDING_TIMEOUT_SECONDS = 1800
+REFRESH_SUBPROCESS_LOG_TAIL_LINES = 80
 REFRESH_STAGE_LABELS = {
     "crawling": "Fetching public Spaces",
     "embedding": "Rebuilding the embedding index",
@@ -283,10 +287,7 @@ def _build_refresh_index_payload(project_path: Path, index_path: Path) -> dict[s
     if n_threads:
         command.extend(["--n-threads", n_threads])
 
-    completed = subprocess.run(command, cwd=ROOT, capture_output=True, text=True, check=False)
-    if completed.returncode != 0:
-        detail = "\n".join(part for part in (completed.stdout.strip(), completed.stderr.strip()) if part)
-        raise RuntimeError(f"refresh embedding index build failed with exit code {completed.returncode}: {detail}")
+    _run_refresh_index_command(command)
     try:
         payload = json.loads(index_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
@@ -294,6 +295,81 @@ def _build_refresh_index_payload(project_path: Path, index_path: Path) -> dict[s
     if not isinstance(payload, dict):
         raise RuntimeError("refresh embedding index build returned a non-object JSON payload")
     return payload
+
+
+def _run_refresh_index_command(command: list[str]) -> None:
+    timeout_seconds = _refresh_embedding_timeout_seconds()
+    output_tail: list[str] = []
+    process = subprocess.Popen(
+        command,
+        cwd=ROOT,
+        env=_refresh_subprocess_env(),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    )
+    assert process.stdout is not None
+    selector = selectors.DefaultSelector()
+    selector.register(process.stdout, selectors.EVENT_READ)
+    started = time.monotonic()
+    try:
+        while process.poll() is None:
+            for key, _event in selector.select(timeout=1):
+                line = key.fileobj.readline()
+                if line:
+                    _record_refresh_subprocess_line(output_tail, line)
+            if time.monotonic() - started > timeout_seconds:
+                process.kill()
+                process.wait(timeout=5)
+                raise RuntimeError(
+                    "refresh embedding index build timed out "
+                    f"after {timeout_seconds} seconds. Last output:\n{_format_output_tail(output_tail)}"
+                )
+        for line in process.stdout:
+            _record_refresh_subprocess_line(output_tail, line)
+    finally:
+        selector.close()
+        process.stdout.close()
+    if process.returncode != 0:
+        raise RuntimeError(
+            "refresh embedding index build failed "
+            f"with exit code {process.returncode}. Last output:\n{_format_output_tail(output_tail)}"
+        )
+
+
+def _refresh_subprocess_env() -> dict[str, str]:
+    env = os.environ.copy()
+    if not env.get("HF_HOME"):
+        cache_dir = cache_dir_from_env()
+        if cache_dir is not None:
+            hf_home = cache_dir / "huggingface"
+            hf_home.mkdir(parents=True, exist_ok=True)
+            env["HF_HOME"] = str(hf_home)
+    return env
+
+
+def _refresh_embedding_timeout_seconds() -> int:
+    raw = os.environ.get("ADVISOR_REFRESH_EMBEDDING_TIMEOUT_SECONDS", "").strip()
+    if not raw:
+        return DEFAULT_REFRESH_EMBEDDING_TIMEOUT_SECONDS
+    timeout = int(raw)
+    if timeout <= 0:
+        raise RuntimeError("ADVISOR_REFRESH_EMBEDDING_TIMEOUT_SECONDS must be a positive integer.")
+    return timeout
+
+
+def _record_refresh_subprocess_line(output_tail: list[str], raw_line: str) -> None:
+    line = raw_line.rstrip()
+    if not line:
+        return
+    print(f"[dashboard-refresh embedding] {line}", flush=True)
+    output_tail.append(line)
+    del output_tail[:-REFRESH_SUBPROCESS_LOG_TAIL_LINES]
+
+
+def _format_output_tail(output_tail: list[str]) -> str:
+    return "\n".join(output_tail) if output_tail else "(no output)"
 
 
 def _replace_runtime_from_files(projects_path: Path, index_path: Path, refreshed_dashboard: dict[str, Any]) -> None:

@@ -220,6 +220,7 @@ ADVISOR_ADAPTER_REVISION=25de69bcde397e1bcdd852923b56a42f10222650
 ADVISOR_QUEST_ANALYZER_BACKEND=minicpm-transformers
 ADVISOR_QUEST_ADAPTER_ID=artifacts/quest-lora
 ADVISOR_CACHE_DIR=/data/advisor-cache
+ADVISOR_REFRESH_EMBEDDING_TIMEOUT_SECONDS=1800
 ADVISOR_EMBEDDING_MODEL_REPO=ggml-org/embeddinggemma-300m-qat-q8_0-GGUF
 ADVISOR_EMBEDDING_MODEL_FILE=embeddinggemma-300m-qat-Q8_0.gguf
 ADVISOR_ASR_MODEL_ID=nvidia/nemotron-speech-streaming-en-0.6b
@@ -238,7 +239,9 @@ The retrieval query embedder downloads the GGUF model through `huggingface_hub` 
 `ADVISOR_EMBEDDING_MODEL_PATH` points to a local file. `/api/transcribe` uses the same ZeroGPU wrapper for Nemotron ASR.
 On macOS local runs, the app automatically runs llama.cpp query embedding in a worker process so the MiniCPM PyTorch
 runtime and llama.cpp do not load conflicting OpenMP runtimes in the same Python process. Dashboard refresh also builds
-the GGUF embedding index in a subprocess before returning to the app process for MiniCPM quest analysis.
+the GGUF embedding index in a subprocess before returning to the app process for MiniCPM quest analysis. When
+`ADVISOR_CACHE_DIR` is set and `HF_HOME` is not, the refresh subprocess stores Hugging Face downloads under
+`$ADVISOR_CACHE_DIR/huggingface` so the mounted bucket keeps the embedding model cache across refreshes and restarts.
 
 ## Test
 

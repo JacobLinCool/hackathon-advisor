@@ -173,31 +173,43 @@ def test_dashboard_refresh_embedding_build_runs_in_subprocess(monkeypatch, tmp_p
     monkeypatch.setenv("ADVISOR_EMBEDDING_MODEL_PATH", "/tmp/model.gguf")
     captured = {}
 
-    def fake_run(command, *, cwd, capture_output, text, check):
+    def fake_run_refresh_index_command(command):
         captured["command"] = command
-        captured["cwd"] = cwd
-        captured["capture_output"] = capture_output
-        captured["text"] = text
-        captured["check"] = check
         index_path.write_text(json.dumps({"schema": "ok"}), encoding="utf-8")
-        return app_module.subprocess.CompletedProcess(command, 0, "wrote index", "")
 
-    monkeypatch.setattr(app_module.subprocess, "run", fake_run)
+    monkeypatch.setattr(app_module, "_run_refresh_index_command", fake_run_refresh_index_command)
 
     payload = app_module._build_refresh_index_payload(project_path, index_path)
 
     command = captured["command"]
     assert payload == {"schema": "ok"}
-    assert captured["cwd"] == app_module.ROOT
-    assert captured["capture_output"] is True
-    assert captured["text"] is True
-    assert captured["check"] is False
     assert command[1].endswith("scripts/build_project_index.py")
     assert command[command.index("--model-repo") + 1] == "test/repo"
     assert command[command.index("--model-file") + 1] == "model.gguf"
     assert command[command.index("--model-path") + 1] == "/tmp/model.gguf"
     assert command[command.index("--build-source") + 1] == "space dashboard refresh"
     assert command[command.index("--builder") + 1] == "app.py:/api/dashboard/refresh"
+
+
+def test_refresh_subprocess_env_uses_cache_dir_for_hf_home(monkeypatch, tmp_path) -> None:
+    monkeypatch.setenv("ADVISOR_CACHE_DIR", str(tmp_path))
+    monkeypatch.delenv("HF_HOME", raising=False)
+
+    env = app_module._refresh_subprocess_env()
+
+    assert env["HF_HOME"] == str(tmp_path / "huggingface")
+    assert (tmp_path / "huggingface").is_dir()
+
+
+def test_refresh_embedding_timeout_rejects_non_positive_env(monkeypatch) -> None:
+    monkeypatch.setenv("ADVISOR_REFRESH_EMBEDDING_TIMEOUT_SECONDS", "0")
+
+    try:
+        app_module._refresh_embedding_timeout_seconds()
+    except RuntimeError as error:
+        assert "must be a positive integer" in str(error)
+    else:
+        raise AssertionError("non-positive refresh embedding timeout should fail")
 
 
 def test_dashboard_refresh_persists_and_swaps_latest(monkeypatch, tmp_path) -> None:

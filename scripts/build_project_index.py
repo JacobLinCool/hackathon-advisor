@@ -68,6 +68,7 @@ def build_payload(
 ) -> dict:
     data = json.loads(project_path.read_text(encoding="utf-8"))
     projects = [Project.from_dict(item) for item in data["projects"]]
+    print(f"loaded {len(projects)} projects from {project_path}", flush=True)
     embedder = LlamaCppEmbedder(
         model_repo=model_repo,
         model_file=model_file,
@@ -76,7 +77,16 @@ def build_payload(
         n_threads=n_threads,
         verbose=False,
     )
-    embeddings = [embedder.embed(project.searchable_text) for project in projects]
+    print(
+        "embedding projects with "
+        f"{model_repo}/{model_file}; first vector may download and load the GGUF model",
+        flush=True,
+    )
+    embeddings = []
+    for index, project in enumerate(projects, start=1):
+        embeddings.append(embedder.embed(project.searchable_text))
+        if index == 1 or index % 10 == 0 or index == len(projects):
+            print(f"embedded {index}/{len(projects)} projects", flush=True)
     metadata = {
         "model_repo": model_repo,
         "model_file": model_file,
