@@ -81,6 +81,7 @@ let voiceRecordingState = "idle";
 let decodeStartedAt = 0;
 let turnProgressTimer = null;
 let dashboardData = null;
+const SELF_PROJECT_ID = "build-small-hackathon/hackathon-advisor";
 let selectedClusterId = "";
 let selectedQuestId = "";
 let selectedProjectId = "";
@@ -465,7 +466,10 @@ function renderDashboard(data) {
     handleDashboardError(new Error("empty dashboard payload"));
     return;
   }
-  if (!selectedProjectId) selectedProjectId = mostLikedPoint(data.points)?.id || data.points[0].id;
+  if (!selectedProjectId) {
+    const selfPoint = data.points.find((point) => point.id === SELF_PROJECT_ID);
+    selectedProjectId = selfPoint?.id || mostLikedPoint(data.points)?.id || data.points[0].id;
+  }
   renderAtlasStats(data);
   renderAtlasClusters(data);
   renderAtlasQuests(data);
