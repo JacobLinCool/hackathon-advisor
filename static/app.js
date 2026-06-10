@@ -477,6 +477,7 @@ function renderDashboard(data) {
   renderAtlasDetail(currentAtlasPoint(data));
   renderAtlasReport(data);
   renderAtlasSearch();
+  renderChatActionChip(); // keep the chat's applied-filter chip in sync with manual clicks
   if (atlasStatusEl) atlasStatusEl.textContent = atlasSearchQuery ? atlasSearchStatusCopy() : atlasProvenanceCopy(data);
 }
 
@@ -2129,4 +2130,627 @@ function boundedPercent(value) {
 function shortDate(value) {
   if (!value) return "unknown";
   return String(value).replace("T", " ").replace(/\+00:00$/, "Z").slice(0, 16);
+}
+
+/* ---------------------------------------------------------------------------
+ * Atlas chat drawer — conversational access to the live dashboard.
+ *
+ * Streams POST /api/dashboard/chat (NDJSON). Verified tool results render as
+ * cards and drive the map through map_action BEFORE the model prose arrives;
+ * the prose is labeled "Model summary" and the done.response is authoritative.
+ * ------------------------------------------------------------------------- */
+
+const openAtlasChatButton = document.querySelector("#open-atlas-chat");
+const atlasChatEl = document.querySelector("#atlas-chat");
+const atlasChatScrimEl = document.querySelector("#atlas-chat-scrim");
+const atlasChatLogEl = document.querySelector("#atlas-chat-log");
+const atlasChatFormEl = document.querySelector("#atlas-chat-form");
+const atlasChatInputEl = document.querySelector("#atlas-chat-input");
+const atlasChatSendEl = document.querySelector("#atlas-chat-send");
+const atlasChatCloseEl = document.querySelector("#atlas-chat-close");
+const atlasChatClearEl = document.querySelector("#atlas-chat-clear");
+const atlasChatSuggestionsEl = document.querySelector("#atlas-chat-suggestions");
+const atlasChatActionEl = document.querySelector("#atlas-chat-action");
+
+const ATLAS_CHAT_STORAGE_KEY = "hackathon-advisor-atlas-chat-v1";
+const ATLAS_CHAT_MAX_MESSAGES = 30;
+const ATLAS_CHAT_SUGGESTIONS = [
+  "What is everyone building?",
+  "Who completed the most quests?",
+  "What clusters exist?",
+  "What changed recently?",
+];
+
+let atlasChatMessages = loadAtlasChatMessages();
+let atlasChatBusy = false;
+let atlasChatLastFocus = null;
+let chatMapActionApplied = false;
+
+openAtlasChatButton?.addEventListener("click", () => openAtlasChat());
+atlasChatCloseEl?.addEventListener("click", () => closeAtlasChat());
+atlasChatScrimEl?.addEventListener("click", () => closeAtlasChat());
+atlasChatClearEl?.addEventListener("click", () => {
+  if (atlasChatBusy) return; // an in-flight stream still mutates the live message
+  atlasChatMessages = [];
+  persistAtlasChatMessages();
+  renderAtlasChatLog();
+});
+atlasChatFormEl?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const message = String(atlasChatInputEl?.value || "").trim();
+  if (!message || atlasChatBusy) return;
+  atlasChatInputEl.value = "";
+  await runAtlasChatTurn(message);
+});
+// Non-modal dialog (aria-modal=false): no Tab trap — the map stays reachable.
+atlasChatEl?.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    event.stopPropagation();
+    closeAtlasChat();
+  }
+});
+
+function openAtlasChat() {
+  if (!atlasChatEl) return;
+  atlasChatLastFocus = document.activeElement;
+  atlasChatEl.hidden = false;
+  if (atlasChatScrimEl) atlasChatScrimEl.hidden = false;
+  window.requestAnimationFrame(() => atlasChatEl.classList.add("open"));
+  renderAtlasChatLog();
+  window.setTimeout(() => atlasChatInputEl?.focus(), 60);
+}
+
+function closeAtlasChat() {
+  if (!atlasChatEl || atlasChatEl.hidden) return;
+  atlasChatEl.classList.remove("open");
+  if (atlasChatScrimEl) atlasChatScrimEl.hidden = true;
+  window.setTimeout(() => {
+    atlasChatEl.hidden = true;
+  }, 290);
+  if (atlasChatLastFocus?.focus) atlasChatLastFocus.focus();
+}
+
+function loadAtlasChatMessages() {
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(ATLAS_CHAT_STORAGE_KEY) || "[]");
+    return Array.isArray(stored) ? stored.slice(-ATLAS_CHAT_MAX_MESSAGES) : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistAtlasChatMessages() {
+  try {
+    window.localStorage.setItem(
+      ATLAS_CHAT_STORAGE_KEY,
+      JSON.stringify(atlasChatMessages.slice(-ATLAS_CHAT_MAX_MESSAGES)),
+    );
+  } catch {
+    /* storage may be unavailable; chat still works in-memory */
+  }
+}
+
+function atlasChatServerHistory() {
+  return atlasChatMessages
+    .filter((message) => message.text)
+    .map((message) => ({
+      role: message.role === "user" ? "user" : "assistant",
+      content: message.text,
+    }));
+}
+
+async function runAtlasChatTurn(message) {
+  if (atlasChatBusy) return;
+  atlasChatBusy = true;
+  if (atlasChatSendEl) atlasChatSendEl.disabled = true;
+  const historyJson = JSON.stringify(atlasChatServerHistory());
+  atlasChatMessages.push({ role: "user", text: message });
+  const guide = {
+    role: "guide",
+    text: "",
+    thinking: "",
+    tool: "",
+    data: null,
+    mapAction: null,
+    skipped: "",
+  };
+  atlasChatMessages.push(guide);
+  renderAtlasChatLog();
+  const live = atlasChatLogEl?.lastElementChild;
+  const typingEl = live?.querySelector(".atlas-chat-typing");
+  const proseEl = live?.querySelector(".atlas-chat-prose");
+  const thinkEl = live?.querySelector(".atlas-chat-think");
+  const thinkTextEl = live?.querySelector(".atlas-chat-think-text");
+
+  try {
+    const response = await fetch("/api/dashboard/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message, history_json: historyJson }),
+    });
+    if (!response.ok) throw new Error(`atlas chat failed with ${response.status}`);
+    if (!response.body) throw new Error("atlas chat stream was empty");
+
+    for await (const raw of readNdjson(response.body)) {
+      const event = JSON.parse(raw);
+      handleAtlasChatEvent(event, guide, { live, typingEl, proseEl, thinkEl, thinkTextEl });
+    }
+  } catch (error) {
+    console.error("Atlas chat turn failed.", error);
+    guide.text = guide.text || `The atlas guide could not answer: ${error.message}`;
+    guide.skipped = guide.skipped || "error";
+  } finally {
+    atlasChatBusy = false;
+    if (atlasChatSendEl) atlasChatSendEl.disabled = false;
+    persistAtlasChatMessages();
+    renderAtlasChatLog();
+    atlasChatInputEl?.focus();
+  }
+}
+
+function handleAtlasChatEvent(event, guide, nodes) {
+  switch (event.type) {
+    case "stage":
+      if (nodes.typingEl) nodes.typingEl.textContent = event.label || "Thinking.";
+      break;
+    case "thinking":
+      guide.thinking += event.text || "";
+      if (nodes.thinkEl) {
+        nodes.thinkEl.hidden = false;
+        nodes.thinkEl.open = true;
+      }
+      if (nodes.thinkTextEl) nodes.thinkTextEl.textContent = guide.thinking;
+      if (nodes.typingEl) nodes.typingEl.textContent = "Thinking.";
+      scrollAtlasChatLog();
+      break;
+    case "tool_call":
+      guide.tool = event.name || "";
+      if (nodes.typingEl && event.name) {
+        nodes.typingEl.textContent = `Checking ${event.name.replaceAll("_", " ")}.`;
+      }
+      break;
+    case "tool_result":
+      guide.data = event.data || null;
+      guide.tool = event.tool || guide.tool;
+      guide.mapAction = event.map_action || null;
+      if (guide.mapAction) applyChatMapAction(guide.mapAction);
+      if (nodes.live) {
+        const cards = nodes.live.querySelector(".atlas-chat-cards");
+        if (cards) cards.replaceChildren(...atlasChatCards(guide.tool, guide.data));
+      }
+      break;
+    case "token":
+      guide.text += event.text || "";
+      if (nodes.proseEl) {
+        nodes.proseEl.hidden = false;
+        nodes.proseEl.textContent = guide.text;
+      }
+      if (nodes.typingEl) nodes.typingEl.hidden = true;
+      if (nodes.thinkEl) nodes.thinkEl.open = false; // fold the trace once the answer starts
+      scrollAtlasChatLog();
+      break;
+    case "answer_skipped":
+      guide.text = event.text || "";
+      guide.skipped = event.reason || "skipped";
+      break;
+    case "fallback":
+      guide.fallback = event.reason || "Running locally.";
+      break;
+    case "done":
+      guide.text = event.response || guide.text;
+      guide.tool = event.tool || guide.tool;
+      if (guide.tool && event.data && Object.keys(event.data).length && !guide.data) {
+        guide.data = event.data;
+      }
+      announceAtlasChat(guide.text);
+      break;
+    default:
+      break;
+  }
+}
+
+function renderAtlasChatLog() {
+  if (!atlasChatLogEl) return;
+  atlasChatLogEl.replaceChildren();
+  for (const message of atlasChatMessages) {
+    atlasChatLogEl.append(
+      message.role === "user" ? atlasChatUserNode(message) : atlasChatGuideNode(message),
+    );
+  }
+  renderAtlasChatSuggestions();
+  renderChatActionChip();
+  scrollAtlasChatLog();
+}
+
+function atlasChatUserNode(message) {
+  const node = document.createElement("div");
+  node.className = "atlas-chat-msg user";
+  node.textContent = message.text;
+  return node;
+}
+
+function atlasChatGuideNode(message) {
+  const node = document.createElement("div");
+  node.className = "atlas-chat-msg guide";
+
+  const hasCards = Boolean(message.tool && message.data && Object.keys(message.data).length);
+  if (hasCards) {
+    const dataLabel = document.createElement("span");
+    dataLabel.className = "atlas-chat-label";
+    dataLabel.textContent = "Data";
+    node.append(dataLabel);
+  }
+  const cards = document.createElement("div");
+  cards.className = "atlas-chat-cards";
+  cards.append(...atlasChatCards(message.tool, message.data));
+  node.append(cards);
+
+  // The model's reasoning trace: streams open, folds once the answer starts.
+  const think = document.createElement("details");
+  think.className = "atlas-chat-think";
+  const summary = document.createElement("summary");
+  summary.textContent = "Thinking";
+  const thinkText = document.createElement("div");
+  thinkText.className = "atlas-chat-think-text";
+  thinkText.textContent = message.thinking || "";
+  think.append(summary, thinkText);
+  think.hidden = !message.thinking;
+  node.append(think);
+
+  const proseLabel = document.createElement("span");
+  proseLabel.className = "atlas-chat-label";
+  proseLabel.textContent = message.skipped ? "Atlas note" : "Model summary";
+  const prose = document.createElement("p");
+  prose.className = `atlas-chat-prose ${message.skipped ? "skipped" : ""}`;
+  prose.textContent = message.text;
+  prose.hidden = !message.text;
+  proseLabel.hidden = !message.text;
+
+  if (!message.text && atlasChatBusy && message === atlasChatMessages.at(-1)) {
+    const typing = document.createElement("span");
+    typing.className = "atlas-chat-typing";
+    typing.textContent = "Reading the atlas.";
+    node.append(typing);
+  }
+  node.append(proseLabel, prose);
+
+  if (message.fallback) {
+    const fallback = document.createElement("span");
+    fallback.className = "atlas-chat-fallback";
+    fallback.textContent = message.fallback;
+    node.append(fallback);
+  }
+  if (message.skipped === "quests_not_analyzed") {
+    node.append(atlasChatRefreshCard());
+  }
+  return node;
+}
+
+function atlasChatRefreshCard() {
+  const card = document.createElement("div");
+  card.className = "atlas-chat-empty";
+  const copy = document.createElement("span");
+  copy.textContent = "Quest coverage appears after a map refresh classifies the field.";
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "btn btn-ghost";
+  button.textContent = "Refresh map";
+  button.addEventListener("click", () => startDashboardRefresh());
+  card.append(copy, button);
+  return card;
+}
+
+function atlasChatCards(tool, data) {
+  if (!data) return [];
+  switch (tool) {
+    case "atlas_overview":
+      return overviewCards(data);
+    case "list_clusters":
+      return clusterListCards(data);
+    case "show_cluster":
+      return clusterDetailCards(data);
+    case "show_project":
+      return projectReadmeCards(data);
+    case "list_quests":
+      return questListCards(data);
+    case "show_quest":
+      return questDetailCards(data);
+    case "top_projects_by_quests":
+      return leaderboardCards(data);
+    case "search_projects":
+      return searchCards(data);
+    case "recent_activity":
+      return recentCards(data);
+    default:
+      return [];
+  }
+}
+
+function overviewCards(data) {
+  const statline = document.createElement("div");
+  statline.className = "atlas-chat-statline";
+  statline.innerHTML = `
+    <span><strong>${Number(data.project_count || 0)}</strong> projects</span>
+    <span><strong>${Number(data.cluster_count || 0)}</strong> clusters</span>
+    <span><strong>${escapeHtml(String(data.quest_status || ""))}</strong> quests</span>
+  `;
+  const chips = document.createElement("div");
+  chips.className = "atlas-chat-chips";
+  for (const cluster of data.top_clusters || []) {
+    chips.append(
+      chatChipButton(`${cluster.label} · ${cluster.project_count}`, () =>
+        applyChatMapAction({ type: "filter_cluster", label: cluster.label }),
+      ),
+    );
+  }
+  const nodes = [statline, chips];
+  for (const project of data.most_liked || []) {
+    nodes.push(projectCard(project, `${project.likes} likes`));
+  }
+  return nodes;
+}
+
+function clusterListCards(data) {
+  const chips = document.createElement("div");
+  chips.className = "atlas-chat-chips";
+  for (const cluster of data.clusters || []) {
+    chips.append(
+      chatChipButton(`${cluster.label} · ${cluster.project_count}`, () =>
+        applyChatMapAction({ type: "filter_cluster", label: cluster.label }),
+      ),
+    );
+  }
+  return [chips];
+}
+
+function clusterDetailCards(data) {
+  const nodes = [];
+  if (data.keywords?.length) {
+    const chips = document.createElement("div");
+    chips.className = "atlas-chat-chips";
+    for (const keyword of data.keywords) {
+      const chip = document.createElement("span");
+      chip.textContent = keyword;
+      chips.append(chip);
+    }
+    nodes.push(chips);
+  }
+  for (const project of data.examples || []) {
+    nodes.push(projectCard(project, `${project.likes} likes`));
+  }
+  return nodes;
+}
+
+function projectReadmeCards(data) {
+  const nodes = [];
+  const metaParts = [
+    data.likes ? `${data.likes} likes` : "",
+    data.sdk || "",
+    data.cluster_label || "",
+  ].filter(Boolean);
+  nodes.push(projectCard(data, [data.summary, metaParts.join(" · ")].filter(Boolean).join(" — ")));
+
+  const chips = document.createElement("div");
+  chips.className = "atlas-chat-chips";
+  for (const label of [...(data.quests || []), ...(data.tags || [])].slice(0, 8)) {
+    const chip = document.createElement("span");
+    chip.textContent = label;
+    chips.append(chip);
+  }
+  if (chips.childElementCount) nodes.push(chips);
+
+  if (data.readme_excerpt) {
+    const readme = document.createElement("div");
+    readme.className = "atlas-chat-card";
+    readme.innerHTML = `<span class="atlas-chat-label">README</span>`;
+    const body = document.createElement("p");
+    body.className = "atlas-chat-excerpt";
+    body.textContent = data.readme_excerpt;
+    readme.append(body);
+    nodes.push(readme);
+  }
+  if (data.app_excerpt) {
+    const app = document.createElement("div");
+    app.className = "atlas-chat-card";
+    app.innerHTML = `<span class="atlas-chat-label">${escapeHtml(data.app_file || "app file")}</span>`;
+    const code = document.createElement("pre");
+    code.className = "atlas-chat-code";
+    code.textContent = data.app_excerpt;
+    app.append(code);
+    nodes.push(app);
+  }
+  return nodes;
+}
+
+function questListCards(data) {
+  const quests = (data.quests || []).filter((quest) => Number(quest.project_count || 0) > 0);
+  const max = Math.max(1, ...quests.map((quest) => Number(quest.project_count || 0)));
+  return quests.slice(0, 8).map((quest) => barCard(quest.label, quest.project_count, max));
+}
+
+function questDetailCards(data) {
+  const nodes = [];
+  const card = document.createElement("div");
+  card.className = "atlas-chat-card";
+  card.innerHTML = `
+    <strong>${escapeHtml(data.label || data.id || "")}</strong>
+    <span class="atlas-chat-card-meta">${escapeHtml(data.description || "")}</span>
+    <span class="atlas-chat-card-meta">${Number(data.project_count || 0)} projects</span>
+  `;
+  nodes.push(card);
+  for (const project of data.examples || []) {
+    nodes.push(projectCard(project, ""));
+  }
+  return nodes;
+}
+
+function leaderboardCards(data) {
+  const rows = data.rows || [];
+  const max = Math.max(1, ...rows.map((row) => Number(row.quest_count || 0)));
+  return rows.map((row) =>
+    barCard(row.title, row.quest_count, max, row.url, `${row.quest_count} quests · ${row.likes} likes`),
+  );
+}
+
+function searchCards(data) {
+  return (data.results || []).map((result) =>
+    projectCard(result, result.summary || "Matched project"),
+  );
+}
+
+function recentCards(data) {
+  return (data.projects || []).map((project) =>
+    projectCard(project, `${shortDate(project.last_modified)}${project.cluster_label ? ` · ${project.cluster_label}` : ""}`),
+  );
+}
+
+function projectCard(project, meta) {
+  const card = document.createElement("div");
+  card.className = "atlas-chat-card";
+  const title = escapeHtml(project.title || project.id || "Untitled project");
+  const body = `
+    <strong>${title}</strong>
+    ${meta ? `<span class="atlas-chat-card-meta">${escapeHtml(meta)}</span>` : ""}
+  `;
+  const url = safeChatUrl(project.url);
+  card.innerHTML = url
+    ? `<a href="${escapeHtml(url)}" target="_blank" rel="noreferrer noopener">${body}</a>`
+    : body;
+  return card;
+}
+
+function barCard(label, count, max, url = "", meta = "") {
+  const card = document.createElement("div");
+  card.className = "atlas-chat-card";
+  const width = Math.max(8, Math.min(100, (Number(count || 0) / max) * 100)).toFixed(0);
+  const title = escapeHtml(label || "");
+  const safeUrl = safeChatUrl(url);
+  const heading = safeUrl
+    ? `<a href="${escapeHtml(safeUrl)}" target="_blank" rel="noreferrer noopener"><strong>${title}</strong></a>`
+    : `<strong>${title}</strong>`;
+  card.innerHTML = `
+    ${heading}
+    <span class="atlas-search-score" aria-hidden="true"><i style="width: ${width}%"></i></span>
+    <span class="atlas-chat-card-meta">${escapeHtml(meta || `${count} projects`)}</span>
+  `;
+  return card;
+}
+
+function safeChatUrl(url) {
+  // Card hrefs come from crawled metadata; only plain web links are clickable.
+  const value = String(url || "");
+  return /^https?:\/\//i.test(value) ? value : "";
+}
+
+function chatChipButton(label, onClick) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = label;
+  button.addEventListener("click", onClick);
+  return button;
+}
+
+function renderAtlasChatSuggestions() {
+  if (!atlasChatSuggestionsEl) return;
+  atlasChatSuggestionsEl.replaceChildren();
+  if (atlasChatMessages.length) return;
+  for (const suggestion of ATLAS_CHAT_SUGGESTIONS) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = suggestion;
+    button.addEventListener("click", () => runAtlasChatTurn(suggestion));
+    atlasChatSuggestionsEl.append(button);
+  }
+}
+
+/* --- chat -> map cooperation ---------------------------------------------- */
+
+function applyChatMapAction(action) {
+  if (!action || !dashboardData) return;
+  switch (action.type) {
+    case "clear_filters":
+      selectedClusterId = "";
+      selectedQuestId = "";
+      atlasSearchResultIds = new Set();
+      break;
+    case "filter_cluster": {
+      // Cluster ids are unstable across refreshes; resolve the label live.
+      const wanted = String(action.label || "").toLowerCase();
+      const cluster = (dashboardData.clusters || []).find(
+        (entry) => String(entry.label || "").toLowerCase() === wanted,
+      );
+      if (cluster) selectedClusterId = cluster.id;
+      break;
+    }
+    case "filter_quest":
+      selectedQuestId = String(action.quest || "");
+      break;
+    case "highlight_projects": {
+      const ids = (action.ids || []).filter(Boolean);
+      atlasSearchResultIds = new Set(ids);
+      if (ids.length) selectedProjectId = ids[0];
+      break;
+    }
+    default:
+      return;
+  }
+  chatMapActionApplied = true;
+  renderDashboard(dashboardData);
+}
+
+function clearChatMapAction() {
+  // "Clear" rather than snapshot-rollback: a rollback would silently revert any
+  // manual cluster/quest clicks the user made after the chat action.
+  if (!dashboardData) return;
+  selectedClusterId = "";
+  selectedQuestId = "";
+  atlasSearchResultIds = new Set();
+  chatMapActionApplied = false;
+  renderDashboard(dashboardData);
+}
+
+function renderChatActionChip() {
+  if (!atlasChatActionEl) return;
+  // Describe the LIVE filter state so a manual sidebar click can never desync the chip.
+  const description = liveMapStateCopy();
+  if (!chatMapActionApplied || !description) {
+    atlasChatActionEl.hidden = true;
+    atlasChatActionEl.replaceChildren();
+    return;
+  }
+  atlasChatActionEl.hidden = false;
+  atlasChatActionEl.replaceChildren();
+  const copy = document.createElement("span");
+  copy.innerHTML = `Map: <strong>${escapeHtml(description)}</strong>`;
+  const clear = document.createElement("button");
+  clear.type = "button";
+  clear.className = "atlas-chat-undo";
+  clear.textContent = "Clear";
+  clear.addEventListener("click", clearChatMapAction);
+  atlasChatActionEl.append(copy, clear);
+}
+
+function liveMapStateCopy() {
+  if (!dashboardData) return "";
+  const parts = [];
+  if (selectedClusterId) {
+    const cluster = (dashboardData.clusters || []).find((entry) => entry.id === selectedClusterId);
+    if (cluster) parts.push(`cluster ${cluster.label}`);
+  }
+  if (selectedQuestId) parts.push(`quest ${selectedQuestId}`);
+  if (atlasSearchResultIds.size && !atlasSearchQuery) {
+    parts.push(`${atlasSearchResultIds.size} highlighted`);
+  }
+  return parts.join(" · ");
+}
+
+function scrollAtlasChatLog() {
+  if (atlasChatLogEl) atlasChatLogEl.scrollTop = atlasChatLogEl.scrollHeight;
+}
+
+function announceAtlasChat(text) {
+  // One announcement per finished answer; live-updating the whole log would make
+  // screen readers re-read every streamed token.
+  const status = document.querySelector("#atlas-chat-status");
+  if (status) status.textContent = text || "";
 }

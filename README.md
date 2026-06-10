@@ -68,6 +68,10 @@ export the session evidence.
   text, and declared app-file source.
 - Filter by cluster or quest, then inspect the selected project's summary, Space link, tags, quest matches, and evidence
   hints.
+- Chat with the atlas: the "Ask the atlas" drawer answers questions like "who completed the most quests" or "what
+  clusters exist" through the BASE MiniCPM5-1B model's native tool calling, with thinking enabled — the reasoning
+  trace streams live into a collapsible block. Verified tool results render as cards and can filter or highlight the
+  map directly; the model's prose is grounded on a compact digest of the same result.
 - Refresh the atlas from the Space backend; validated artifacts are written to the mounted cache directory and swapped
   into the live app atomically.
 - Open the advisor workspace for idea comparison, gap exploration, score seals, profile-aware plans, voice input, and
@@ -212,6 +216,7 @@ credentials.
 | --- | --- |
 | `GET /api/dashboard` | Atlas points, links, clusters, quest report, provenance, and refresh status. |
 | `GET /api/dashboard/search?q=...` | BM25 search over project, cluster, quest, README, and app-file text. |
+| `POST /api/dashboard/chat` | Atlas chat turn (NDJSON stream): base-model tool call, verified result + map action, grounded answer. |
 | `POST /api/dashboard/refresh` | Starts one background refresh job. |
 | `GET /api/dashboard/refresh` | Reports refresh stage, result, and status. |
 | `POST /api/transcribe` | Transcribes uploaded voice notes with NVIDIA NeMo and Nemotron ASR. |

@@ -24,6 +24,17 @@ MAX_TOOL_CALL_TOKENS = 180
 MINICPM_DEMO_TEMPERATURE = 0.9
 MINICPM_DEMO_TOP_P = 0.95
 
+# One lock for every MiniCPM generation in this process. The atlas chat borrows the
+# advisor's loaded model and toggles its LoRA off via PeftModel.disable_adapter(),
+# which mutates shared model state — so adapter toggling and generate() must never
+# interleave across threads. The lock is held for the FULL lifetime of the streaming
+# worker thread (acquired before it starts, released after it joins).
+_GENERATION_LOCK = threading.Lock()
+
+
+def generation_lock() -> threading.Lock:
+    return _GENERATION_LOCK
+
 
 class ToolPlanner(Protocol):
     backend: str
@@ -157,6 +168,7 @@ class MiniCPMTransformersPlanner:
         self._tokenizer = None
         self._model = None
         self._inference_mode = None
+        self._load_lock = threading.Lock()
 
     def plan(self, message: str, state: dict[str, Any]) -> ToolResolution:
         resolution: ToolResolution | None = None
@@ -179,6 +191,15 @@ class MiniCPMTransformersPlanner:
     def _ensure_loaded(self) -> None:
         if self._model is not None and self._tokenizer is not None:
             return
+        # Double-checked: the advisor and the atlas chat share this planner, so two
+        # cold-start requests could otherwise both run the full from_pretrained load
+        # (a ~2x transient memory spike). _GENERATION_LOCK starts too late to help.
+        with self._load_lock:
+            if self._model is not None and self._tokenizer is not None:
+                return
+            self._load()
+
+    def _load(self) -> None:
         try:
             import torch
             from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -235,44 +256,31 @@ class MiniCPMTransformersPlanner:
         )
 
     def _stream_tool_call(self, prompt: str) -> Iterator[tuple[int, str]]:
-        from transformers import TextIteratorStreamer
-
         assert self._tokenizer is not None
         assert self._model is not None
         inputs = self._prepare_inputs(prompt)
-        streamer = TextIteratorStreamer(
-            self._tokenizer, skip_prompt=True, skip_special_tokens=True
-        )
-        generation_kwargs = _minicpm_generation_kwargs(
+        yield from _stream_minicpm_generation(
+            self._model,
+            self._tokenizer,
             inputs,
             max_new_tokens=MAX_TOOL_CALL_TOKENS,
             temperature=0.0,
-            streamer=streamer,
+            inference_mode=self._inference_mode,
         )
-        errors: list[BaseException] = []
 
-        def _run() -> None:
-            context = self._inference_mode() if self._inference_mode is not None else nullcontext()
-            try:
-                with context:
-                    self._model.generate(**generation_kwargs)
-            except BaseException as error:  # surfaced after the streamer drains
-                errors.append(error)
-                # generate() never reached its end sentinel, so wake the consumer instead of
-                # letting it block forever, then re-raise from the main thread below.
-                streamer.end()
+    def ensure_loaded(self) -> None:
+        """Public lazy-load trigger so a borrower (the atlas chat) can share the model."""
+        self._ensure_loaded()
 
-        worker = threading.Thread(target=_run, daemon=True)
-        worker.start()
-        tokens = 0
-        for piece in streamer:
-            if not piece:
-                continue
-            tokens += 1
-            yield tokens, piece
-        worker.join()
-        if errors:
-            raise errors[0]
+    def base_model_context(self):
+        """Context manager that exposes the BASE weights of the loaded model.
+
+        With a LoRA adapter attached this is PeftModel.disable_adapter(); without one
+        the model already is the base, so a nullcontext suffices. Callers must hold
+        generation_lock() around the entered context (see _stream_minicpm_generation)."""
+        if self.adapter_id and self._model is not None and hasattr(self._model, "disable_adapter"):
+            return self._model.disable_adapter()
+        return nullcontext()
 
 
 def _device_available(device: str, torch: Any) -> bool:
@@ -359,6 +367,30 @@ def _minicpm_chat_inputs(
     return inputs
 
 
+def _minicpm_chat_inputs_with_tools(
+    tokenizer: Any,
+    messages: list[dict[str, Any]],
+    *,
+    tools: list[dict[str, Any]],
+    enable_thinking: bool,
+    device: Any,
+) -> Any:
+    """Chat inputs with the native tools= injection (atlas chat pass 1).
+
+    Kept separate from _minicpm_chat_inputs so the advisor's exact template call —
+    asserted verbatim in tests — stays untouched."""
+    prompt_text = tokenizer.apply_chat_template(
+        messages,
+        tools=tools,
+        tokenize=False,
+        add_generation_prompt=True,
+        enable_thinking=enable_thinking,
+    )
+    inputs = tokenizer([prompt_text], return_tensors="pt").to(device)
+    _strip_unused_generation_inputs(inputs)
+    return inputs
+
+
 def _minicpm_generation_kwargs(
     inputs: dict[str, Any],
     *,
@@ -378,6 +410,188 @@ def _minicpm_generation_kwargs(
     else:
         generation_kwargs.update(do_sample=False)
     return generation_kwargs
+
+
+def _stream_minicpm_generation(
+    model: Any,
+    tokenizer: Any,
+    inputs: dict[str, Any],
+    *,
+    max_new_tokens: int,
+    temperature: float = 0.0,
+    inference_mode: Any | None = None,
+    model_context: Any | None = None,
+) -> Iterator[tuple[int, str]]:
+    """Stream one MiniCPM generation as (token_count, text_piece) tuples.
+
+    Shared by the advisor tool-call pass and both atlas-chat passes. generate() runs in
+    a daemon thread feeding a TextIteratorStreamer; the process-wide generation lock is
+    held from before the worker starts until after it joins, so an adapter toggle
+    (``model_context`` — e.g. PeftModel.disable_adapter()) can never interleave with a
+    concurrent adapter-on generation. The ``finally`` also covers a consumer that
+    abandons the generator mid-stream."""
+    from transformers import TextIteratorStreamer
+
+    streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
+    generation_kwargs = _minicpm_generation_kwargs(
+        inputs,
+        max_new_tokens=max_new_tokens,
+        temperature=temperature,
+        streamer=streamer,
+    )
+    errors: list[BaseException] = []
+
+    def _run() -> None:
+        context = inference_mode() if inference_mode is not None else nullcontext()
+        weights = model_context() if model_context is not None else nullcontext()
+        try:
+            with weights, context:
+                model.generate(**generation_kwargs)
+        except BaseException as error:  # surfaced after the streamer drains
+            errors.append(error)
+            # generate() never reached its end sentinel, so wake the consumer instead of
+            # letting it block forever, then re-raise from the main thread below.
+            streamer.end()
+
+    worker = threading.Thread(target=_run, daemon=True)
+    with _GENERATION_LOCK:
+        worker.start()
+        try:
+            tokens = 0
+            for piece in streamer:
+                if not piece:
+                    continue
+                tokens += 1
+                yield tokens, piece
+        finally:
+            worker.join()
+    if errors:
+        raise errors[0]
+
+
+class ChatRunner(Protocol):
+    """Streams atlas-chat generations over the (shared) base model."""
+
+    backend: str
+    model_id: str
+
+    supports_thinking: bool
+
+    def stream(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        tools: list[dict[str, Any]] | None = None,
+        max_new_tokens: int,
+        enable_thinking: bool = False,
+    ) -> Iterator[tuple[int, str]]:
+        ...
+
+
+class MiniCPMChatRunner:
+    """Atlas-chat generations on the advisor's MiniCPM instance with the LoRA disabled.
+
+    Borrows the advisor planner's model and tokenizer (never loads its own copy) and
+    runs every generation under base_model_context() + the shared generation lock, so
+    the chat speaks with the BASE MiniCPM5-1B voice while the advisor keeps its adapter."""
+
+    backend = "minicpm-transformers"
+    # With enable_thinking the template ends the prompt with "<think>\n", so the
+    # stream is reasoning text up to "</think>" followed by the actual content.
+    supports_thinking = True
+
+    def __init__(self, planner: MiniCPMTransformersPlanner) -> None:
+        self._planner = planner
+
+    @property
+    def model_id(self) -> str:
+        return self._planner.model_id
+
+    def stream(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        tools: list[dict[str, Any]] | None = None,
+        max_new_tokens: int,
+        enable_thinking: bool = False,
+    ) -> Iterator[tuple[int, str]]:
+        planner = self._planner
+        planner.ensure_loaded()
+        assert planner._model is not None and planner._tokenizer is not None
+        device = next(planner._model.parameters()).device
+        if tools:
+            inputs = _minicpm_chat_inputs_with_tools(
+                planner._tokenizer,
+                messages,
+                tools=tools,
+                enable_thinking=enable_thinking,
+                device=device,
+            )
+        else:
+            inputs = _minicpm_chat_inputs(
+                planner._tokenizer,
+                messages,
+                enable_thinking=enable_thinking,
+                device=device,
+            )
+        yield from _stream_minicpm_generation(
+            planner._model,
+            planner._tokenizer,
+            inputs,
+            max_new_tokens=max_new_tokens,
+            temperature=0.0,
+            inference_mode=planner._inference_mode,
+            model_context=planner.base_model_context,
+        )
+
+
+class RuleBasedChatRunner:
+    """Deterministic ChatRunner for the rules backend (tests, weight-free UI work).
+
+    Pass 1 (tools given) emits a native-format call chosen by the keyword intent
+    router; pass 2 emits a fixed grounded sentence — the UI's verified cards carry
+    the actual data either way."""
+
+    backend = "rules"
+    model_id = "deterministic-chat-router"
+    supports_thinking = False
+
+    def stream(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        tools: list[dict[str, Any]] | None = None,
+        max_new_tokens: int,
+        enable_thinking: bool = False,
+    ) -> Iterator[tuple[int, str]]:
+        from xml.sax.saxutils import escape
+
+        from hackathon_advisor.dashboard_chat_contracts import heuristic_chat_call
+
+        if tools:
+            message = _last_user_content(messages)
+            call = heuristic_chat_call(message)
+            params = "".join(
+                f'<param name="{name}">{escape(str(value))}</param>'
+                for name, value in call.arguments.items()
+            )
+            yield 1, f'<function name="{call.name}">{params}</function>'
+            return
+        yield 1, "Here is what the atlas snapshot shows; the cards below are the verified data."
+
+
+def _last_user_content(messages: list[dict[str, Any]]) -> str:
+    for message in reversed(messages):
+        if message.get("role") == "user":
+            return str(message.get("content") or "")
+    return ""
+
+
+def create_chat_runner(planner: ToolPlanner) -> ChatRunner:
+    """Build the atlas ChatRunner for an advisor planner; never loads a second model."""
+    if isinstance(planner, MiniCPMTransformersPlanner):
+        return MiniCPMChatRunner(planner)
+    return RuleBasedChatRunner()
 
 
 def create_tool_planner(device: str = "auto") -> ToolPlanner:

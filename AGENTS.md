@@ -79,6 +79,9 @@ tests/                  pytest suite (mirrors module names: test_<module>.py)
 | `data.py` | `ProjectIndex`: loads the snapshot + embedding index, `_embed_query()` via llama.cpp, cosine search. |
 | `llama_embedding.py` | `LlamaCppEmbedder` — EmbeddingGemma GGUF through llama-cpp-python (the Llama Champion path). |
 | `dashboard.py` / `dashboard_storage.py` / `dashboard_search.py` | Atlas payload (t-SNE / KMeans / nearest links), BM25 search, and the refresh **lease + heartbeat + atomic `latest.json` swap**. |
+| `dashboard_repository.py` | `DashboardRepository`: read-only queries (overview, clusters, quests, leaderboard, search, recent) over one snapshot of `(dashboard_payload, search_index)`; no locks, no globals, plain dicts. |
+| `dashboard_chat_contracts.py` | Atlas-chat tool specs (8 tools), `parse_native_tool_call()` for MiniCPM5's native `<function><param>` format, and the chat degradation ladder (`resolve_chat_tool_call` / `data_intent_call`). |
+| `dashboard_chat.py` | `DashboardChatEngine.turn_stream()`: native two-pass loop on the **base** model with `enable_thinking` — reasoning streams as `thinking` events (split from content at `</think>`, which is NOT a special token), then tool pick (tools= injected) → repository execution → `tool_result` + `map_action` events **before** prose → grounded answer from a compact line-format digest (no history in pass 2: echo bait). 4096-token budget per generation; empty results skip pass 2 for a templated sentence. |
 | `quest_analysis.py` / `quest_taxonomy.py` / `quest_cache.py` | MiniCPM quest LoRA → strict quest JSON; the taxonomy; per-project cache keyed on prompt/taxonomy/model/adapter hashes. |
 | `scoring.py` | Deterministic idea rubric (the model only triggers + verbalizes it). |
 | `wood_map.py` / `png_export.py` | PCA projection + Pillow render of the shareable page PNG. |
@@ -97,6 +100,7 @@ First-party FastAPI routes power the visible app; `@app.api()` endpoints stay av
 | `POST /api/agent-turn` | The advisor turn — **NDJSON stream**; this is the `@spaces.GPU` boundary |
 | `POST /api/transcribe` | Voice note → transcript (NeMo, see ASR gotcha) |
 | `GET /api/dashboard` · `GET /api/dashboard/search` | Atlas payload · BM25 search |
+| `POST /api/dashboard/chat` | Atlas chat turn — **NDJSON stream** (base MiniCPM5-1B, native tool calling, two-pass) |
 | `POST/GET /api/dashboard/refresh` | Start / poll one background refresh job |
 | `GET /api/bootstrap` · `GET /api/runtime` · `GET /api/prize-ledger` · `GET /api/tool-contracts` | Frontend bootstrap, runtime status, prize ledger, tool schema |
 | `GET /api/demo-bundle.zip` · `GET /api/lora-training-kit.zip` · `POST /api/artifact.png` · `POST /api/field-notes` · `POST /api/chapter` | Exports |
@@ -124,6 +128,13 @@ First-party FastAPI routes power the visible app; `@app.api()` endpoints stay av
    weights. Don't add module-top heavy imports that break CPU-only test collection.
 8. **ASR backend.** `asr_runtime.py` requires NVIDIA NeMo ASR for `nvidia/nemotron-speech-streaming-en-0.6b`; missing
    NeMo is a hard runtime error, locally and on the deployed Space. `status()` reports the configured Nemotron backend.
+9. **The atlas chat shares the advisor's model — never load a second MiniCPM.** `create_chat_runner(engine.planner)`
+   borrows the loaded PeftModel and runs chat generations inside `base_model_context()` (PEFT `disable_adapter()`), so
+   the chat speaks with BASE weights. Adapter toggling mutates shared model state, so **every** generation (advisor and
+   chat) goes through `_stream_minicpm_generation`, which holds the module-level `generation_lock()` for the full
+   streamer-worker lifetime. Gotcha 1 still binds the advisor; the chat's two-pass model-written answers are a
+   deliberate, separately guarded exception (verified cards always render from the real tool result, and empty results
+   skip the model entirely).
 
 ---
 

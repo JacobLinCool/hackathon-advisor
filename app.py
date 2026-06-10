@@ -44,8 +44,10 @@ from hackathon_advisor.data import (
     ProjectIndex,
     normalize_project_tags,
 )
+from hackathon_advisor.dashboard_chat import DashboardChatEngine
+from hackathon_advisor.dashboard_repository import DashboardRepository
 from hackathon_advisor.demo_rehearsal import build_demo_rehearsal
-from hackathon_advisor.model_runtime import create_tool_planner
+from hackathon_advisor.model_runtime import create_chat_runner, create_tool_planner
 from hackathon_advisor.profiling import (
     TurnProfiler,
     configure_logging,
@@ -136,7 +138,22 @@ engine = AdvisorEngine(index, create_tool_planner(device=gpu_device()))
 voice_transcriber = create_asr_transcriber()
 app = Server()
 
+
+def _current_dashboard_repository() -> DashboardRepository:
+    """Snapshot the swapped globals under the lock, build the repository outside it."""
+    with _runtime_lock:
+        payload = dashboard_payload
+        search_index = dashboard_search_index
+    return DashboardRepository(payload, search_index)
+
+
+# The atlas chat shares the advisor's model (BASE weights via adapter-off generations);
+# create_chat_runner never loads a second copy. The planner reference survives refresh
+# swaps because _replace_runtime_from_files reuses engine.planner.
+chat_engine = DashboardChatEngine(create_chat_runner(engine.planner), _current_dashboard_repository)
+
 _cpu_engine: AdvisorEngine | None = None
+_cpu_chat_engine: DashboardChatEngine | None = None
 _refresh_state: dict[str, Any] = {
     "status": "idle",
     "run_id": "",
@@ -166,9 +183,26 @@ def _cpu_engine_instance() -> AdvisorEngine:
     return _cpu_engine
 
 
+def _cpu_chat_engine_instance() -> DashboardChatEngine:
+    """CPU-pinned atlas chat used for the explicit CPU override and the ZeroGPU-quota
+    fallback. Shares the CPU advisor engine's model, mirroring _cpu_engine_instance()."""
+    global _cpu_chat_engine
+    if _cpu_chat_engine is None:
+        _cpu_chat_engine = DashboardChatEngine(
+            create_chat_runner(_cpu_engine_instance().planner),
+            _current_dashboard_repository,
+        )
+    return _cpu_chat_engine
+
+
 @gpu_task
 def _engine_turn_stream_gpu(message: str, session: dict[str, Any]) -> Iterator[dict[str, Any]]:
     yield from engine.turn_stream(message, session)
+
+
+@gpu_task
+def _chat_turn_stream_gpu(message: str, history: list[dict[str, Any]]) -> Iterator[dict[str, Any]]:
+    yield from chat_engine.turn_stream(message, history)
 
 
 @gpu_task
@@ -883,6 +917,70 @@ def _profiled_turn_events(
         yield event
 
 
+def _history_from_json(history_json: str = "[]") -> list[dict[str, Any]]:
+    try:
+        history = json.loads(history_json or "[]")
+    except json.JSONDecodeError:
+        return []
+    return history if isinstance(history, list) else []
+
+
+def _primary_chat_stream(message: str, history: list[dict[str, Any]]) -> Iterator[dict[str, Any]]:
+    if zero_gpu_enabled():
+        yield from _chat_turn_stream_gpu(message, history)
+    else:
+        yield from chat_engine.turn_stream(message, history)
+
+
+def _chat_turn_events(
+    message: str,
+    history_json: str = "[]",
+    compute: str = "gpu",
+) -> Iterator[str]:
+    profiler = TurnProfiler(
+        message_index=next_message_index(),
+        compute=compute,
+        backend=str(getattr(chat_engine.runner, "backend", "")),
+        message_chars=len(message),
+    )
+    profiler.log_start()
+    try:
+        for event in _profiled_chat_events(message, history_json, compute):
+            profiler.observe(event)
+            yield _json_event(event)
+        profiler.device = _active_device(compute)
+        profiler.log_summary()
+    except Exception as error:  # noqa: BLE001 - log timing/resources even when a turn fails
+        profiler.device = _active_device(compute)
+        profiler.log_summary(error)
+        raise
+
+
+def _profiled_chat_events(
+    message: str,
+    history_json: str,
+    compute: str,
+) -> Iterator[dict[str, Any]]:
+    history = _history_from_json(history_json)
+    if compute != "cpu":
+        produced = False
+        try:
+            for event in _primary_chat_stream(message, history):
+                produced = True
+                yield event
+            return
+        except Exception as error:  # noqa: BLE001 - fall back to local on a clean quota failure
+            if produced or not is_gpu_quota_error(error):
+                raise
+            yield {
+                "type": "fallback",
+                "to": "cpu",
+                "reason": "ZeroGPU quota reached — running this turn locally (slower).",
+            }
+
+    yield from _cpu_chat_engine_instance().turn_stream(message, history)
+
+
 @app.get("/", response_class=HTMLResponse)
 def home() -> FileResponse:
     return FileResponse(STATIC_DIR / "index.html")
@@ -1137,6 +1235,22 @@ def agent_turn_stream(payload: dict[str, Any] | None = Body(default=None)) -> St
     return StreamingResponse(stream(), media_type="application/x-ndjson")
 
 
+@app.post("/api/dashboard/chat")
+def dashboard_chat_stream(payload: dict[str, Any] | None = Body(default=None)) -> StreamingResponse:
+    payload = payload or {}
+    message = str(payload.get("message") or "").strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="Chat message is required.")
+    history_json = str(payload.get("history_json") or "[]")
+    compute = _normalize_compute(payload.get("compute"))
+
+    def stream() -> Iterator[str]:
+        for event in _chat_turn_events(message, history_json, compute):
+            yield f"{event}\n"
+
+    return StreamingResponse(stream(), media_type="application/x-ndjson")
+
+
 def _normalize_compute(value: Any) -> str:
     # Acceleration is automatic; "cpu" is the only manual override (not surfaced in the UI).
     return "cpu" if str(value or "").strip().lower() == "cpu" else "gpu"
@@ -1286,6 +1400,11 @@ def submission_packet_artifact(session_json: str = "{}") -> str:
 @app.api(name="agent_turn", concurrency_limit=4, stream_every=0.04)
 def agent_turn(message: str, session_json: str = "{}", compute: str = "gpu") -> Iterator[str]:
     yield from _agent_turn_events(message, session_json, _normalize_compute(compute))
+
+
+@app.api(name="dashboard_chat", concurrency_limit=4, stream_every=0.04)
+def dashboard_chat(message: str, history_json: str = "[]", compute: str = "gpu") -> Iterator[str]:
+    yield from _chat_turn_events(message, history_json, _normalize_compute(compute))
 
 
 _start_scheduled_refresh_loop()

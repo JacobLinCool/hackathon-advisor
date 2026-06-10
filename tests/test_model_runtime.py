@@ -1,11 +1,19 @@
+import sys
+import types
+
 import pytest
 
+from hackathon_advisor.dashboard_chat_contracts import parse_native_tool_call
 from hackathon_advisor.model_runtime import (
     DEFAULT_ADAPTER_ID,
     DEFAULT_ADAPTER_REVISION,
+    MiniCPMChatRunner,
     MiniCPMTransformersPlanner,
+    RuleBasedChatRunner,
     RuleBasedPlanner,
+    create_chat_runner,
     create_tool_planner,
+    generation_lock,
     render_context,
     runtime_status,
     system_prompt,
@@ -13,6 +21,7 @@ from hackathon_advisor.model_runtime import (
     _minicpm_generation_kwargs,
     _load_minicpm_causal_lm,
     _minicpm_chat_inputs,
+    _minicpm_chat_inputs_with_tools,
     _normalize_xml_tool_output,
     _resolve_torch_device,
     _strip_unused_generation_inputs,
@@ -73,6 +82,276 @@ class FakeMiniCPMModel:
     def to(self, device):
         self.device = device
         return self
+
+
+class FakeToolsTokenizer(FakeTokenizer):
+    """FakeTokenizer that also records the native tools= template path."""
+
+    def apply_chat_template(
+        self, messages, *, tokenize, add_generation_prompt, enable_thinking, tools=None
+    ):
+        self.template_call = {
+            "messages": messages,
+            "tokenize": tokenize,
+            "add_generation_prompt": add_generation_prompt,
+            "enable_thinking": enable_thinking,
+        }
+        if tools is not None:
+            self.template_call["tools"] = tools
+        return "rendered prompt"
+
+
+class FakeStreamer:
+    """Stands in for transformers.TextIteratorStreamer in the worker-thread flow."""
+
+    def __init__(self, tokenizer, *, skip_prompt, skip_special_tokens) -> None:
+        import queue
+
+        self._queue: queue.Queue = queue.Queue()
+
+    def put(self, piece) -> None:
+        self._queue.put(piece)
+
+    def end(self) -> None:
+        self._queue.put(None)
+
+    def __iter__(self):
+        while True:
+            piece = self._queue.get()
+            if piece is None:
+                return
+            yield piece
+
+
+class FakeParameter:
+    device = "cpu"
+
+
+class FakeAdapterContext:
+    def __init__(self, log: list[str]) -> None:
+        self._log = log
+
+    def __enter__(self):
+        self._log.append("adapter_disabled")
+        return self
+
+    def __exit__(self, *exc_info):
+        self._log.append("adapter_restored")
+        return False
+
+
+class FakeChatModel:
+    def __init__(self, pieces: tuple[str, ...], adapter_log: list[str] | None = None) -> None:
+        self.pieces = pieces
+        self.adapter_log = adapter_log
+        self.generate_calls: list[dict] = []
+        self.lock_was_held: list[bool] = []
+
+    def parameters(self):
+        return iter([FakeParameter()])
+
+    def generate(self, **kwargs) -> None:
+        self.lock_was_held.append(generation_lock().locked())
+        self.generate_calls.append(kwargs)
+        streamer = kwargs["streamer"]
+        for piece in self.pieces:
+            streamer.put(piece)
+        streamer.end()
+
+
+class FakeAdapterChatModel(FakeChatModel):
+    def disable_adapter(self):
+        assert self.adapter_log is not None
+        return FakeAdapterContext(self.adapter_log)
+
+
+@pytest.fixture
+def fake_transformers(monkeypatch: pytest.MonkeyPatch):
+    module = types.SimpleNamespace(TextIteratorStreamer=FakeStreamer)
+    monkeypatch.setitem(sys.modules, "transformers", module)
+    return module
+
+
+def chat_runner_with(model: FakeChatModel) -> MiniCPMChatRunner:
+    planner = MiniCPMTransformersPlanner(
+        "openbmb/MiniCPM5-1B",
+        adapter_id="build-small-hackathon/some-lora" if hasattr(model, "disable_adapter") else "",
+    )
+    planner._model = model
+    planner._tokenizer = FakeToolsTokenizer()
+    return MiniCPMChatRunner(planner)
+
+
+def test_chat_inputs_with_tools_passes_native_tools() -> None:
+    tokenizer = FakeToolsTokenizer()
+    tools = [{"type": "function", "function": {"name": "list_quests"}}]
+
+    inputs = _minicpm_chat_inputs_with_tools(
+        tokenizer,
+        [{"role": "user", "content": "hello"}],
+        tools=tools,
+        enable_thinking=False,
+        device="cpu",
+    )
+
+    assert tokenizer.template_call["tools"] == tools
+    assert tokenizer.template_call["enable_thinking"] is False
+    assert inputs == {"input_ids": [1], "attention_mask": [1], "device": "cpu"}
+
+
+def test_chat_runner_streams_under_lock_with_adapter_disabled(fake_transformers) -> None:
+    adapter_log: list[str] = []
+    model = FakeAdapterChatModel(("<function ", 'name="list_quests">', "</function>"), adapter_log)
+    runner = chat_runner_with(model)
+
+    pieces = list(
+        runner.stream(
+            [{"role": "user", "content": "what quests exist"}],
+            tools=[{"type": "function", "function": {"name": "list_quests"}}],
+            max_new_tokens=96,
+        )
+    )
+
+    assert [piece for _count, piece in pieces] == [
+        "<function ",
+        'name="list_quests">',
+        "</function>",
+    ]
+    assert [count for count, _piece in pieces] == [1, 2, 3]
+    assert adapter_log == ["adapter_disabled", "adapter_restored"]
+    assert model.lock_was_held == [True]
+    assert generation_lock().locked() is False
+    assert model.generate_calls[0]["max_new_tokens"] == 96
+    assert model.generate_calls[0]["do_sample"] is False
+    template_call = runner._planner._tokenizer.template_call
+    assert "tools" in template_call
+
+
+def test_chat_runner_forwards_enable_thinking_to_the_template(fake_transformers) -> None:
+    model = FakeChatModel(("thoughts</think>\n\nanswer",))
+    runner = chat_runner_with(model)
+
+    list(
+        runner.stream(
+            [{"role": "user", "content": "hi"}],
+            tools=[{"type": "function"}],
+            max_new_tokens=4096,
+            enable_thinking=True,
+        )
+    )
+
+    template_call = runner._planner._tokenizer.template_call
+    assert template_call["enable_thinking"] is True
+    assert model.generate_calls[0]["max_new_tokens"] == 4096
+    assert MiniCPMChatRunner.supports_thinking is True
+    assert RuleBasedChatRunner.supports_thinking is False
+
+
+def test_chat_runner_answer_pass_omits_tools_and_adapter_toggle(fake_transformers) -> None:
+    model = FakeChatModel(("The map ", "shows ten projects."))
+    runner = chat_runner_with(model)
+
+    pieces = list(
+        runner.stream(
+            [
+                {"role": "user", "content": "what is everyone building"},
+                {"role": "assistant", "content": "", "tool_calls": []},
+                {"role": "tool", "content": "{}"},
+            ],
+            max_new_tokens=200,
+        )
+    )
+
+    assert "".join(piece for _count, piece in pieces) == "The map shows ten projects."
+    assert model.lock_was_held == [True]
+    template_call = runner._planner._tokenizer.template_call
+    assert "tools" not in template_call
+
+
+def test_chat_runner_surfaces_generation_errors(fake_transformers) -> None:
+    class ExplodingModel(FakeChatModel):
+        def generate(self, **kwargs) -> None:
+            kwargs["streamer"].end()
+            raise RuntimeError("boom")
+
+    runner = chat_runner_with(ExplodingModel(()))
+
+    with pytest.raises(RuntimeError, match="boom"):
+        list(runner.stream([{"role": "user", "content": "hi"}], max_new_tokens=10))
+    assert generation_lock().locked() is False
+
+
+def test_early_close_releases_generation_lock(fake_transformers) -> None:
+    model = FakeChatModel(("tok1 ", "tok2 ", "tok3 ", "tok4 ", "tok5"))
+    runner = chat_runner_with(model)
+    stream = runner.stream([{"role": "user", "content": "hi"}], max_new_tokens=32)
+
+    next(stream)  # consume one piece then abandon mid-stream
+    stream.close()
+
+    assert generation_lock().locked() is False
+
+
+def test_rule_chat_runner_escapes_xml_special_characters() -> None:
+    runner = RuleBasedChatRunner()
+
+    output = "".join(
+        piece
+        for _count, piece in runner.stream(
+            [{"role": "user", "content": "find projects about A & B <robots>"}],
+            tools=[{"type": "function"}],
+            max_new_tokens=96,
+        )
+    )
+
+    call = parse_native_tool_call(output)
+    assert call.name == "search_projects"
+    assert call.arguments["query"] == "find projects about A & B <robots>"
+
+
+def test_rule_chat_runner_routes_tools_pass_through_intents() -> None:
+    runner = RuleBasedChatRunner()
+
+    output = "".join(
+        piece
+        for _count, piece in runner.stream(
+            [{"role": "user", "content": "who completed the most quests"}],
+            tools=[{"type": "function"}],
+            max_new_tokens=96,
+        )
+    )
+
+    call = parse_native_tool_call(output)
+    assert call.name == "top_projects_by_quests"
+
+
+def test_rule_chat_runner_answer_pass_is_deterministic() -> None:
+    runner = RuleBasedChatRunner()
+
+    output = "".join(
+        piece
+        for _count, piece in runner.stream(
+            [{"role": "user", "content": "hi"}, {"role": "tool", "content": "{}"}],
+            max_new_tokens=200,
+        )
+    )
+
+    assert "verified data" in output
+
+
+def test_create_chat_runner_matches_advisor_backend() -> None:
+    minicpm = MiniCPMTransformersPlanner("openbmb/MiniCPM5-1B")
+
+    assert isinstance(create_chat_runner(minicpm), MiniCPMChatRunner)
+    assert isinstance(create_chat_runner(RuleBasedPlanner()), RuleBasedChatRunner)
+
+
+def test_base_model_context_is_null_without_adapter() -> None:
+    planner = MiniCPMTransformersPlanner("openbmb/MiniCPM5-1B", adapter_id="")
+    planner._model = FakeChatModel(())
+
+    with planner.base_model_context():
+        pass  # no adapter -> nullcontext, nothing to toggle
 
 
 def test_rule_planner_emits_valid_search_call() -> None:

@@ -4,6 +4,9 @@ import time
 from io import BytesIO
 from zipfile import ZipFile
 
+import pytest
+from fastapi import HTTPException
+
 import app as app_module
 from app import (
     agent_turn_stream,
@@ -12,6 +15,7 @@ from app import (
     chapter_api,
     chapter_artifact,
     dashboard,
+    dashboard_chat_stream,
     dashboard_search,
     dashboard_refresh_start,
     dashboard_refresh_status,
@@ -581,6 +585,120 @@ def test_agent_turn_stream_runs_on_cpu_compute() -> None:
     assert lines[0]["type"] == "start"
     assert lines[-1]["type"] == "done"
     assert lines[-1]["state"]["ideas"]
+
+
+def _run_dashboard_chat(payload: dict) -> list[dict]:
+    response = dashboard_chat_stream(payload)
+    assert response.media_type == "application/x-ndjson"
+    body = asyncio.run(_read_streaming_response(response))
+    return [json.loads(line) for line in body.splitlines()]
+
+
+def test_dashboard_chat_stream_exports_ndjson_events() -> None:
+    lines = _run_dashboard_chat({"message": "what clusters exist on the map?"})
+    types = [line["type"] for line in lines]
+
+    assert types[0] == "start"
+    assert types[-1] == "done"
+    tool_call = next(line for line in lines if line["type"] == "tool_call")
+    assert tool_call["status"] == "valid"
+    assert tool_call["name"] == "list_clusters"
+    tool_result = next(line for line in lines if line["type"] == "tool_result")
+    assert tool_result["data"]["clusters"]
+    assert types.index("tool_result") < types.index("token")
+    done = lines[-1]
+    assert done["response"]
+    assert done["history"][-1]["role"] == "assistant"
+
+
+def test_dashboard_chat_stream_skips_answer_for_unanalyzed_quests() -> None:
+    lines = _run_dashboard_chat({"message": "who completed the most quests?"})
+    types = [line["type"] for line in lines]
+
+    tool_call = next(line for line in lines if line["type"] == "tool_call")
+    assert tool_call["name"] == "top_projects_by_quests"
+    skipped = next(line for line in lines if line["type"] == "answer_skipped")
+    assert skipped["reason"] == "quests_not_analyzed"
+    assert "token" not in types
+    assert lines[-1]["response"] == skipped["text"]
+
+
+def test_dashboard_chat_stream_emits_map_action_for_overview() -> None:
+    lines = _run_dashboard_chat({"message": "what is everyone building right now?"})
+
+    tool_result = next(line for line in lines if line["type"] == "tool_result")
+    assert tool_result["tool"] == "atlas_overview"
+    assert tool_result["map_action"] == {"type": "clear_filters"}
+    assert tool_result["data"]["project_count"] == len(index.projects)
+
+
+def test_dashboard_chat_stream_round_trips_history() -> None:
+    first = _run_dashboard_chat({"message": "what clusters exist?"})
+    history = first[-1]["history"]
+    assert history[-2]["content"] == "what clusters exist?"
+
+    second = _run_dashboard_chat(
+        {"message": "what changed recently?", "history_json": json.dumps(history)}
+    )
+
+    # The rules backend answers every turn with the same fixed sentence, and repeated
+    # assistant lines are deliberately deduplicated — so assert the round trip keeps
+    # the latest turn rather than a fixed length.
+    final_history = second[-1]["history"]
+    assert {"role": "user", "content": "what changed recently?"} in final_history
+    assert final_history[-1]["role"] == "assistant"
+
+
+def test_dashboard_chat_stream_runs_on_cpu_compute() -> None:
+    lines = _run_dashboard_chat({"message": "what clusters exist?", "compute": "cpu"})
+
+    assert lines[0]["type"] == "start"
+    assert lines[-1]["type"] == "done"
+
+
+def test_dashboard_chat_stream_requires_message() -> None:
+    with pytest.raises(HTTPException) as error:
+        dashboard_chat_stream({"message": "   "})
+
+    assert error.value.status_code == 400
+
+
+class _QuotaError(Exception):
+    pass
+
+
+def test_dashboard_chat_falls_back_to_cpu_on_pre_stream_quota_error(monkeypatch) -> None:
+    def quota_stream(message, history):
+        raise _QuotaError("gpu quota exceeded")
+        yield  # pragma: no cover - makes this a generator
+
+    monkeypatch.setattr(app_module, "_primary_chat_stream", quota_stream)
+    monkeypatch.setattr(app_module, "is_gpu_quota_error", lambda error: isinstance(error, _QuotaError))
+
+    events = list(app_module._profiled_chat_events("what clusters exist?", "[]", "gpu"))
+
+    types = [event["type"] for event in events]
+    assert types[0] == "fallback"
+    assert types.count("start") == 1
+    assert types.count("done") == 1
+
+
+def test_dashboard_chat_does_not_restart_after_mid_stream_failure(monkeypatch) -> None:
+    def mid_stream_failure(message, history):
+        yield {"type": "start", "normalized_text": message, "corrections": []}
+        raise _QuotaError("gpu quota exceeded")
+
+    monkeypatch.setattr(app_module, "_primary_chat_stream", mid_stream_failure)
+    monkeypatch.setattr(app_module, "is_gpu_quota_error", lambda error: isinstance(error, _QuotaError))
+
+    events = []
+    with pytest.raises(_QuotaError):
+        for event in app_module._profiled_chat_events("what clusters exist?", "[]", "gpu"):
+            events.append(event)
+
+    # A mid-stream failure must re-raise, never silently restart on CPU and emit
+    # a second start/done into the same NDJSON stream.
+    assert [event["type"] for event in events] == ["start"]
 
 
 def test_transcribe_audio_endpoint_saves_audio(monkeypatch) -> None:

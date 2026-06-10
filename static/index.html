@@ -40,6 +40,10 @@
       <symbol id="icon-x" viewBox="0 0 24 24">
         <path d="M6 6l12 12M18 6L6 18" />
       </symbol>
+      <symbol id="icon-chat" viewBox="0 0 24 24">
+        <path d="M4 5h16v11H9l-5 4z" />
+        <path d="M8 9h8M8 12h5" />
+      </symbol>
       <symbol id="icon-check" viewBox="0 0 24 24">
         <path d="M5 12l4 4 10-11" />
       </symbol>
@@ -79,6 +83,17 @@
             <button id="refresh-dashboard" class="btn btn-ghost" type="button" title="Refresh the project atlas">
               <svg class="icon"><use href="#icon-reset"></use></svg>
               Refresh map
+            </button>
+            <button
+              id="open-atlas-chat"
+              class="btn btn-ghost"
+              type="button"
+              title="Chat with the atlas guide"
+              aria-haspopup="dialog"
+              aria-controls="atlas-chat"
+            >
+              <svg class="icon"><use href="#icon-chat"></use></svg>
+              Ask the atlas
             </button>
             <button id="open-advisor" class="btn btn-ink" type="button" title="Open the idea advisor">
               <svg class="icon"><use href="#icon-quill"></use></svg>
@@ -121,6 +136,46 @@
             </section>
           </aside>
         </section>
+
+        <div id="atlas-chat-scrim" class="atlas-chat-scrim" hidden></div>
+        <aside
+          id="atlas-chat"
+          class="atlas-chat-drawer"
+          role="dialog"
+          aria-modal="false"
+          aria-label="Atlas guide chat"
+          hidden
+        >
+          <header class="atlas-chat-header">
+            <div class="atlas-chat-title">
+              <p class="atlas-kicker">Atlas guide</p>
+              <h2>Ask the field</h2>
+            </div>
+            <div class="atlas-chat-header-actions">
+              <button id="atlas-chat-clear" class="atlas-chat-iconbtn" type="button" title="Clear conversation">
+                <svg class="icon"><use href="#icon-reset"></use></svg>
+              </button>
+              <button id="atlas-chat-close" class="atlas-chat-iconbtn" type="button" title="Close chat" aria-label="Close chat">
+                <svg class="icon"><use href="#icon-x"></use></svg>
+              </button>
+            </div>
+          </header>
+          <div id="atlas-chat-action" class="atlas-chat-action" hidden></div>
+          <div id="atlas-chat-log" class="atlas-chat-log"></div>
+          <div id="atlas-chat-status" class="sr-only" role="status" aria-live="polite"></div>
+          <div id="atlas-chat-suggestions" class="atlas-chat-suggestions"></div>
+          <form id="atlas-chat-form" class="atlas-chat-composer">
+            <label class="sr-only" for="atlas-chat-input">Ask about the atlas</label>
+            <input
+              id="atlas-chat-input"
+              type="text"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Ask what everyone is building..."
+            />
+            <button id="atlas-chat-send" class="btn btn-ink" type="submit">Ask</button>
+          </form>
+        </aside>
       </section>
     </main>
 
