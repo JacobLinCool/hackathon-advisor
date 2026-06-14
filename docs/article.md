@@ -1,7 +1,8 @@
 # Hackathon Advisor: A Living Field Guide for Build Small
 
-Demo: <https://build-small-hackathon-hackathon-advisor.hf.space>  
-Demo video: <https://youtu.be/Gq-FUiL-ZPw>  
+Watch the demo video: <https://youtu.be/Gq-FUiL-ZPw>
+
+Live app: <https://build-small-hackathon-hackathon-advisor.hf.space>  
 Repository: <https://github.com/JacobLinCool/hackathon-advisor>  
 Space: <https://huggingface.co/spaces/build-small-hackathon/hackathon-advisor>
 
