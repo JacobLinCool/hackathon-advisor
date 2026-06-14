@@ -1,13 +1,11 @@
 import json
 from io import BytesIO
-from pathlib import Path
 
 from tests.helpers import load_test_index
 from zipfile import ZipFile
 
 from hackathon_advisor.agent import AdvisorEngine
 from hackathon_advisor.artifact_bundle import build_demo_bundle_zip
-from hackathon_advisor.data import ProjectIndex
 from hackathon_advisor.demo_rehearsal import build_demo_rehearsal
 from hackathon_advisor.prize_ledger import prize_ledger
 from hackathon_advisor.trace_export import trace_metadata

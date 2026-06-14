@@ -1,10 +1,8 @@
 import json
-from pathlib import Path
 
 from tests.helpers import load_test_index
 
 from hackathon_advisor.agent import AdvisorEngine
-from hackathon_advisor.data import ProjectIndex
 from hackathon_advisor.lora_dataset import BASE_MODEL, build_lora_dataset_jsonl
 from hackathon_advisor.trace_export import trace_metadata
 

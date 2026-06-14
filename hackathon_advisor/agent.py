@@ -78,7 +78,6 @@ class AdvisorEngine:
         projects: list[Project] = []
         whitespace: list[WhitespaceItem] = []
         score: ScoreCard | None = None
-        plan: list[str] = []
         call = resolution.call
 
         if call.name == "list_projects":

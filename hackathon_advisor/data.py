@@ -396,8 +396,7 @@ class ProjectIndex:
 
     @classmethod
     def from_file(cls, path: Path, query_embedder: EmbeddingFunction | None = None) -> "ProjectIndex":
-        data = json.loads(path.read_text(encoding="utf-8"))
-        projects = [Project.from_dict(item) for item in data["projects"]]
+        json.loads(path.read_text(encoding="utf-8"))
         raise ValueError("ProjectIndex.from_file requires a separate embedding index payload")
 
     @classmethod

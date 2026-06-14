@@ -1,9 +1,6 @@
-from pathlib import Path
-
 from tests.helpers import load_test_index
 
 from hackathon_advisor.agent import AdvisorEngine
-from hackathon_advisor.data import ProjectIndex
 from hackathon_advisor.prize_ledger import prize_ledger
 from hackathon_advisor.submission_packet import build_submission_packet_markdown
 from hackathon_advisor.trace_export import trace_metadata

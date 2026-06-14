@@ -1,9 +1,6 @@
-from pathlib import Path
-
 from tests.helpers import load_test_index
 
 from hackathon_advisor.agent import AdvisorEngine
-from hackathon_advisor.data import ProjectIndex
 from hackathon_advisor.demo_rehearsal import DEMO_GOALS, build_demo_rehearsal
 
 

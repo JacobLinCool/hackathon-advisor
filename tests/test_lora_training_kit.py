@@ -8,7 +8,6 @@ from tests.helpers import load_test_index
 from zipfile import ZipFile
 
 from hackathon_advisor.agent import AdvisorEngine
-from hackathon_advisor.data import ProjectIndex
 from hackathon_advisor.demo_rehearsal import build_demo_rehearsal
 from hackathon_advisor.lora_dataset import build_lora_dataset_jsonl
 from hackathon_advisor.lora_training_kit import (

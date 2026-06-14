@@ -4,7 +4,6 @@ from pathlib import Path
 from tests.helpers import load_test_index
 
 from hackathon_advisor.agent import AdvisorEngine
-from hackathon_advisor.data import ProjectIndex
 from hackathon_advisor.trace_export import build_trace_jsonl, trace_metadata
 
 
