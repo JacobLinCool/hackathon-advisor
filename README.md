@@ -92,11 +92,16 @@ Hackathon Advisor is submitted primarily for the **Thousand Token Wood** track. 
 its core form is an AI-native field guide: a living map, an almanac voice, quest evidence, and shareable artifacts that
 make the hackathon field itself explorable.
 
+The demo video is part of that submission evidence. It is built from real app footage of the atlas and advisor flows. Codex helped draft the storyboard, drive the app, capture the screen, generate voice-over, compose the cut, and verify frames and ASR transcripts against the intended narration.
+
 The Space is also targeting the official sponsor and achievement tags shown in the README front matter:
 
 - `sponsor:openbmb`: MiniCPM5-1B is the central planner and quest-classifier base model.
-- `sponsor:openai`: Codex helped implement, debug, document, and prepare the submission; the public Git history uses
-  Codex co-author trailers.
+- `sponsor:openai`: Codex served as the engineering partner across the build. It helped translate the hackathon
+  requirements into implementation slices, inspect and revise the repository, implement the atlas
+  refresh/storage/search paths, add the quest-evidence UI, run tests and browser checks, review deployed Space behavior,
+  prepare commits and deployment updates, produce the demo storyboard/app-footage/voice-over checks, and refine the
+  README narrative. The redacted project-facing Codex session traces are published as a Hugging Face dataset.
 - `sponsor:nvidia`: voice input runs `nvidia/nemotron-speech-streaming-en-0.6b` through NVIDIA NeMo ASR.
 - `sponsor:modal`: Modal is used for development compute, including the quest LoRA training path and remote index-build
   path, and is documented in this README.
@@ -173,9 +178,15 @@ MiniCPM is loaded following the official demo shape (`trust_remote_code=True`, `
 [Codex](https://developers.openai.com/codex) served as the engineering partner for the project. It helped translate the
 hackathon requirements into implementation slices, inspect the existing codebase, build the atlas refresh/storage/cache
 path, add the dashboard search and quest-evidence UI, run local tests and browser checks, review deployed Space behavior,
-prepare commits and deployment updates, and revise the README into a submission narrative. The live app runtime uses the
-models and data listed above; Codex appears in the development record as the assistant that helped design, implement,
-validate, and document the system.
+prepare commits and deployment updates, and revise the README into a submission narrative. This was an evidence loop:
+Codex could read the repository, operate the local or deployed app, inspect the result, and then revise the
+implementation or presentation from what it observed. The live app runtime uses the models and data listed above; Codex
+appears in the development record as the assistant that helped design, implement, validate, and document the system.
+
+The demo video used the same agentic workflow. Codex helped draft the narrated storyboard, drive the live app, capture
+real screen footage, generate voice-over, compose the final video, and check the artifact by reading frames and ASR
+transcripts. That media workflow ran outside Hackathon Advisor's submitted runtime and is not counted in the model
+budget, but it documents how Codex was used to produce and verify submission materials rather than only code changes.
 
 The redacted session-level Codex traces are published as a Hugging Face dataset at
 [`build-small-hackathon/hackathon-advisor-codex-traces`](https://huggingface.co/datasets/build-small-hackathon/hackathon-advisor-codex-traces).
@@ -197,8 +208,9 @@ sponsor awards and the six bonus-quest badges.
 | Sharing is Caring | Real Codex session logs for this project are published on the Hub at [`build-small-hackathon/hackathon-advisor-codex-traces`](https://huggingface.co/datasets/build-small-hackathon/hackathon-advisor-codex-traces); the publisher selects project-relevant sessions, minimizes internal metadata, applies [`openai/privacy-filter`](https://huggingface.co/openai/privacy-filter), and records source hashes for audit. |
 | Field Notes | A build report on the quest-classifier fine-tune is published at [`docs/quest-classification-lora.md`](docs/quest-classification-lora.md), and the app exports session Field Notes as markdown. |
 | Tiny Titan | The largest single model is MiniCPM5-1B at ~1.08B — well under the 4B Tiny Titan ceiling; the full runtime stack totals ≈1.98B, far under the 32B cap. |
+| Best Demo | The YouTube demo and public X post are linked from this README, and a backup MP4 is committed at [`static/assets/hackathon-advisor-demo.mp4`](static/assets/hackathon-advisor-demo.mp4). The video uses real app footage and a Codex-assisted production loop for storyboard, app driving, screen capture, voice-over generation, final composition, and frame/ASR verification. |
 | OpenBMB | MiniCPM5-1B is the central language model for both tool planning and quest classification. |
-| OpenAI Codex | Codex helped implement, debug, document, deploy, and prepare the submission; the public GitHub and Space histories use `Co-authored-by: Codex <codex@openai.com>` trailers. |
+| OpenAI Codex | Codex acted as an engineering partner across implementation, debugging, documentation, deployment review, demo production, and submission preparation. The public GitHub and Space histories use `Co-authored-by: Codex <codex@openai.com>` trailers, and selected project-facing session traces are published after minimization and privacy-filter redaction. |
 | NVIDIA Nemotron | Voice input runs `nvidia/nemotron-speech-streaming-en-0.6b` through NVIDIA NeMo. |
 | Modal | Modal trains the quest-classifier LoRA (`scripts/modal_train_quest_lora.py`), and a Modal remote index-build path is provided; the index shipped in this repo was built locally. |
 | Best Agent | Each turn MiniCPM5 selects one tool; the engine then orchestrates the search → whitespace → score → plan chain over the live project field. |
