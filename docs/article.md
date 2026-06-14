@@ -18,6 +18,11 @@ the surrounding field quickly. They need to know which ideas are crowded, which 
 project might satisfy, and how a proposal can become more specific before time runs out. Hackathon Advisor makes those
 questions answerable from the public work already being built around them.
 
+The motivation starts with the data itself. Build Small already produces a ready-made corpus: public Spaces, READMEs,
+model declarations, app files, tags, and demos. That corpus invites exploration. Once it is made searchable and
+comparable, participants can see what others are building, which methods they are using, and what kinds of results are
+emerging across the community.
+
 ## Contribution
 
 The central claim of the project is simple: originality improves when builders can see the field they are entering. The
@@ -25,10 +30,20 @@ app presents that field first. A full-screen Idea Map places projects by embeddi
 links, and exposes clusters that would be difficult to infer from a feed of individual Spaces. Search and filters make
 the same evidence usable for targeted questions, such as "voice assistants", "local-first", or "quest classifier".
 
+This kind of visibility gives an online hackathon some of the generative character of OpenAI's Parameter Golf challenge:
+the event becomes more than a submission queue. It becomes a shared surface where participants can discover adjacent
+work, recognize partial overlap, borrow useful patterns, and extend ideas into new domains. A project similar to one's
+own can become evidence of a nearby direction; a project in another domain can suggest a feature, interface, or
+evaluation strategy that would otherwise remain invisible.
+
 The advisor, called The Unwritten Almanac, uses the same project snapshot to compare a proposed idea against nearby
 work. It cites overlapping projects, identifies whitespace, scores the idea with a deterministic rubric, and drafts a
 build plan. The output is meant to be useful before implementation begins: it helps a builder sharpen the audience,
 choose a tractable scope, and reduce accidental duplication.
+
+The broader value is collective intelligence. When participants can find related work quickly, similar teams can learn
+from each other's approaches and the community can combine ideas while the event is still unfolding. The atlas helps
+good ideas become easier to find, easier to extend, and easier to improve.
 
 ## User Experience
 
