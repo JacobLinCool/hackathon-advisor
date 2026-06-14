@@ -132,14 +132,14 @@ Additional prize evidence for Tiny Titan, Best Agent, Best Demo, and Bonus Quest
 ## How It Works
 
 The refresh path snapshots public Spaces in the `build-small-hackathon` organization, reads each README and declared
-main app file, rebuilds the EmbeddingGemma project index, analyzes quest evidence with MiniCPM, and generates the
-dashboard payload. The active dashboard contains project points, nearest links, clusters, quest coverage, provenance,
-and refresh state.
+main app file, rebuilds the EmbeddingGemma project index, resolves official `track:*`, `sponsor:*`, and
+`achievement:*` metadata tags first, then asks MiniCPM only for quest evidence that metadata did not declare. The active
+dashboard contains project points, nearest links, clusters, quest coverage, provenance, and refresh state.
 
 `ADVISOR_CACHE_DIR` is the artifact store. On Hugging Face Spaces it points to the mounted Storage Bucket; locally it can
 be a normal directory such as `.cache/advisor-dashboard`. Each refresh writes
 `runs/{run_id}/projects.json`, `project_index.json`, `dashboard.json`, `quest_analysis.json`, and `manifest.json`, then
-updates `latest.json` through an atomic swap. Quest analysis is cached per project using the rendered README+app-file
+updates `latest.json` through an atomic swap. Quest analysis is cached per project using the metadata-first inference
 prompt hash, taxonomy hash, MiniCPM model id, adapter id/revision, local adapter digest, and generation config.
 
 The app starts an hourly scheduler when `ADVISOR_CACHE_DIR` is configured. Manual and scheduled refreshes both acquire
@@ -151,7 +151,7 @@ run fails validation.
 | Role | Model | Runtime | Evidence |
 | --- | --- | --- | --- |
 | Advisor | [`openbmb/MiniCPM5-1B`](https://huggingface.co/openbmb/MiniCPM5-1B) + [`build-small-hackathon/hackathon-advisor-minicpm5-lora`](https://huggingface.co/build-small-hackathon/hackathon-advisor-minicpm5-lora) | ZeroGPU, Transformers, PEFT | A 1.08B OpenBMB model plans which tool to call each turn; advisor prose is rendered from deterministic templates grounded in the retrieved tool results. |
-| Quest analysis | [`openbmb/MiniCPM5-1B`](https://huggingface.co/openbmb/MiniCPM5-1B) + [`build-small-hackathon/hackathon-advisor-quest-minicpm5-lora`](https://huggingface.co/build-small-hackathon/hackathon-advisor-quest-minicpm5-lora) | ZeroGPU, Transformers, PEFT | A task-specific MiniCPM LoRA classifies README and app-file evidence into strict quest JSON. |
+| Quest analysis | Official Space metadata + [`openbmb/MiniCPM5-1B`](https://huggingface.co/openbmb/MiniCPM5-1B) + [`build-small-hackathon/hackathon-advisor-quest-minicpm5-lora`](https://huggingface.co/build-small-hackathon/hackathon-advisor-quest-minicpm5-lora) | ZeroGPU, Transformers, PEFT | The analyzer trusts official README tags for declared tracks, sponsor prizes, and badges, then uses a task-specific MiniCPM LoRA to classify remaining README/app-file evidence into strict quest JSON. |
 | Project retrieval | [`ggml-org/embeddinggemma-300m-qat-q8_0-GGUF`](https://huggingface.co/ggml-org/embeddinggemma-300m-qat-q8_0-GGUF) | Local llama.cpp index build plus llama.cpp query embeddings | The atlas and retrieval index use a GGUF embedding model through llama.cpp. |
 | Voice input | [`nvidia/nemotron-speech-streaming-en-0.6b`](https://huggingface.co/nvidia/nemotron-speech-streaming-en-0.6b) | ZeroGPU; NVIDIA NeMo ASR | Voice notes are transcribed with NVIDIA NeMo using the same Nemotron model in local and deployed runs. |
 
@@ -197,6 +197,7 @@ sponsor awards and the six bonus-quest badges.
 | Field Notes | A build report on the quest-classifier fine-tune is published at [`docs/quest-classification-lora.md`](docs/quest-classification-lora.md), and the app exports session Field Notes as markdown. |
 | Tiny Titan | The largest single model is MiniCPM5-1B at ~1.08B — well under the 4B Tiny Titan ceiling; the full runtime stack totals ≈1.98B, far under the 32B cap. |
 | OpenBMB | MiniCPM5-1B is the central language model for both tool planning and quest classification. |
+| OpenAI Codex | Codex helped implement, debug, document, deploy, and prepare the submission; the public GitHub and Space histories use `Co-authored-by: Codex <codex@openai.com>` trailers. |
 | NVIDIA Nemotron | Voice input runs `nvidia/nemotron-speech-streaming-en-0.6b` through NVIDIA NeMo. |
 | Modal | Modal trains the quest-classifier LoRA (`scripts/modal_train_quest_lora.py`), and a Modal remote index-build path is provided; the index shipped in this repo was built locally. |
 | Best Agent | Each turn MiniCPM5 selects one tool; the engine then orchestrates the search → whitespace → score → plan chain over the live project field. |

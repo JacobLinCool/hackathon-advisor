@@ -8,9 +8,13 @@ app file (which model it loads, whether it runs on Modal, whether it is agentic)
 This module is the single source of truth for that label space and for the strict
 two-segment prompt, so the LoRA training data and the live analyzer stay aligned.
 
-Output schema (one JSON object, nothing else):
+Model output schema (one JSON object, nothing else):
     {"matches": [{"quest": str, "confidence": 0.0-1.0, "evidence": str,
                   "source": "readme" | "app_file"}]}
+
+The live analyzer also accepts deterministic ``metadata`` matches produced from
+official Space README tags. Those are not model outputs; they are structured
+submission intent recorded by the hackathon submitter.
 """
 from __future__ import annotations
 
@@ -22,7 +26,8 @@ from typing import Any
 
 SOURCE_README = "readme"
 SOURCE_APP_FILE = "app_file"
-QUEST_SOURCES = (SOURCE_README, SOURCE_APP_FILE)
+SOURCE_METADATA = "metadata"
+QUEST_SOURCES = (SOURCE_README, SOURCE_APP_FILE, SOURCE_METADATA)
 
 # Canonical system prompt shared by the SFT dataset and the live analyzer so the
 # model is trained and served under the exact same instruction.
@@ -105,6 +110,14 @@ QUEST_PROFILES: tuple[dict[str, str], ...] = (
         "microsoft/..., mistralai/... do NOT count just because a model id is present.",
     },
     {
+        "id": "Codex",
+        "label": "OpenAI Codex",
+        "description": "Uses Codex during development with Codex-attributed commits in the Space history or "
+        "a linked GitHub repository.",
+        "signals": "Codex co-author trailers, Codex-attributed commits, README or article describes Codex as "
+        "part of implementation, debugging, documentation, deployment, or demo preparation.",
+    },
+    {
         "id": "Nemotron",
         "label": "NVIDIA Nemotron",
         "description": "Uses an NVIDIA Nemotron model (Nemotron LLM, Parakeet, Nemotron-Speech, Canary).",
@@ -155,6 +168,10 @@ _QUEST_ALIASES.update(
         _quest_key("MiniCPM Build"): "OpenBMB",
         _quest_key("MiniCPM"): "OpenBMB",
         _quest_key("OpenBMB / MiniCPM"): "OpenBMB",
+        _quest_key("Best Use of Codex"): "Codex",
+        _quest_key("OpenAI Codex"): "Codex",
+        _quest_key("OpenAI"): "Codex",
+        _quest_key("Codex"): "Codex",
         _quest_key("Small model <=4B"): "Tiny Titan",
         _quest_key("Small model under 4B"): "Tiny Titan",
         _quest_key("Shareable output"): "Sharing is Caring",
@@ -167,10 +184,35 @@ _QUEST_ALIASES.update(
 )
 
 
-def quest_profiles() -> list[dict[str, str]]:
+TRACK_METADATA_TAG_TO_QUEST: dict[str, str] = {
+    "track:backyard": "Backyard AI",
+    "track:wood": "Thousand Token Wood",
+}
+TRACK_QUESTS: tuple[str, ...] = tuple(TRACK_METADATA_TAG_TO_QUEST.values())
+
+OFFICIAL_METADATA_TAG_TO_QUEST: dict[str, str] = {
+    **TRACK_METADATA_TAG_TO_QUEST,
+    "sponsor:openbmb": "OpenBMB",
+    "sponsor:openai": "Codex",
+    "sponsor:nvidia": "Nemotron",
+    "sponsor:modal": "Modal",
+    "achievement:offgrid": "Off the Grid",
+    "achievement:welltuned": "Well-Tuned",
+    "achievement:offbrand": "Off-Brand",
+    "achievement:llama": "Llama Champion",
+    "achievement:sharing": "Sharing is Caring",
+    "achievement:fieldnotes": "Field Notes",
+    # These tags are not emitted by the current submitter, but they appear in
+    # hand-authored Space metadata and map cleanly to existing official prizes.
+    "tiny-titan": "Tiny Titan",
+    "best-agent": "Best Agent",
+}
+
+
+def quest_profiles(quest_ids: Sequence[str] | None = None) -> list[dict[str, str]]:
     return [
         {"id": profile["id"], "label": profile["label"], "description": profile["description"]}
-        for profile in QUEST_PROFILES
+        for profile in _selected_quest_profiles(quest_ids)
     ]
 
 
@@ -212,6 +254,52 @@ def canonical_quest_ids(raw_quest: Any) -> tuple[str, ...]:
         if quest_id not in canonical:
             canonical.append(quest_id)
     return tuple(canonical)
+
+
+def declared_quest_matches_from_tags(tags: Sequence[Any]) -> list[dict[str, Any]]:
+    """Return deterministic quest matches declared by official Space metadata tags."""
+    matches: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for raw_tag in tags or ():
+        tag = " ".join(str(raw_tag or "").split())
+        quest = OFFICIAL_METADATA_TAG_TO_QUEST.get(tag.casefold())
+        if not quest or quest in seen:
+            continue
+        seen.add(quest)
+        matches.append(
+            normalize_match(
+                {
+                    "quest": quest,
+                    "confidence": 1.0,
+                    "evidence": f"official Space tag {tag.casefold()}",
+                    "source": SOURCE_METADATA,
+                }
+            )
+        )
+    return matches
+
+
+def metadata_suppressed_quests_from_tags(tags: Sequence[Any]) -> set[str]:
+    """Return quest ids that metadata should remove from model inference."""
+    suppressed: set[str] = set()
+    declared_tags = {" ".join(str(raw_tag or "").split()).casefold() for raw_tag in tags or ()}
+    if declared_tags & set(TRACK_METADATA_TAG_TO_QUEST):
+        suppressed.update(TRACK_QUESTS)
+    return suppressed
+
+
+def _selected_quest_profiles(quest_ids: Sequence[str] | None) -> tuple[dict[str, str], ...]:
+    if quest_ids is None:
+        return QUEST_PROFILES
+    selected: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for raw_quest in quest_ids:
+        quest = canonical_quest_id(raw_quest)
+        if quest in seen:
+            continue
+        seen.add(quest)
+        selected.append(QUEST_PROFILE_BY_ID[quest])
+    return tuple(selected)
 
 
 def _clip(text: str, limit: int) -> str:
@@ -267,17 +355,19 @@ def render_quest_prompt(
     app_file_name: str,
     app_file_segment: str,
     include_signals: bool = True,
+    quest_ids: Sequence[str] | None = None,
 ) -> str:
     """Render the canonical two-segment classification prompt.
 
     The same renderer feeds both the SFT dataset and the live analyzer so the model
     never sees a different shape at training and inference time.
     """
-    quest_lines = [f"- {profile['id']}: {profile['description']}" for profile in QUEST_PROFILES]
+    profiles = _selected_quest_profiles(quest_ids)
+    quest_lines = [f"- {profile['id']}: {profile['description']}" for profile in profiles]
     if include_signals:
         quest_lines = [
             f"- {profile['id']}: {profile['description']} Signals: {profile['signals']}"
-            for profile in QUEST_PROFILES
+            for profile in profiles
         ]
     readme_text = _clip(readme_segment, README_PROMPT_CHAR_LIMIT) or "(no README description provided)"
     app_label = app_file_name.strip() or "(unknown)"

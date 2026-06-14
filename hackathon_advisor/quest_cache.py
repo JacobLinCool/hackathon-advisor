@@ -11,9 +11,10 @@ from uuid import uuid4
 
 from hackathon_advisor.data import Project
 from hackathon_advisor.quest_analysis import (
+    METADATA_FIRST_QUEST_ANALYZER_SOURCE,
     MAX_QUEST_TOKENS,
     QuestAnalysisError,
-    render_project_quest_prompt,
+    render_project_inference_prompt,
     resolve_quest_identity,
     validate_matches_by_project,
 )
@@ -28,8 +29,8 @@ from hackathon_advisor._text import utc_now
 
 QUEST_CACHE_SCHEMA_VERSION = 1
 QUEST_CACHE_ROOT = Path("quest-cache") / "v1"
-QUEST_PROMPT_VERSION = "quest-prompt-v1"
-QUEST_ANALYZER_SOURCE = "minicpm-json-quest-analyzer"
+QUEST_PROMPT_VERSION = "quest-prompt-v2-metadata-first"
+QUEST_ANALYZER_SOURCE = METADATA_FIRST_QUEST_ANALYZER_SOURCE
 QUEST_GENERATION_CONFIG = {
     "enable_thinking": False,
     "temperature": 0.0,
@@ -100,7 +101,7 @@ def build_quest_cache_identity(
     project: Project,
     analyzer_fingerprint: Mapping[str, Any],
 ) -> QuestCacheIdentity:
-    prompt_hash = sha256(render_project_quest_prompt(project).encode("utf-8")).hexdigest()
+    prompt_hash = sha256(render_project_inference_prompt(project).encode("utf-8")).hexdigest()
     taxonomy_hash = quest_taxonomy_hash()
     canonical_fingerprint = json.loads(_canonical_json(analyzer_fingerprint))
     key_payload = {

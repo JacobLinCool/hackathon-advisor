@@ -363,7 +363,7 @@ def test_dashboard_refresh_quest_analysis_uses_minicpm_analyzer(monkeypatch, tmp
     )
 
     class FakeMiniCPMAnalyzer:
-        source = "minicpm-json-quest-analyzer"
+        source = "metadata-first-minicpm-json-quest-analyzer"
 
         def analyze(self, projects):
             assert [item.id for item in projects] == [project.id]
@@ -394,7 +394,7 @@ def test_dashboard_refresh_quest_analysis_uses_minicpm_analyzer(monkeypatch, tmp
     )
 
     quests = {match["quest"] for match in result["matches_by_project"][project.id]}
-    assert result["source"] == "minicpm-json-quest-analyzer"
+    assert result["source"] == "metadata-first-minicpm-json-quest-analyzer"
     assert quests == {"Off the Grid", "Field Notes"}
     assert result["quest_analysis_payload"]["summary"]["miss_count"] == 1
     assert result["quest_analysis_payload"]["summary"]["analyzed_count"] == 1
@@ -424,7 +424,7 @@ def test_dashboard_refresh_quest_analysis_batches_minicpm(monkeypatch, tmp_path)
     calls = []
 
     class FakeMiniCPMAnalyzer:
-        source = "minicpm-json-quest-analyzer"
+        source = "metadata-first-minicpm-json-quest-analyzer"
 
         def analyze(self, batch):
             calls.append([project.id for project in batch])
@@ -468,7 +468,7 @@ def test_dashboard_refresh_quest_analysis_caches_minicpm_results(monkeypatch, tm
     calls = []
 
     class FakeMiniCPMAnalyzer:
-        source = "minicpm-json-quest-analyzer"
+        source = "metadata-first-minicpm-json-quest-analyzer"
 
         def analyze(self, projects):
             calls.append([item.id for item in projects])

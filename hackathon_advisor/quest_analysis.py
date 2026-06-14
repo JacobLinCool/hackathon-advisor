@@ -22,6 +22,8 @@ from hackathon_advisor.quest_taxonomy import (
     build_app_segment,
     build_readme_segment,
     canonical_quest_ids,
+    declared_quest_matches_from_tags,
+    metadata_suppressed_quests_from_tags,
     normalize_match,
     render_quest_prompt,
 )
@@ -30,6 +32,7 @@ from hackathon_advisor.quest_taxonomy import (
 MAX_QUEST_TOKENS = 1024
 DEFAULT_QUEST_ADAPTER_ID = "build-small-hackathon/hackathon-advisor-quest-minicpm5-lora"
 DEFAULT_QUEST_ADAPTER_REVISION = ""
+METADATA_FIRST_QUEST_ANALYZER_SOURCE = "metadata-first-minicpm-json-quest-analyzer"
 
 
 class QuestAnalysisError(RuntimeError):
@@ -50,7 +53,7 @@ class ValidatedQuestAnalysis:
 
 
 class MiniCPMQuestAnalyzer:
-    source = "minicpm-json-quest-analyzer"
+    source = METADATA_FIRST_QUEST_ANALYZER_SOURCE
 
     def __init__(
         self,
@@ -69,18 +72,28 @@ class MiniCPMQuestAnalyzer:
         self._model = None
 
     def analyze(self, projects: Sequence[Project]) -> dict[str, list[dict[str, Any]]]:
-        self._ensure_loaded()
         matches: dict[str, list[dict[str, Any]]] = {}
         for project in projects:
+            declared_matches = declared_project_quest_matches(project)
+            remaining_quests = remaining_project_quest_ids(project)
+            if not remaining_quests:
+                matches[project.id] = declared_matches
+                continue
+            self._ensure_loaded()
             try:
-                raw = self._generate_json(render_project_quest_prompt(project))
+                raw = self._generate_json(
+                    render_project_quest_prompt(project, quest_ids=remaining_quests)
+                )
                 validated = self._validate_or_repair_project(project, raw).matches_by_project
-                matches.update(validated)
+                matches[project.id] = merge_declared_and_inferred_matches(
+                    declared_matches,
+                    validated.get(project.id, []),
+                )
             except QuestAnalysisError as error:
                 # Tolerate a single unparseable project: record empty matches and continue, so one
                 # malformed model output never aborts a whole-org refresh.
                 print(f"[quest-analysis] skipped {project.id}: {error}", flush=True)
-                matches[project.id] = []
+                matches[project.id] = declared_matches
         return matches
 
     def _validate_or_repair_project(self, project: Project, raw: Mapping[str, Any]) -> ValidatedQuestAnalysis:
@@ -334,7 +347,7 @@ def _validate_single_project_payload(project: Project, raw: Mapping[str, Any]) -
     )
 
 
-def render_project_quest_prompt(project: Project) -> str:
+def render_project_quest_prompt(project: Project, quest_ids: Sequence[str] | None = None) -> str:
     """Render the strict two-segment quest prompt from a snapshot Project.
 
     Refresh snapshots carry the same raw README body and main app source segments
@@ -348,7 +361,41 @@ def render_project_quest_prompt(project: Project) -> str:
         readme_segment=build_readme_segment(project.readme_body),
         app_file_name=project.app_file,
         app_file_segment=build_app_segment(project.app_file_source, project.app_file_embedding_text),
+        quest_ids=quest_ids,
     )
+
+
+def render_project_inference_prompt(project: Project) -> str:
+    """Render the exact prompt used for model inference after metadata claims."""
+    return render_project_quest_prompt(project, quest_ids=remaining_project_quest_ids(project))
+
+
+def declared_project_quest_matches(project: Project) -> list[dict[str, Any]]:
+    """Return quest matches declared by official Build Small Space metadata."""
+    return declared_quest_matches_from_tags(normalize_project_tags(project.tags))
+
+
+def remaining_project_quest_ids(project: Project) -> tuple[str, ...]:
+    tags = normalize_project_tags(project.tags)
+    declared = {match["quest"] for match in declared_quest_matches_from_tags(tags)}
+    suppressed = metadata_suppressed_quests_from_tags(tags)
+    return tuple(quest for quest in QUESTS if quest not in declared and quest not in suppressed)
+
+
+def merge_declared_and_inferred_matches(
+    declared_matches: Sequence[Mapping[str, Any]],
+    inferred_matches: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """Merge metadata and model matches, keeping metadata as the authority."""
+    merged: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for raw_match in (*declared_matches, *inferred_matches):
+        match = normalize_match(raw_match)
+        if match["quest"] in seen:
+            continue
+        seen.add(match["quest"])
+        merged.append(match)
+    return merged
 
 
 def _validate_project_matches(raw_matches: Any, project_id: str) -> list[dict[str, Any]]:

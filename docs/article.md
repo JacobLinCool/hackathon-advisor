@@ -69,7 +69,8 @@ remains UI-agnostic.
 The runtime model stack is open-weight and local to the Space:
 
 - Advisor planning: `openbmb/MiniCPM5-1B` with a public advisor LoRA.
-- Quest classification: `openbmb/MiniCPM5-1B` with a public quest-classifier LoRA.
+- Quest classification: official Space metadata first, then `openbmb/MiniCPM5-1B` with a public quest-classifier LoRA
+  for evidence not declared by tags.
 - Retrieval: `ggml-org/embeddinggemma-300m-qat-q8_0-GGUF` through llama.cpp.
 - Voice input: `nvidia/nemotron-speech-streaming-en-0.6b` through NVIDIA NeMo ASR.
 
@@ -79,9 +80,10 @@ exports. This design keeps the user-facing response tied to retrieved evidence w
 discipline of the hackathon.
 
 The atlas refresh method crawls public Spaces in the hackathon organization, reads each README and declared app file,
-builds a llama.cpp embedding index, runs quest analysis, validates the dashboard payload, and atomically swaps the new
-snapshot into the mounted Space cache. The last validated atlas remains available when a refresh fails, and many
-inspection routes remain usable while heavier models are unloaded.
+builds a llama.cpp embedding index, resolves official `track:*`, `sponsor:*`, and `achievement:*` tags before invoking
+the quest LoRA for remaining evidence, validates the dashboard payload, and atomically swaps the new snapshot into the
+mounted Space cache. The last validated atlas remains available when a refresh fails, and many inspection routes remain
+usable while heavier models are unloaded.
 
 ## Validation Challenges
 

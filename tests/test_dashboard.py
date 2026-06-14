@@ -12,8 +12,10 @@ from hackathon_advisor.quest_analysis import (
     _extract_json_object,
     create_quest_analyzer,
     render_project_quest_prompt,
+    remaining_project_quest_ids,
     validate_quest_analysis_payload,
 )
+from hackathon_advisor.quest_taxonomy import declared_quest_matches_from_tags
 from hackathon_advisor.tools import GOALS
 
 
@@ -188,6 +190,25 @@ def test_quest_analysis_validation_accepts_expanded_track_quests() -> None:
     assert validated.matches_by_project[projects[0].id][0]["source"] in {"readme", "app_file"}
 
 
+def test_declared_quest_matches_from_official_space_tags() -> None:
+    matches = declared_quest_matches_from_tags(
+        [
+            "track:wood",
+            "sponsor:openai",
+            "sponsor:nvidia",
+            "achievement:llama",
+            "tiny-titan",
+            "region:us",
+            "unknown:tag",
+        ]
+    )
+
+    quests = [match["quest"] for match in matches]
+    assert quests == ["Thousand Token Wood", "Codex", "Nemotron", "Llama Champion", "Tiny Titan"]
+    assert {match["source"] for match in matches} == {"metadata"}
+    assert all(match["confidence"] == 1.0 for match in matches)
+
+
 def test_quest_analysis_validation_canonicalizes_known_label_suffixes() -> None:
     projects = fake_projects(1)
     raw = {
@@ -342,6 +363,94 @@ def test_minicpm_quest_analyzer_attaches_project_id_to_match_payload(monkeypatch
 
     assert set(result) == {project.id}
     assert result[project.id][0]["quest"] == "Off the Grid"
+
+
+def test_minicpm_quest_analyzer_uses_metadata_before_model_matches(monkeypatch) -> None:
+    project = fake_projects(1)[0]
+    project = Project(
+        **{
+            **project.to_refresh_snapshot_dict(),
+            "tags": ["track:wood", "sponsor:openai"],
+            "readme_body": "Uses MiniCPM locally.",
+            "app_file_source": "model = 'openbmb/MiniCPM5-1B'",
+        }
+    )
+    prompts: list[str] = []
+    analyzer = MiniCPMQuestAnalyzer()
+    monkeypatch.setattr(analyzer, "_ensure_loaded", lambda: None)
+
+    def fake_generate(prompt: str) -> dict:
+        prompts.append(prompt)
+        return {
+            "matches": [
+                {
+                    "quest": "Best Use of Codex",
+                    "confidence": 0.88,
+                    "evidence": "Codex helped development",
+                    "source": "readme",
+                },
+                {
+                    "quest": "OpenBMB",
+                    "confidence": 0.9,
+                    "evidence": "openbmb/MiniCPM5-1B",
+                    "source": "app_file",
+                },
+            ]
+        }
+
+    monkeypatch.setattr(analyzer, "_generate_json", fake_generate)
+
+    result = analyzer.analyze([project])
+
+    assert prompts
+    assert "- Thousand Token Wood:" not in prompts[0]
+    assert "- Backyard AI:" not in prompts[0]
+    assert "- Codex:" not in prompts[0]
+    assert [match["quest"] for match in result[project.id]] == [
+        "Thousand Token Wood",
+        "Codex",
+        "OpenBMB",
+    ]
+    assert result[project.id][1]["source"] == "metadata"
+
+
+def test_minicpm_quest_analyzer_skips_model_when_metadata_covers_every_profile(monkeypatch) -> None:
+    project = fake_projects(1)[0]
+    project = Project(
+        **{
+            **project.to_refresh_snapshot_dict(),
+            "tags": [
+                "achievement:offgrid",
+                "achievement:welltuned",
+                "achievement:offbrand",
+                "achievement:llama",
+                "achievement:sharing",
+                "achievement:fieldnotes",
+                "track:backyard",
+                "track:wood",
+                "sponsor:openbmb",
+                "sponsor:openai",
+                "sponsor:nvidia",
+                "sponsor:modal",
+                "tiny-titan",
+                "best-agent",
+            ],
+            "readme_body": "All declared in metadata.",
+            "app_file_source": "",
+        }
+    )
+    analyzer = MiniCPMQuestAnalyzer()
+
+    def fail_load() -> None:
+        raise AssertionError("fully declared metadata should not load MiniCPM")
+
+    monkeypatch.setattr(analyzer, "_ensure_loaded", fail_load)
+
+    result = analyzer.analyze([project])
+
+    assert not remaining_project_quest_ids(project)
+    assert len(result[project.id]) == 14
+    assert {match["source"] for match in result[project.id]} == {"metadata"}
 
 
 def test_minicpm_quest_analyzer_repairs_invalid_json_with_base_model(monkeypatch) -> None:

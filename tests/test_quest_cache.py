@@ -59,7 +59,7 @@ def test_quest_cache_round_trip_validates_cached_matches(tmp_path) -> None:
         project,
         fingerprint,
         matches,
-        source="minicpm-json-quest-analyzer",
+        source="metadata-first-minicpm-json-quest-analyzer",
     )
     lookup = read_quest_cache_entry(tmp_path, project, fingerprint)
 
@@ -84,7 +84,7 @@ def test_quest_cache_rejects_corrupt_record(tmp_path) -> None:
                 "source": "readme",
             }
         ],
-        source="minicpm-json-quest-analyzer",
+        source="metadata-first-minicpm-json-quest-analyzer",
     )
     payload = json.loads(stored.path.read_text(encoding="utf-8"))
     payload["matches"][0]["quest"] = "Unknown Quest"
