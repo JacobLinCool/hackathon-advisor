@@ -8,21 +8,23 @@ post URL.
 Primary short version, under 280 characters with X URL weighting:
 
 ```text
-Built Hackathon Advisor for #BuildSmall: a live atlas of hackathon Spaces + a tiny-model coach for finding overlap, whitespace, and quest fit.
+Built Hackathon Advisor for #BuildSmall: a live atlas of hackathon Spaces + tiny-model coach for originality gaps.
 
 MiniCPM, llama.cpp, Nemotron ASR, Modal, and Codex helped ship it.
 
-Demo: https://build-small-hackathon-hackathon-advisor.hf.space
+App: https://build-small-hackathon-hackathon-advisor.hf.space
+Video: https://youtu.be/Gq-FUiL-ZPw
 Code: https://github.com/JacobLinCool/hackathon-advisor
 ```
 
 Shorter fallback:
 
 ```text
-Built Hackathon Advisor for #BuildSmall: a live atlas of hackathon Spaces and a tiny-model coach for finding originality gaps.
+Built Hackathon Advisor for #BuildSmall: a live atlas + tiny-model coach for originality gaps.
 
 MiniCPM, llama.cpp, Nemotron ASR, Modal, and Codex helped ship it.
 
+https://youtu.be/Gq-FUiL-ZPw
 https://build-small-hackathon-hackathon-advisor.hf.space
 https://github.com/JacobLinCool/hackathon-advisor
 ```
