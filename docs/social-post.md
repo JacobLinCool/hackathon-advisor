@@ -43,7 +43,7 @@ Codex helped throughout the build: implementation planning, code changes, tests,
 submission notes, README polish, and commit history with Codex co-author attribution.
 
 Demo: https://build-small-hackathon-hackathon-advisor.hf.space  
-Demo video: https://build-small-hackathon-hackathon-advisor.hf.space/static/assets/hackathon-advisor-demo.mp4  
+Demo video: https://youtu.be/Gq-FUiL-ZPw  
 GitHub: https://github.com/JacobLinCool/hackathon-advisor
 
 #BuildSmall #Gradio #HuggingFace #OpenAICodex #MiniCPM #Nemotron #Modal

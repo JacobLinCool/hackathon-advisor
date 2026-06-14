@@ -6,7 +6,7 @@ Official guide: <https://build-small-hackathon-field-guide.hf.space/submit>
 Live app: <https://build-small-hackathon-hackathon-advisor.hf.space>  
 Space: <https://huggingface.co/spaces/build-small-hackathon/hackathon-advisor>  
 GitHub: <https://github.com/JacobLinCool/hackathon-advisor>  
-Demo video: <https://build-small-hackathon-hackathon-advisor.hf.space/static/assets/hackathon-advisor-demo.mp4>
+Demo video: <https://youtu.be/Gq-FUiL-ZPw>
 
 ## Official Checklist
 
@@ -14,7 +14,7 @@ Demo video: <https://build-small-hackathon-hackathon-advisor.hf.space/static/ass
 | --- | --- | --- |
 | Stay under 32B | Ready | All runtime models are below 4B; the full stack is documented at `/api/prize-ledger` and in `README.md`. |
 | Ship a Gradio app in the official org | Ready | Public Gradio Space: `build-small-hackathon/hackathon-advisor`; `/health` returns 200. |
-| Record a demo | Ready | Final demo video is committed at `static/assets/hackathon-advisor-demo.mp4` and served by the Space. |
+| Record a demo | Ready | Final demo video is uploaded to YouTube; a Space-hosted MP4 backup remains committed at `static/assets/hackathon-advisor-demo.mp4`. |
 | Post it | Needs user action | Draft is in `docs/social-post.md`; publish it manually and replace the README draft link with the public post URL. |
 | Mind the GPU limit | Ready | Uses one ZeroGPU Space (`zero-a10g`) for this submission. |
 | Tag README | Ready | README front matter uses official `track:*`, `sponsor:*`, and `achievement:*` tags. |

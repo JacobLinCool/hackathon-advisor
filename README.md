@@ -59,7 +59,7 @@ of a continuously refreshed project atlas, and every advisor response is grounde
 - Live app: <https://build-small-hackathon-hackathon-advisor.hf.space>
 - Hugging Face Space: <https://huggingface.co/spaces/build-small-hackathon/hackathon-advisor>
 - Source code (GitHub): <https://github.com/JacobLinCool/hackathon-advisor>
-- Demo video: <https://build-small-hackathon-hackathon-advisor.hf.space/static/assets/hackathon-advisor-demo.mp4>
+- Demo video: <https://youtu.be/Gq-FUiL-ZPw>
 - Social post draft: [`docs/social-post.md`](docs/social-post.md) - publish it, then replace this line with the
   public post URL before the final form submission.
 - Submission notes: [`docs/submission-notes.md`](docs/submission-notes.md)
