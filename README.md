@@ -72,6 +72,16 @@ be hard to see, and prize alignment can be scattered across READMEs, tags, and a
 field itself into the starting point. The app shows where projects cluster, which submissions sit near each other, which
 quests they appear to satisfy, and where a new idea may still have room to breathe.
 
+The project also exists because the dataset is already there. A public hackathon organization is a living corpus of
+Spaces, READMEs, model declarations, app files, tags, and demos. Once that corpus is indexed, builders can explore what
+others are making, which methods they are using, and which results are emerging across the field.
+
+That visibility gives an online hackathon some of the creative force of OpenAI's Parameter Golf challenge: the event
+becomes a shared surface for ideas to interact while people are still building. Participants can find adjacent work,
+recognize overlap, borrow useful patterns, extend ideas into new domains, and connect with others working on similar
+problems. The result is a faster open-source feedback loop, where good ideas become easier to find, improve, and build
+on together.
+
 The atlas is the default experience because the map is the evidence. The advisor is available behind `Open advisor`,
 where it uses the same project snapshot to cite overlap, propose whitespace, score the idea, draft a build plan, and
 export the session evidence.
