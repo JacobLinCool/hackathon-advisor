@@ -7,6 +7,7 @@ Live app: <https://build-small-hackathon-hackathon-advisor.hf.space>
 Space: <https://huggingface.co/spaces/build-small-hackathon/hackathon-advisor>  
 GitHub: <https://github.com/JacobLinCool/hackathon-advisor>  
 Demo video: <https://youtu.be/Gq-FUiL-ZPw>
+Social post: <https://x.com/JacobLinCool/status/2066156056724848965>
 
 ## Official Checklist
 
@@ -15,7 +16,7 @@ Demo video: <https://youtu.be/Gq-FUiL-ZPw>
 | Stay under 32B | Ready | All runtime models are below 4B; the full stack is documented at `/api/prize-ledger` and in `README.md`. |
 | Ship a Gradio app in the official org | Ready | Public Gradio Space: `build-small-hackathon/hackathon-advisor`; `/health` returns 200. |
 | Record a demo | Ready | Final demo video is uploaded to YouTube; a Space-hosted MP4 backup remains committed at `static/assets/hackathon-advisor-demo.mp4`. |
-| Post it | Needs user action | Draft is in `docs/social-post.md`; publish it manually and replace the README draft link with the public post URL. |
+| Post it | Ready | Public X post: <https://x.com/JacobLinCool/status/2066156056724848965>. |
 | Mind the GPU limit | Ready | Uses one ZeroGPU Space (`zero-a10g`) for this submission. |
 | Tag README | Ready | README front matter uses official `track:*`, `sponsor:*`, and `achievement:*` tags. |
 | Short write-up of idea and tech | Ready | README plus `docs/article.md` describe the problem, experience, architecture, quests, and Codex usage. |
@@ -60,7 +61,7 @@ README tags: `achievement:offgrid`, `achievement:welltuned`, `achievement:offbra
 | --- | --- | --- |
 | Tiny Titan | Yes | Largest runtime model is MiniCPM5-1B at about 1.08B, well below 4B. |
 | Best Agent | Yes | MiniCPM selects tools; Python orchestrates search, whitespace, scoring, plans, exports, and atlas actions. |
-| Best Demo | Mostly ready | Demo video is ready; public social post still needs manual publication. |
+| Best Demo | Ready | Demo video and public X post are both linked from the README. |
 | Bonus Quest Champion | Yes | The submission satisfies the six achievement tags and multiple sponsor/extra prize criteria. |
 | Judges' Wildcard | Automatic | No separate entry required. |
 
@@ -80,8 +81,8 @@ README tags: `achievement:offgrid`, `achievement:welltuned`, `achievement:offbra
 
 ## Manual Remaining Step
 
-Publish one social post using `docs/social-post.md`, then update the README `Social post draft` line with the public URL
-before completing the official submission form.
+No repository-side action remains. Complete the official submission form with the Space, GitHub, YouTube demo, and X post
+links listed above.
 
 ## Submission Form Summary
 

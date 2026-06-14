@@ -60,8 +60,7 @@ of a continuously refreshed project atlas, and every advisor response is grounde
 - Hugging Face Space: <https://huggingface.co/spaces/build-small-hackathon/hackathon-advisor>
 - Source code (GitHub): <https://github.com/JacobLinCool/hackathon-advisor>
 - Demo video: <https://youtu.be/Gq-FUiL-ZPw>
-- Social post draft: [`docs/social-post.md`](docs/social-post.md) - publish it, then replace this line with the
-  public post URL before the final form submission.
+- Social post: <https://x.com/JacobLinCool/status/2066156056724848965>
 - Submission notes: [`docs/submission-notes.md`](docs/submission-notes.md)
 - Start at the Idea Map, search for a theme, click nearby projects, hover quest badges for evidence, and open the
   advisor when you are ready to test an idea.

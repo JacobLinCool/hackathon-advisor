@@ -1,7 +1,6 @@
 # Social Post Draft
 
-Use this after the demo video and Space are public. After posting, replace the README social-post line with the public
-post URL.
+Posted on X: <https://x.com/JacobLinCool/status/2066156056724848965>
 
 ## X / Twitter Draft
 
