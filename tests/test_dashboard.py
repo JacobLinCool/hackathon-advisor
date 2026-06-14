@@ -308,6 +308,54 @@ def test_quest_analysis_validation_accepts_best_use_of_known_labels() -> None:
     assert validated.matches_by_project[projects[0].id][0]["quest"] == "Modal"
 
 
+def test_quest_analysis_validation_accepts_common_compact_aliases() -> None:
+    projects = fake_projects(1)
+    raw = {
+        "projects": [
+            {
+                "project_id": projects[0].id,
+                "matches": [
+                    {
+                        "quest": "Offbrand",
+                        "confidence": 0.84,
+                        "evidence": "custom frontend",
+                        "source": "readme",
+                    },
+                    {
+                        "quest": "Offgrid",
+                        "confidence": 0.82,
+                        "evidence": "loads weights locally",
+                        "source": "app_file",
+                    },
+                    {
+                        "quest": "Llama Champion badge",
+                        "confidence": 0.8,
+                        "evidence": "llama-cpp-python",
+                        "source": "app_file",
+                    },
+                    {
+                        "quest": "Modal-first",
+                        "confidence": 0.79,
+                        "evidence": "Modal serverless GPUs",
+                        "source": "readme",
+                    },
+                    {
+                        "quest": "Nemotron-3 Nano 4B",
+                        "confidence": 0.78,
+                        "evidence": "Nemotron 3 Nano 4B",
+                        "source": "readme",
+                    },
+                ],
+            }
+        ]
+    }
+
+    validated = validate_quest_analysis_payload(raw, projects, source="fake")
+
+    quests = [match["quest"] for match in validated.matches_by_project[projects[0].id]]
+    assert quests == ["Off-Brand", "Off the Grid", "Llama Champion", "Modal", "Nemotron"]
+
+
 def test_quest_analysis_validation_rejects_unknown_composite_quest_labels() -> None:
     projects = fake_projects(1)
     raw = {

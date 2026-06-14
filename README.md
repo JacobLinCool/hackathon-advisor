@@ -142,9 +142,10 @@ be a normal directory such as `.cache/advisor-dashboard`. Each refresh writes
 updates `latest.json` through an atomic swap. Quest analysis is cached per project using the metadata-first inference
 prompt hash, taxonomy hash, MiniCPM model id, adapter id/revision, local adapter digest, and generation config.
 
-The app starts an hourly scheduler when `ADVISOR_CACHE_DIR` is configured. Manual and scheduled refreshes both acquire
-`$ADVISOR_CACHE_DIR/refresh.lock`, heartbeat while active, and leave the current validated dashboard in place if a new
-run fails validation.
+The app can start an hourly scheduler when `ADVISOR_CACHE_DIR` is configured. The submitted Space keeps scheduled
+refresh disabled and updates the mounted bucket from local builds, so index construction and quest analysis do not run
+inside the public demo runtime. Manual and scheduled refreshes still acquire `$ADVISOR_CACHE_DIR/refresh.lock`,
+heartbeat while active, and leave the current validated dashboard in place if a new run fails validation.
 
 ## Models And Data
 
@@ -303,6 +304,7 @@ ADVISOR_QUEST_ANALYZER_BACKEND=minicpm-transformers
 ADVISOR_QUEST_ADAPTER_ID=build-small-hackathon/hackathon-advisor-quest-minicpm5-lora
 ADVISOR_QUEST_ANALYSIS_BATCH_SIZE=8
 ADVISOR_CACHE_DIR=/data/advisor-cache
+ADVISOR_DISABLE_SCHEDULED_REFRESH=1
 ADVISOR_REFRESH_COMPUTE=cpu
 ADVISOR_SCHEDULED_REFRESH_COMPUTE=cpu
 ADVISOR_REFRESH_INTERVAL_SECONDS=3600
