@@ -6,81 +6,100 @@ Live app: <https://build-small-hackathon-hackathon-advisor.hf.space>
 Repository: <https://github.com/JacobLinCool/hackathon-advisor>  
 Space: <https://huggingface.co/spaces/build-small-hackathon/hackathon-advisor>
 
-## The Problem
+## Overview
 
-Build Small moves fast. Every builder is trying to make something local, useful, strange, or delightful under a strict
-model budget, but the field changes hour by hour. A good idea can already be crowded. A quiet niche can be invisible.
-Quest and sponsor fit can be buried in READMEs, model cards, and app files. The result is that builders spend too much
-of their scarce time guessing where their project sits.
+Hackathon Advisor is a live atlas of the Build Small Hackathon and a small-model originality coach for builders. It
+turns the public `build-small-hackathon` organization into an evidence surface: every public Space contributes to a map
+of the field, a searchable project index, quest-evidence summaries, and an advisor that helps a builder test where a new
+idea may still have room to grow.
 
-Hackathon Advisor turns the hackathon itself into the starting point. It is a live atlas of public
-`build-small-hackathon` Spaces and a small-model originality coach that helps a builder ask: what exists, what is nearby,
-what is still unwritten, and how could this idea become a focused submission?
+The project addresses a practical problem in compressed creative work. During a hackathon, builders need to understand
+the surrounding field quickly. They need to know which ideas are crowded, which themes are emerging, which quests a
+project might satisfy, and how a proposal can become more specific before time runs out. Hackathon Advisor makes those
+questions answerable from the public work already being built around them.
 
-## The Experience
+## Contribution
 
-The app opens on the Idea Map, not a chatbot. Each point is a public hackathon Space. Clusters show the shape of the
-field; nearest-neighbor links show which projects echo each other. A builder can search for a theme, filter by quest,
-open a project, and inspect evidence before asking the advisor for help.
+The central claim of the project is simple: originality improves when builders can see the field they are entering. The
+app presents that field first. A full-screen Idea Map places projects by embedding similarity, draws nearest-neighbor
+links, and exposes clusters that would be difficult to infer from a feed of individual Spaces. Search and filters make
+the same evidence usable for targeted questions, such as "voice assistants", "local-first", or "quest classifier".
 
-The advisor side is called The Unwritten Almanac. It compares an idea against the current project atlas, cites nearby
-projects, proposes whitespace, scores the idea, and drafts a build plan. The workspace can export field notes, an
-Almanac chapter, a page PNG, a demo bundle, and LoRA training materials.
+The advisor, called The Unwritten Almanac, uses the same project snapshot to compare a proposed idea against nearby
+work. It cites overlapping projects, identifies whitespace, scores the idea with a deterministic rubric, and drafts a
+build plan. The output is meant to be useful before implementation begins: it helps a builder sharpen the audience,
+choose a tractable scope, and reduce accidental duplication.
 
-There is also an "Ask the atlas" drawer. It uses the base MiniCPM5-1B model's native tool calling to answer questions
-about the dashboard. Verified tool results render before the prose, and map actions can highlight or filter the atlas.
+## User Experience
 
-## The Implementation
+The experience begins with exploration. A builder can search the atlas, inspect a cluster, open a project card, and see
+the evidence behind detected quest matches. The map is intentionally the first surface because it gives the advisor's
+later recommendations visible context.
 
-The visible Space is a Gradio `gradio.Server`, which is a FastAPI server with Gradio API endpoints. The frontend is a
-custom HTML/CSS/JS interface served from `static/`; the engine in `hackathon_advisor/` stays UI-agnostic.
+When the builder opens The Unwritten Almanac, the app shifts from field reading to idea development. The workspace keeps
+an idea board, profile constraints, score seals, whitespace candidates, and export actions in one place. A session can
+produce field notes, an Almanac chapter, a shareable PNG, a demo bundle, and LoRA training materials. These artifacts
+become reusable records for review and submission.
 
-The runtime model stack is fully open-weight and local to the Space:
+The "Ask the atlas" drawer adds a second mode of interaction. It lets a builder ask structured questions about the
+current dashboard. Verified repository results appear before the model-written answer, and map actions can highlight or
+filter projects directly. The model's prose is grounded in a compact digest of the verified result.
 
-- Advisor planning: `openbmb/MiniCPM5-1B` plus a public advisor LoRA.
-- Quest classification: `openbmb/MiniCPM5-1B` plus a public quest-classifier LoRA.
+## Technical Design
+
+Hackathon Advisor is deployed as a Gradio `gradio.Server`, a FastAPI application with Gradio API endpoints. The visible
+interface is a custom HTML, CSS, and JavaScript frontend served from `static/`; the engine in `hackathon_advisor/`
+remains UI-agnostic.
+
+The runtime model stack is open-weight and local to the Space:
+
+- Advisor planning: `openbmb/MiniCPM5-1B` with a public advisor LoRA.
+- Quest classification: `openbmb/MiniCPM5-1B` with a public quest-classifier LoRA.
 - Retrieval: `ggml-org/embeddinggemma-300m-qat-q8_0-GGUF` through llama.cpp.
 - Voice input: `nvidia/nemotron-speech-streaming-en-0.6b` through NVIDIA NeMo ASR.
 
-The advisor deliberately keeps the 1B model's job small. MiniCPM chooses one tool call per turn. Python then handles the
-deterministic orchestration: search, whitespace, scoring, planning, profile handling, exports, and response templates.
-This keeps behavior inspectable and avoids asking a tiny model to run an uncontrolled multi-hop ReAct loop.
+The advisor gives the 1B model a narrow, inspectable role. MiniCPM selects one advisor action per turn; Python then
+carries out the deterministic sequence over search, whitespace discovery, scoring, planning, profile constraints, and
+exports. This design keeps the user-facing response tied to retrieved evidence while preserving the small-model
+discipline of the hackathon.
 
-The atlas refresh path crawls public Spaces in the hackathon organization, reads each README and declared app file,
-rebuilds the llama.cpp embedding index, runs quest analysis, validates the dashboard payload, and swaps the result
-atomically into the mounted Space cache. A failed refresh leaves the last validated dashboard in place.
+The atlas refresh method crawls public Spaces in the hackathon organization, reads each README and declared app file,
+builds a llama.cpp embedding index, runs quest analysis, validates the dashboard payload, and atomically swaps the new
+snapshot into the mounted Space cache. The last validated atlas remains available when a refresh fails, and many
+inspection routes remain usable while heavier models are unloaded.
 
-## What Was Hard
+## Validation Challenges
 
-The hardest part was not drawing a map. It was making the map trustworthy enough for judges and builders.
+The main engineering challenge was trust. A map is useful only when builders and judges can understand where its signals
+come from. The refresh process therefore preserves project metadata, README evidence, app-file evidence, embedding
+provenance, quest-analysis outputs, and manifest data for each validated snapshot.
 
-MiniCPM and llama.cpp can clash on OpenMP when loaded into the same hot path, so query embedding on macOS runs in a
-worker subprocess and dashboard refresh builds the GGUF index in a subprocess before returning to MiniCPM quest analysis.
+Quest classification required additional care. Early prompt-only runs could rename quests, emit explanatory prose, or
+misread local-inference criteria. The final classifier is a supervised MiniCPM LoRA trained on real public Spaces, with
+a strict JSON schema and invariant checks behind every refresh. The write-up in
+[`docs/quest-classification-lora.md`](docs/quest-classification-lora.md) describes the dataset and validation path.
 
-Quest classification also needed discipline. A prompt-only classifier would rename quests, emit extra prose, or award
-Off the Grid to projects that used remote inference APIs. We built a supervised dataset from real public Spaces,
-fine-tuned a MiniCPM LoRA, and kept schema validation plus hard invariants in the refresh path.
+The runtime also had to separate MiniCPM's PyTorch stack from llama.cpp on systems where OpenMP runtimes conflict. Query
+embedding on macOS runs in a worker subprocess, and dashboard refresh builds the GGUF index in a subprocess before
+returning to MiniCPM quest analysis.
 
-Finally, the Space needed to be useful even when GPU quota is tight. The atlas, search, exports, cached dashboard, and
-many inspection routes remain available without loading the heavy models.
+## Codex Development Record
 
-## How Codex Helped
+Codex acted as an engineering collaborator throughout the build. It helped inspect the codebase, turn requirements into
+implementation slices, add the dashboard storage and search paths, build the quest-evidence UI, run tests, review
+deployed Space behavior, prepare the demo materials, and refine the submission documents.
 
-Codex acted as the engineering partner across the project. It helped inspect the codebase, break the work into
-implementation slices, build the dashboard storage and search paths, add quest evidence UI, write and adjust tests,
-debug deployed Space behavior, prepare commit history, publish redacted build traces, and turn the project into a
-submission-ready story.
+The project also preserves Codex's contribution as evidence. The public Git history includes Codex co-author trailers,
+and redacted Codex session traces are published at
+<https://huggingface.co/datasets/build-small-hackathon/hackathon-advisor-codex-traces>.
 
-The project also uses Codex as evidence. Redacted Codex session traces are published at
-<https://huggingface.co/datasets/build-small-hackathon/hackathon-advisor-codex-traces>, and commits in the public GitHub
-repo include Codex co-author trailers.
+## Fit For Build Small
 
-## Why It Fits Build Small
+Hackathon Advisor fits the Build Small constraints through its model budget and its product form. Every runtime model is
+under 4B parameters, the full stack is far below the 32B cap, and inference runs from open weights inside the Space
+process. MiniCPM is central to the advisor and quest classifier, llama.cpp powers retrieval, Nemotron supports voice
+input, Modal supports development compute, and Codex is part of the documented build record.
 
-Hackathon Advisor is small in the way the hackathon asks for: every model is under 4B, the full stack is far below the
-32B cap, and the runtime uses open weights instead of proprietary inference APIs. It is also complete: a public Space,
-a public repo, a demo video, a model/data trail, a custom interface, and a clear use case.
-
-The project belongs in Thousand Token Wood because it turns a hackathon into a navigable, AI-native landscape. The map,
-Almanac, quest evidence, and exports make the field feel alive while still grounding every suggestion in real public
-projects.
+The project is submitted for Thousand Token Wood because it makes the hackathon field navigable as an AI-native
+landscape. The atlas, Almanac, quest evidence, and exports give builders a way to see the surrounding work and produce a
+more deliberate idea from that evidence.
