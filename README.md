@@ -16,7 +16,21 @@ tags:
   - small-models
   - agent
   - originality
-  - off-the-grid
+  - track:wood
+  - sponsor:openbmb
+  - sponsor:openai
+  - sponsor:nvidia
+  - sponsor:modal
+  - achievement:offgrid
+  - achievement:welltuned
+  - achievement:offbrand
+  - achievement:llama
+  - achievement:sharing
+  - achievement:fieldnotes
+  - tiny-titan
+  - best-demo
+  - best-agent
+  - bonus-quest-champion
 models:
   - openbmb/MiniCPM5-1B
   - build-small-hackathon/hackathon-advisor-minicpm5-lora
@@ -45,8 +59,10 @@ of a continuously refreshed project atlas, and every advisor response is grounde
 - Live app: <https://build-small-hackathon-hackathon-advisor.hf.space>
 - Hugging Face Space: <https://huggingface.co/spaces/build-small-hackathon/hackathon-advisor>
 - Source code (GitHub): <https://github.com/JacobLinCool/hackathon-advisor>
-- Demo video: _TODO — add the hosted demo video URL before submission._
-- Social post: _TODO — add the public X/LinkedIn post URL before submission._
+- Demo video: <https://build-small-hackathon-hackathon-advisor.hf.space/static/assets/hackathon-advisor-demo.mp4>
+- Social post draft: [`docs/social-post.md`](docs/social-post.md) - publish it, then replace this line with the
+  public post URL before the final form submission.
+- Submission notes: [`docs/submission-notes.md`](docs/submission-notes.md)
 - Start at the Idea Map, search for a theme, click nearby projects, hover quest badges for evidence, and open the
   advisor when you are ready to test an idea.
 
@@ -60,6 +76,30 @@ quests they appear to satisfy, and where a new idea may still have room to breat
 The atlas is the default experience because the map is the evidence. The advisor is available behind `Open advisor`,
 where it uses the same project snapshot to cite overlap, propose whitespace, score the idea, draft a build plan, and
 export the session evidence.
+
+## Hackathon Submission
+
+Hackathon Advisor is submitted primarily for the **Thousand Token Wood** track. The product is useful to builders, but
+its core form is an AI-native field guide: a living map, an almanac voice, quest evidence, and shareable artifacts that
+make the hackathon field itself explorable.
+
+The Space is also targeting the official sponsor and achievement tags shown in the README front matter:
+
+- `sponsor:openbmb`: MiniCPM5-1B is the central planner and quest-classifier base model.
+- `sponsor:openai`: Codex helped implement, debug, document, and prepare the submission; the public Git history uses
+  Codex co-author trailers.
+- `sponsor:nvidia`: voice input runs `nvidia/nemotron-speech-streaming-en-0.6b` through NVIDIA NeMo ASR.
+- `sponsor:modal`: Modal is used for development compute, including the quest LoRA training path and remote index-build
+  path, and is documented in this README.
+- `achievement:offgrid`: runtime inference is local to the Space process; no proprietary cloud inference API is called.
+- `achievement:welltuned`: the advisor and quest classifier use published MiniCPM LoRA adapters.
+- `achievement:offbrand`: the app uses a custom `gradio.Server` frontend instead of the stock Gradio interface.
+- `achievement:llama`: retrieval embeddings run through llama.cpp via `llama-cpp-python`.
+- `achievement:sharing`: redacted Codex build traces are published as a Hugging Face dataset.
+- `achievement:fieldnotes`: the repo includes build reports and field-note exports.
+
+Additional prize evidence for Tiny Titan, Best Agent, Best Demo, and Bonus Quest Champion is summarized in
+[`docs/submission-notes.md`](docs/submission-notes.md).
 
 ## What You Can Do
 

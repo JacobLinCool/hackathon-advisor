@@ -195,3 +195,7 @@ cython_debug/
 
 # Published LoRA adapter — lives on the Hugging Face Hub, not in git
 artifacts/quest-lora/
+
+# Local demo production workspace. Keep only curated public assets under static/assets/.
+demo-video/
+frames/
