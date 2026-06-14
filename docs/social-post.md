@@ -5,25 +5,27 @@ post URL.
 
 ## X / Twitter Draft
 
-I built Hackathon Advisor for #BuildSmall: a live atlas of the hackathon field plus a tiny-model originality coach.
+Primary short version, under 280 characters with X URL weighting:
 
-Search public Spaces, inspect project clusters, see quest evidence, ask the atlas what exists, then open The Unwritten
-Almanac to test whether your idea still has room to breathe.
+```text
+Built Hackathon Advisor for #BuildSmall: a live atlas of hackathon Spaces + a tiny-model coach for finding overlap, whitespace, and quest fit.
 
-Runs local/open-weight:
-- MiniCPM5-1B + LoRA for tool planning
-- MiniCPM5-1B + LoRA for quest classification
-- EmbeddingGemma GGUF via llama.cpp
-- Nemotron Speech ASR via NeMo
-
-Codex helped turn this from a pile of project signals into a deployable Space: code, tests, debug passes, demo prep,
-submission docs, and co-authored commits.
+MiniCPM, llama.cpp, Nemotron ASR, Modal, and Codex helped ship it.
 
 Demo: https://build-small-hackathon-hackathon-advisor.hf.space
-Video: https://build-small-hackathon-hackathon-advisor.hf.space/static/assets/hackathon-advisor-demo.mp4
-GitHub: https://github.com/JacobLinCool/hackathon-advisor
+Code: https://github.com/JacobLinCool/hackathon-advisor
+```
 
-#BuildSmall #Gradio #HuggingFace #OpenAICodex #MiniCPM #Nemotron #Modal
+Shorter fallback:
+
+```text
+Built Hackathon Advisor for #BuildSmall: a live atlas of hackathon Spaces and a tiny-model coach for finding originality gaps.
+
+MiniCPM, llama.cpp, Nemotron ASR, Modal, and Codex helped ship it.
+
+https://build-small-hackathon-hackathon-advisor.hf.space
+https://github.com/JacobLinCool/hackathon-advisor
+```
 
 ## LinkedIn / Longer Draft
 
