@@ -61,6 +61,7 @@ of a continuously refreshed project atlas, and every advisor response is grounde
 - Source code (GitHub): <https://github.com/JacobLinCool/hackathon-advisor>
 - Demo video: <https://youtu.be/Gq-FUiL-ZPw>
 - Social post: <https://x.com/JacobLinCool/status/2066156056724848965>
+- Team HF username: [`JacobLinCool`](https://huggingface.co/JacobLinCool)
 - Submission notes: [`docs/submission-notes.md`](docs/submission-notes.md)
 - Start at the Idea Map, search for a theme, click nearby projects, hover quest badges for evidence, and open the
   advisor when you are ready to test an idea.
